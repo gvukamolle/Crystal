@@ -33,7 +33,9 @@ export interface ButtonLocale {
 	fetchingUrl: string;
 	usingTool: string;
 	thinking: string;
+	showFullReasoning: string;
 	thinkingDeeper: string;
+	deepReasoning: string;  // Codex deep reasoning toggle
 	// Difficulty levels
 	difficultyKids: string;
 	difficultyKidsDesc: string;
@@ -58,6 +60,12 @@ export interface ButtonLocale {
 	welcomeFeature3: string;
 	welcomeFeature4: string;
 	welcomeJoke: string;
+	// Edit prompt
+	edit: string;
+	cancelEdit: string;
+	resend: string;
+	// Input placeholder
+	inputPlaceholder: string;
 }
 
 export const BUTTON_LOCALES: Record<LanguageCode, ButtonLocale> = {
@@ -91,7 +99,9 @@ export const BUTTON_LOCALES: Record<LanguageCode, ButtonLocale> = {
 		fetchingUrl: "Загружает URL",
 		usingTool: "Использует",
 		thinking: "Думает...",
+		showFullReasoning: "Показать полное рассуждение",
 		thinkingDeeper: "Думать глубже",
+		deepReasoning: "Глубокие рассуждения",
 		difficultyKids: "Для детей",
 		difficultyKidsDesc: "Простые слова и весёлые аналогии",
 		difficultyStudent: "Для студента",
@@ -102,16 +112,20 @@ export const BUTTON_LOCALES: Record<LanguageCode, ButtonLocale> = {
 		unsupportedFileType: "Неподдерживаемый формат",
 		fileAttachError: "Ошибка прикрепления файла",
 		rateLimitTitle: "Лимит исчерпан",
-		rateLimitMessage: "Достигнут лимит использования Claude. Попробуйте позже.",
+		rateLimitMessage: "Достигнут лимит использования. Попробуйте позже.",
 		rateLimitResets: "Сброс",
-		welcomeTitle: "Добро пожаловать в Claude Rock",
+		welcomeTitle: "Добро пожаловать в Cristal",
 		welcomeSubtitle: "Ваш ИИ-ассистент прямо в Obsidian",
 		welcomeTip: "Enter — отправить, Shift+Enter — новая строка",
-		welcomeFeature1: "Общайся с Claude на любые темы",
+		welcomeFeature1: "Общайся с ИИ-ассистентом на любые темы",
 		welcomeFeature2: "Прикрепляй файлы и изображения",
 		welcomeFeature3: "Используй @ для упоминания заметок",
 		welcomeFeature4: "Веб-поиск и анализ ссылок",
-		welcomeJoke: "Claude не кусается. Ну, почти..."
+		welcomeJoke: "Твой умный помощник ждёт вопросов!",
+		edit: "Редактировать",
+		cancelEdit: "Отмена",
+		resend: "Отправить",
+		inputPlaceholder: "Отправить сообщение... (/ для команд)"
 	},
 	en: {
 		copy: "Copy",
@@ -143,7 +157,9 @@ export const BUTTON_LOCALES: Record<LanguageCode, ButtonLocale> = {
 		fetchingUrl: "Fetching URL",
 		usingTool: "Using",
 		thinking: "Thinking...",
+		showFullReasoning: "Show full reasoning",
 		thinkingDeeper: "Think deeper",
+		deepReasoning: "Deep reasoning",
 		difficultyKids: "For kids",
 		difficultyKidsDesc: "Simple words and fun analogies",
 		difficultyStudent: "For student",
@@ -154,16 +170,20 @@ export const BUTTON_LOCALES: Record<LanguageCode, ButtonLocale> = {
 		unsupportedFileType: "Unsupported file type",
 		fileAttachError: "Failed to attach file",
 		rateLimitTitle: "Rate limit reached",
-		rateLimitMessage: "Claude usage limit reached. Please try again later.",
+		rateLimitMessage: "Usage limit reached. Please try again later.",
 		rateLimitResets: "Resets",
-		welcomeTitle: "Welcome to Claude Rock",
+		welcomeTitle: "Welcome to Cristal",
 		welcomeSubtitle: "Your AI assistant right in Obsidian",
 		welcomeTip: "Enter to send, Shift+Enter for new line",
-		welcomeFeature1: "Chat with Claude about anything",
+		welcomeFeature1: "Chat with your AI assistant about anything",
 		welcomeFeature2: "Attach files and images",
 		welcomeFeature3: "Use @ to mention your notes",
 		welcomeFeature4: "Web search and link analysis",
-		welcomeJoke: "Claude doesn't bite. Well, mostly..."
+		welcomeJoke: "Your smart assistant awaits your questions!",
+		edit: "Edit",
+		cancelEdit: "Cancel",
+		resend: "Send",
+		inputPlaceholder: "Send a message... (type / for commands)"
 	},
 	fr: {
 		copy: "Copier",
@@ -195,7 +215,9 @@ export const BUTTON_LOCALES: Record<LanguageCode, ButtonLocale> = {
 		fetchingUrl: "Récupération URL",
 		usingTool: "Utilisation de",
 		thinking: "Réflexion...",
+		showFullReasoning: "Afficher le raisonnement complet",
 		thinkingDeeper: "Réfléchir plus",
+		deepReasoning: "Raisonnement approfondi",
 		difficultyKids: "Pour enfants",
 		difficultyKidsDesc: "Mots simples et analogies amusantes",
 		difficultyStudent: "Pour étudiant",
@@ -206,16 +228,20 @@ export const BUTTON_LOCALES: Record<LanguageCode, ButtonLocale> = {
 		unsupportedFileType: "Type de fichier non pris en charge",
 		fileAttachError: "Échec de la pièce jointe",
 		rateLimitTitle: "Limite atteinte",
-		rateLimitMessage: "Limite d'utilisation de Claude atteinte. Réessayez plus tard.",
+		rateLimitMessage: "Limite d'utilisation atteinte. Réessayez plus tard.",
 		rateLimitResets: "Réinitialisation",
-		welcomeTitle: "Bienvenue sur Claude Rock",
+		welcomeTitle: "Bienvenue sur Cristal",
 		welcomeSubtitle: "Votre assistant IA directement dans Obsidian",
 		welcomeTip: "Entrée pour envoyer, Shift+Entrée pour nouvelle ligne",
-		welcomeFeature1: "Discutez avec Claude de tout",
+		welcomeFeature1: "Discutez avec l'assistant IA de tout",
 		welcomeFeature2: "Joignez des fichiers et images",
 		welcomeFeature3: "Utilisez @ pour mentionner vos notes",
 		welcomeFeature4: "Recherche web et analyse de liens",
-		welcomeJoke: "Claude ne mord pas. Enfin, presque..."
+		welcomeJoke: "Votre assistant intelligent attend vos questions !",
+		edit: "Modifier",
+		cancelEdit: "Annuler",
+		resend: "Envoyer",
+		inputPlaceholder: "Envoyer un message... (/ pour les commandes)"
 	},
 	de: {
 		copy: "Kopieren",
@@ -247,7 +273,9 @@ export const BUTTON_LOCALES: Record<LanguageCode, ButtonLocale> = {
 		fetchingUrl: "Lade URL",
 		usingTool: "Verwende",
 		thinking: "Denke nach...",
+		showFullReasoning: "Vollständiges Denken anzeigen",
 		thinkingDeeper: "Tiefer denken",
+		deepReasoning: "Tiefes Denken",
 		difficultyKids: "Für Kinder",
 		difficultyKidsDesc: "Einfache Wörter und lustige Analogien",
 		difficultyStudent: "Für Studenten",
@@ -258,16 +286,20 @@ export const BUTTON_LOCALES: Record<LanguageCode, ButtonLocale> = {
 		unsupportedFileType: "Nicht unterstützter Dateityp",
 		fileAttachError: "Dateianhang fehlgeschlagen",
 		rateLimitTitle: "Limit erreicht",
-		rateLimitMessage: "Claude-Nutzungslimit erreicht. Bitte später erneut versuchen.",
+		rateLimitMessage: "Nutzungslimit erreicht. Bitte später erneut versuchen.",
 		rateLimitResets: "Zurücksetzen",
-		welcomeTitle: "Willkommen bei Claude Rock",
+		welcomeTitle: "Willkommen bei Cristal",
 		welcomeSubtitle: "Ihr KI-Assistent direkt in Obsidian",
 		welcomeTip: "Enter zum Senden, Shift+Enter für neue Zeile",
-		welcomeFeature1: "Mit Claude über alles chatten",
+		welcomeFeature1: "Mit dem KI-Assistenten über alles chatten",
 		welcomeFeature2: "Dateien und Bilder anhängen",
 		welcomeFeature3: "@ verwenden um Notizen zu erwähnen",
 		welcomeFeature4: "Websuche und Link-Analyse",
-		welcomeJoke: "Claude beißt nicht. Naja, meistens..."
+		welcomeJoke: "Ihr smarter Assistent wartet auf Ihre Fragen!",
+		edit: "Bearbeiten",
+		cancelEdit: "Abbrechen",
+		resend: "Senden",
+		inputPlaceholder: "Nachricht senden... (/ für Befehle)"
 	},
 	es: {
 		copy: "Copiar",
@@ -299,7 +331,9 @@ export const BUTTON_LOCALES: Record<LanguageCode, ButtonLocale> = {
 		fetchingUrl: "Obteniendo URL",
 		usingTool: "Usando",
 		thinking: "Pensando...",
+		showFullReasoning: "Mostrar razonamiento completo",
 		thinkingDeeper: "Pensar más",
+		deepReasoning: "Razonamiento profundo",
 		difficultyKids: "Para niños",
 		difficultyKidsDesc: "Palabras simples y analogías divertidas",
 		difficultyStudent: "Para estudiante",
@@ -310,16 +344,20 @@ export const BUTTON_LOCALES: Record<LanguageCode, ButtonLocale> = {
 		unsupportedFileType: "Tipo de archivo no admitido",
 		fileAttachError: "Error al adjuntar archivo",
 		rateLimitTitle: "Límite alcanzado",
-		rateLimitMessage: "Límite de uso de Claude alcanzado. Inténtelo más tarde.",
+		rateLimitMessage: "Límite de uso alcanzado. Inténtelo más tarde.",
 		rateLimitResets: "Reinicio",
-		welcomeTitle: "Bienvenido a Claude Rock",
+		welcomeTitle: "Bienvenido a Cristal",
 		welcomeSubtitle: "Tu asistente IA directamente en Obsidian",
 		welcomeTip: "Enter para enviar, Shift+Enter para nueva línea",
-		welcomeFeature1: "Chatea con Claude sobre cualquier tema",
+		welcomeFeature1: "Chatea con el asistente IA sobre cualquier tema",
 		welcomeFeature2: "Adjunta archivos e imágenes",
 		welcomeFeature3: "Usa @ para mencionar tus notas",
 		welcomeFeature4: "Búsqueda web y análisis de enlaces",
-		welcomeJoke: "Claude no muerde. Bueno, casi..."
+		welcomeJoke: "¡Tu asistente inteligente espera tus preguntas!",
+		edit: "Editar",
+		cancelEdit: "Cancelar",
+		resend: "Enviar",
+		inputPlaceholder: "Enviar mensaje... (/ para comandos)"
 	},
 	hi: {
 		copy: "कॉपी करें",
@@ -351,7 +389,9 @@ export const BUTTON_LOCALES: Record<LanguageCode, ButtonLocale> = {
 		fetchingUrl: "URL प्राप्त कर रहा है",
 		usingTool: "उपयोग कर रहा है",
 		thinking: "सोच रहा है...",
+		showFullReasoning: "पूर्ण तर्क दिखाएं",
 		thinkingDeeper: "गहराई से सोचें",
+		deepReasoning: "गहन तर्क",
 		difficultyKids: "बच्चों के लिए",
 		difficultyKidsDesc: "सरल शब्द और मज़ेदार उदाहरण",
 		difficultyStudent: "छात्र के लिए",
@@ -362,16 +402,20 @@ export const BUTTON_LOCALES: Record<LanguageCode, ButtonLocale> = {
 		unsupportedFileType: "असमर्थित फ़ाइल प्रकार",
 		fileAttachError: "फ़ाइल संलग्न करने में त्रुटि",
 		rateLimitTitle: "सीमा पहुँच गई",
-		rateLimitMessage: "Claude उपयोग सीमा पहुँच गई। बाद में पुनः प्रयास करें।",
+		rateLimitMessage: "उपयोग सीमा पहुँच गई। बाद में पुनः प्रयास करें।",
 		rateLimitResets: "रीसेट",
-		welcomeTitle: "Claude Rock में आपका स्वागत है",
+		welcomeTitle: "Cristal में आपका स्वागत है",
 		welcomeSubtitle: "Obsidian में आपका AI सहायक",
 		welcomeTip: "भेजने के लिए Enter, नई पंक्ति के लिए Shift+Enter",
-		welcomeFeature1: "Claude से किसी भी विषय पर बात करें",
+		welcomeFeature1: "AI सहायक से किसी भी विषय पर बात करें",
 		welcomeFeature2: "फ़ाइलें और छवियां संलग्न करें",
 		welcomeFeature3: "नोट्स का उल्लेख करने के लिए @ का उपयोग करें",
 		welcomeFeature4: "वेब खोज और लिंक विश्लेषण",
-		welcomeJoke: "Claude काटता नहीं है। खैर, लगभग..."
+		welcomeJoke: "आपका स्मार्ट सहायक आपके सवालों का इंतज़ार कर रहा है!",
+		edit: "संपादित करें",
+		cancelEdit: "रद्द करें",
+		resend: "भेजें",
+		inputPlaceholder: "संदेश भेजें... (कमांड के लिए /)"
 	},
 	zh: {
 		copy: "复制",
@@ -403,7 +447,9 @@ export const BUTTON_LOCALES: Record<LanguageCode, ButtonLocale> = {
 		fetchingUrl: "正在获取URL",
 		usingTool: "正在使用",
 		thinking: "思考中...",
+		showFullReasoning: "显示完整推理",
 		thinkingDeeper: "深入思考",
+		deepReasoning: "深度推理",
 		difficultyKids: "给孩子",
 		difficultyKidsDesc: "简单的词汇和有趣的类比",
 		difficultyStudent: "给学生",
@@ -414,16 +460,20 @@ export const BUTTON_LOCALES: Record<LanguageCode, ButtonLocale> = {
 		unsupportedFileType: "不支持的文件类型",
 		fileAttachError: "附加文件失败",
 		rateLimitTitle: "达到限制",
-		rateLimitMessage: "Claude使用限制已达到。请稍后再试。",
+		rateLimitMessage: "使用限制已达到。请稍后再试。",
 		rateLimitResets: "重置",
-		welcomeTitle: "欢迎使用 Claude Rock",
+		welcomeTitle: "欢迎使用 Cristal",
 		welcomeSubtitle: "Obsidian 中的 AI 助手",
 		welcomeTip: "Enter 发送，Shift+Enter 换行",
-		welcomeFeature1: "与 Claude 聊任何话题",
+		welcomeFeature1: "与 AI 助手聊任何话题",
 		welcomeFeature2: "附加文件和图片",
 		welcomeFeature3: "使用 @ 提及笔记",
 		welcomeFeature4: "网络搜索和链接分析",
-		welcomeJoke: "Claude 不咬人。嗯，大概吧..."
+		welcomeJoke: "您的智能助手正在等待您的问题！",
+		edit: "编辑",
+		cancelEdit: "取消",
+		resend: "发送",
+		inputPlaceholder: "发送消息... (/ 查看命令)"
 	},
 	ja: {
 		copy: "コピー",
@@ -455,7 +505,9 @@ export const BUTTON_LOCALES: Record<LanguageCode, ButtonLocale> = {
 		fetchingUrl: "URL取得中",
 		usingTool: "使用中",
 		thinking: "考え中...",
+		showFullReasoning: "完全な推論を表示",
 		thinkingDeeper: "深く考える",
+		deepReasoning: "深い推論",
 		difficultyKids: "子供向け",
 		difficultyKidsDesc: "シンプルな言葉と楽しい例え",
 		difficultyStudent: "学生向け",
@@ -466,16 +518,20 @@ export const BUTTON_LOCALES: Record<LanguageCode, ButtonLocale> = {
 		unsupportedFileType: "サポートされていないファイルタイプ",
 		fileAttachError: "ファイルの添付に失敗しました",
 		rateLimitTitle: "制限に達しました",
-		rateLimitMessage: "Claudeの使用制限に達しました。後でもう一度お試しください。",
+		rateLimitMessage: "使用制限に達しました。後でもう一度お試しください。",
 		rateLimitResets: "リセット",
-		welcomeTitle: "Claude Rock へようこそ",
+		welcomeTitle: "Cristal へようこそ",
 		welcomeSubtitle: "Obsidian の AI アシスタント",
 		welcomeTip: "Enter で送信、Shift+Enter で改行",
-		welcomeFeature1: "Claude と何でも話そう",
+		welcomeFeature1: "AI アシスタントと何でも話そう",
 		welcomeFeature2: "ファイルと画像を添付",
 		welcomeFeature3: "@ でノートをメンション",
 		welcomeFeature4: "ウェブ検索とリンク分析",
-		welcomeJoke: "Claude は噛みません。たぶん..."
+		welcomeJoke: "スマートアシスタントがあなたの質問をお待ちしています！",
+		edit: "編集",
+		cancelEdit: "キャンセル",
+		resend: "送信",
+		inputPlaceholder: "メッセージを送信... (/ でコマンド)"
 	}
 };
 

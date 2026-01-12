@@ -102,12 +102,14 @@ export interface ChatMessage {
 
 export interface ChatSession {
 	id: string;
-	cliSessionId: string | null;  // Claude CLI session ID for --resume
+	cliSessionId: string | null;  // Claude CLI session ID or Codex thread_id for --resume
 	messages: ChatMessage[];
 	createdAt: number;
 	title?: string;  // Auto-generated from first message
-	model?: ClaudeModel;  // Model used for this session
+	model?: ClaudeModel | string;  // Model used for this session (Claude or Codex)
 	tokenStats?: SessionTokenStats;  // Token statistics for this session
+	provider?: AIProvider;  // Which AI provider was used for this session (legacy)
+	agentId?: string;  // Which agent was used for this session
 }
 
 // ============================================================================
@@ -115,7 +117,7 @@ export interface ChatSession {
 // ============================================================================
 
 export interface PluginData {
-	settings: ClaudeRockSettings;
+	settings: CristalSettings;
 	sessions: ChatSession[];
 	currentSessionId: string | null;
 }
@@ -142,6 +144,12 @@ export interface SlashCommand {
 // Re-export LanguageCode for convenience
 export type { LanguageCode } from "./systemPrompts";
 
+// ============================================================================
+// AI Provider Types
+// ============================================================================
+
+export type AIProvider = "claude" | "codex";
+
 // Claude model types
 export type ClaudeModel = "claude-haiku-4-5-20251001" | "claude-sonnet-4-5-20250929" | "claude-opus-4-5-20251101";
 
@@ -157,31 +165,104 @@ export interface ClaudePermissions {
 	task: boolean;
 }
 
-export interface ClaudeRockSettings {
-	cliPath: string;
-	language: import("./systemPrompts").LanguageCode;
-	permissions: ClaudePermissions;
-	customCommands: SlashCommand[];
-	disabledBuiltinCommands: string[];  // IDs of disabled built-in commands
-	defaultModel: ClaudeModel;
-	thinkingEnabled: boolean;  // Enable extended thinking mode by default
-	tokenHistory: Record<string, number>;  // date -> tokens used that day
-	gettingStartedDismissed: boolean;  // Whether the Getting Started section is collapsed
+// Codex model types
+export const CODEX_MODELS: { value: string; label: string }[] = [
+	{ value: "gpt-5.2-codex", label: "GPT-5.2 Codex" },
+	{ value: "gpt-5.1-codex-max", label: "GPT-5.1 Codex Max" },
+	{ value: "gpt-5.1-codex-mini", label: "GPT-5.1 Codex Mini" },
+	{ value: "gpt-5.2", label: "GPT-5.2" }
+];
+
+// Codex reasoning levels (configured via ~/.codex/config.toml)
+// Simplified to toggle: off = medium, on = xhigh
+export type CodexReasoningLevel = "medium" | "xhigh";
+
+// ============================================================================
+// Agent Configuration (new multi-agent system)
+// ============================================================================
+
+export type CLIType = "claude" | "codex" | "gemini" | "grok";
+
+export interface AgentConfig {
+	id: string;                      // Unique ID
+	cliType: CLIType;                // Type of CLI
+	name: string;                    // User-defined name
+	description: string;             // Description
+	enabled: boolean;                // Whether agent is enabled
+	cliPath: string;                 // Path to CLI executable
+	model: string;                   // Default model
+	// Claude-specific
+	thinkingEnabled?: boolean;       // Extended thinking mode
+	permissions?: ClaudePermissions; // Claude permissions
+	// Codex-specific
+	reasoningEnabled?: boolean;      // Deep reasoning (false = medium, true = xhigh)
 }
 
-export const DEFAULT_SETTINGS: ClaudeRockSettings = {
-	cliPath: "claude",
-	language: "en",
-	permissions: {
-		webSearch: false,
-		webFetch: false,
-		task: false
+// CLI descriptions for the add agent dropdown
+export const CLI_INFO: Record<CLIType, { name: string; description: string; available: boolean }> = {
+	claude: { name: "Claude Code", description: "Anthropic Claude CLI", available: true },
+	codex: { name: "Codex", description: "OpenAI Codex CLI", available: true },
+	gemini: { name: "Gemini", description: "Google Gemini CLI", available: false },
+	grok: { name: "Grok", description: "xAI Grok CLI", available: false }
+};
+
+export interface CristalSettings {
+	// New agent-based settings
+	agents: AgentConfig[];
+	defaultAgentId: string | null;
+
+	// General settings
+	language: import("./systemPrompts").LanguageCode;
+	customCommands: SlashCommand[];
+	disabledBuiltinCommands: string[];  // IDs of disabled built-in commands
+	tokenHistory: Record<string, number>;  // date -> tokens used that day
+	agentTokenHistory: Record<string, Record<string, number>>;  // agentId -> date -> tokens
+	gettingStartedDismissed: boolean;  // Whether the Getting Started section is collapsed
+	terminal?: import("./terminal/types").TerminalSettings;  // Terminal settings
+
+	// Legacy fields for backwards compatibility (will be migrated)
+	cliPath?: string;
+	permissions?: ClaudePermissions;
+	defaultModel?: ClaudeModel;
+	codexCliPath?: string;
+	codexDefaultModel?: string;
+	codexReasoningLevel?: CodexReasoningLevel;
+	defaultProvider?: AIProvider;
+	thinkingEnabled?: boolean;
+}
+
+export const DEFAULT_AGENTS: AgentConfig[] = [
+	{
+		id: "claude-default",
+		cliType: "claude",
+		name: "Claude",
+		description: "Anthropic Claude Code CLI",
+		enabled: true,
+		cliPath: "claude",
+		model: "claude-haiku-4-5-20251001",
+		thinkingEnabled: false,
+		permissions: { webSearch: false, webFetch: false, task: false }
 	},
+	{
+		id: "codex-default",
+		cliType: "codex",
+		name: "Codex",
+		description: "OpenAI Codex CLI",
+		enabled: false,
+		cliPath: "codex",
+		model: "gpt-5.2-codex",
+		reasoningEnabled: false
+	}
+];
+
+export const DEFAULT_SETTINGS: CristalSettings = {
+	agents: DEFAULT_AGENTS,
+	defaultAgentId: "claude-default",
+	language: "en",
 	customCommands: [],
 	disabledBuiltinCommands: [],
-	defaultModel: "claude-haiku-4-5-20251001",
-	thinkingEnabled: false,
 	tokenHistory: {},
+	agentTokenHistory: {},
 	gettingStartedDismissed: false
 };
 

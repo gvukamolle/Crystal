@@ -1,14 +1,15 @@
 import { ItemView, WorkspaceLeaf, MarkdownRenderer, setIcon, TFile, Modal, TextComponent } from "obsidian";
-import type ClaudeRockPlugin from "./main";
-import type { ChatMessage, SlashCommand, StreamingEvent, CompleteEvent, ResultEvent, ErrorEvent, AssistantEvent, ClaudeModel, SessionTokenStats, ContextUsage, CompactEvent, ResultMessage, ToolUseEvent, ToolUseBlock, SelectionContext } from "./types";
-import { CLAUDE_MODELS } from "./types";
+import type CristalPlugin from "./main";
+import type { ChatMessage, SlashCommand, StreamingEvent, CompleteEvent, ResultEvent, ErrorEvent, AssistantEvent, ClaudeModel, SessionTokenStats, ContextUsage, CompactEvent, ResultMessage, ToolUseEvent, ToolUseBlock, SelectionContext, AIProvider } from "./types";
+import { CLAUDE_MODELS, CODEX_MODELS } from "./types";
 import { getAvailableCommands, filterCommands, parseCommand, buildCommandPrompt } from "./commands";
 import { getButtonLocale, type ButtonLocale } from "./buttonLocales";
+import { setCodexReasoningLevel } from "./codexConfig";
 
-export const CLAUDE_VIEW_TYPE = "claude-rock-chat-view";
+export const CRISTAL_VIEW_TYPE = "cristal-cli-llm-chat-view";
 
-export class ClaudeChatView extends ItemView {
-	private plugin: ClaudeRockPlugin;
+export class CristalChatView extends ItemView {
+	private plugin: CristalPlugin;
 	private messagesContainer: HTMLElement;
 	private inputEl: HTMLTextAreaElement;
 	private sendButton: HTMLButtonElement;
@@ -21,11 +22,15 @@ export class ClaudeChatView extends ItemView {
 	private activeSessionId: string | null = null;  // ID of currently active session
 	private contextDisabled: boolean = false;  // User manually removed context
 	private modelIndicatorEl: HTMLElement;
-	private currentModel: ClaudeModel;
+	private currentModel: ClaudeModel | string;
+	private currentProvider: AIProvider;
+	private providerIndicatorEl: HTMLElement;
 	private sessionStarted: boolean = false;  // Track if first message was sent
 	private modelAutocompleteVisible: boolean = false;
-	private thinkingEnabled: boolean = false;  // Extended thinking mode
+	private thinkingEnabled: boolean = false;  // Extended thinking mode for Claude
+	private codexReasoningEnabled: boolean = false;  // Deep reasoning for Codex (medium/xhigh)
 	private difficultyAutocompleteVisible: boolean = false;
+	private editingMessageId: string | null = null;
 
 	// Custom session dropdown
 	private sessionDropdownContainer: HTMLElement;
@@ -78,6 +83,18 @@ export class ClaudeChatView extends ItemView {
 	// Token tracking for history
 	private lastRecordedTokens: number = 0;  // Track previously recorded total tokens
 
+	// Tool grouping state (for consecutive same-type commands) - deprecated, kept for compatibility
+	private currentToolGroup: { type: string; tools: ToolUseBlock[]; element: HTMLElement | null } | null = null;
+
+	// Reasoning grouping state (for consecutive thinking blocks)
+	private currentReasoningGroup: { tools: ToolUseBlock[]; element: HTMLElement | null } | null = null;
+
+	// Tool steps group (all non-thinking tools in one collapsible container)
+	private currentToolStepsGroup: { tools: ToolUseBlock[]; element: HTMLElement | null; contentEl: HTMLElement | null } | null = null;
+
+	// Global expand/collapse state for all reasoning and tool groups
+	private reasoningGroupsExpanded: boolean = true;
+
 	private initialTokenStats(): SessionTokenStats {
 		return {
 			inputTokens: 0,
@@ -90,7 +107,7 @@ export class ClaudeChatView extends ItemView {
 	}
 
 	private calculateContextUsage(stats: SessionTokenStats): ContextUsage {
-		const effectiveLimit = ClaudeChatView.CONTEXT_LIMIT;
+		const effectiveLimit = CristalChatView.CONTEXT_LIMIT;
 		const usedTokens = stats.inputTokens + stats.outputTokens;
 		const percentage = Math.min((usedTokens / effectiveLimit) * 100, 100);
 
@@ -102,17 +119,17 @@ export class ClaudeChatView extends ItemView {
 		};
 	}
 
-	constructor(leaf: WorkspaceLeaf, plugin: ClaudeRockPlugin) {
+	constructor(leaf: WorkspaceLeaf, plugin: CristalPlugin) {
 		super(leaf);
 		this.plugin = plugin;
 	}
 
 	getViewType(): string {
-		return CLAUDE_VIEW_TYPE;
+		return CRISTAL_VIEW_TYPE;
 	}
 
 	getDisplayText(): string {
-		return "Claude Rock";
+		return "Cristal";
 	}
 
 	getIcon(): string {
@@ -122,18 +139,18 @@ export class ClaudeChatView extends ItemView {
 	async onOpen(): Promise<void> {
 		const container = this.containerEl.children[1] as HTMLElement;
 		container.empty();
-		container.addClass("claude-rock-container");
+		container.addClass("cristal-container");
 
 		// Header with session dropdown and actions
-		const header = container.createDiv({ cls: "claude-rock-header" });
+		const header = container.createDiv({ cls: "cristal-header" });
 
 		// Custom session dropdown
-		this.sessionDropdownContainer = header.createDiv({ cls: "claude-rock-session-dropdown-custom" });
+		this.sessionDropdownContainer = header.createDiv({ cls: "cristal-session-dropdown-custom" });
 
-		this.sessionTriggerEl = this.sessionDropdownContainer.createDiv({ cls: "claude-rock-session-trigger" });
+		this.sessionTriggerEl = this.sessionDropdownContainer.createDiv({ cls: "cristal-session-trigger" });
 		this.sessionTriggerEl.addEventListener("click", () => this.toggleSessionDropdown());
 
-		this.sessionListEl = this.sessionDropdownContainer.createDiv({ cls: "claude-rock-session-list" });
+		this.sessionListEl = this.sessionDropdownContainer.createDiv({ cls: "cristal-session-list" });
 
 		// Close dropdown when clicking outside
 		document.addEventListener("click", (e) => {
@@ -142,66 +159,80 @@ export class ClaudeChatView extends ItemView {
 			}
 		});
 
-		const actions = header.createDiv({ cls: "claude-rock-actions" });
+		const actions = header.createDiv({ cls: "cristal-actions" });
 		const newChatBtn = actions.createEl("button", {
-			cls: "claude-rock-action-btn",
+			cls: "cristal-action-btn",
 			attr: { "aria-label": "New chat" }
 		});
 		setIcon(newChatBtn, "plus");
 		newChatBtn.addEventListener("click", () => this.startNewChat());
 
 		// Messages area
-		this.messagesContainer = container.createDiv({ cls: "claude-rock-messages" });
+		this.messagesContainer = container.createDiv({ cls: "cristal-messages" });
 
 		// Status bar
-		this.statusEl = container.createDiv({ cls: "claude-rock-status" });
+		this.statusEl = container.createDiv({ cls: "cristal-status" });
 
 		// Input area
-		const inputArea = container.createDiv({ cls: "claude-rock-input-area" });
+		const inputArea = container.createDiv({ cls: "cristal-input-area" });
 
 		// Context indicator (shows attached file)
-		this.contextIndicatorEl = inputArea.createDiv({ cls: "claude-rock-context-indicator" });
+		this.contextIndicatorEl = inputArea.createDiv({ cls: "cristal-context-indicator" });
 
 		// Input wrapper for positioning autocomplete
-		const inputWrapper = inputArea.createDiv({ cls: "claude-rock-input-wrapper" });
+		const inputWrapper = inputArea.createDiv({ cls: "cristal-input-wrapper" });
 
+		const btnLocale = getButtonLocale(this.plugin.settings.language);
 		this.inputEl = inputWrapper.createEl("textarea", {
-			cls: "claude-rock-input",
+			cls: "cristal-input",
 			attr: {
-				placeholder: "Ask Claude... (type / for commands)",
+				placeholder: btnLocale.inputPlaceholder,
 				rows: "1"
 			}
 		});
 
 		// Autocomplete popup for slash commands
-		this.autocompleteEl = inputWrapper.createDiv({ cls: "claude-rock-autocomplete" });
+		this.autocompleteEl = inputWrapper.createDiv({ cls: "cristal-autocomplete" });
 
 		// Autocomplete popup for @ mentions
-		this.mentionAutocompleteEl = inputWrapper.createDiv({ cls: "claude-rock-mention-autocomplete" });
+		this.mentionAutocompleteEl = inputWrapper.createDiv({ cls: "cristal-mention-autocomplete" });
 
-		const buttonContainer = inputArea.createDiv({ cls: "claude-rock-button-container" });
+		const buttonContainer = inputArea.createDiv({ cls: "cristal-button-container" });
 
-		// Left group: model + context indicator
-		const leftGroup = buttonContainer.createDiv({ cls: "claude-rock-button-group" });
+		// Left group: provider + model + context indicator
+		const leftGroup = buttonContainer.createDiv({ cls: "cristal-button-group" });
+
+		// Get default agent for initial state
+		const defaultAgent = this.plugin.getDefaultAgent();
+
+		// Provider indicator
+		this.currentProvider = defaultAgent?.cliType === "codex" ? "codex" : "claude";
+		this.providerIndicatorEl = leftGroup.createDiv({ cls: "cristal-provider-indicator" });
+		this.updateProviderIndicator();
+		this.providerIndicatorEl.addEventListener("click", () => {
+			this.toggleProvider();
+		});
 
 		// Model indicator (replaces dropdown)
-		this.currentModel = this.plugin.settings.defaultModel;
-		this.modelIndicatorEl = leftGroup.createDiv({ cls: "claude-rock-model-indicator" });
-		const modelIcon = this.modelIndicatorEl.createSpan({ cls: "claude-rock-model-indicator-icon" });
+		this.currentModel = defaultAgent?.model || "claude-haiku-4-5-20251001";
+		this.modelIndicatorEl = leftGroup.createDiv({ cls: "cristal-model-indicator" });
+		const modelIcon = this.modelIndicatorEl.createSpan({ cls: "cristal-model-indicator-icon" });
 		setIcon(modelIcon, "cpu");
 		this.modelIndicatorEl.createSpan({
-			cls: "claude-rock-model-indicator-name",
+			cls: "cristal-model-indicator-name",
 			text: this.getModelLabel(this.currentModel)
 		});
 		this.modelIndicatorEl.addEventListener("click", () => {
 			this.showModelAutocomplete();
 		});
 
-		// Initialize thinking mode from settings
-		this.thinkingEnabled = this.plugin.settings.thinkingEnabled;
+		// Initialize thinking mode from agent settings
+		this.thinkingEnabled = defaultAgent?.thinkingEnabled || false;
+		// Initialize Codex reasoning mode from agent settings
+		this.codexReasoningEnabled = defaultAgent?.reasoningEnabled || false;
 
 		// Context indicator (right after model)
-		this.contextIndicatorBtnEl = leftGroup.createDiv({ cls: "claude-rock-context-indicator-btn" });
+		this.contextIndicatorBtnEl = leftGroup.createDiv({ cls: "cristal-context-indicator-btn" });
 
 		// SVG ring (starts at 0%)
 		this.contextRingEl = this.createRingIndicator(0);
@@ -209,12 +240,12 @@ export class ClaudeChatView extends ItemView {
 
 		// Percentage text
 		this.contextPercentEl = this.contextIndicatorBtnEl.createSpan({
-			cls: "claude-rock-context-percent",
+			cls: "cristal-context-percent",
 			text: "0%"
 		});
 
 		// Context popup (inside indicator for proper positioning)
-		this.contextPopupEl = this.contextIndicatorBtnEl.createDiv({ cls: "claude-rock-context-popup" });
+		this.contextPopupEl = this.contextIndicatorBtnEl.createDiv({ cls: "cristal-context-popup" });
 		this.setupContextPopup();
 
 		// Click handler for popup (after popup is created)
@@ -237,18 +268,18 @@ export class ClaudeChatView extends ItemView {
 		});
 
 		// Right group: attach + send
-		const rightGroup = buttonContainer.createDiv({ cls: "claude-rock-button-group" });
+		const rightGroup = buttonContainer.createDiv({ cls: "cristal-button-group" });
 
 		// Add file attachment button (left of send button)
 		const attachBtn = rightGroup.createEl("button", {
-			cls: "claude-rock-attach-btn",
+			cls: "cristal-attach-btn",
 			attr: { "aria-label": "Attach file" }
 		});
 		setIcon(attachBtn, "plus");
 
 		const fileInput = rightGroup.createEl("input", {
 			type: "file",
-			cls: "claude-rock-file-input-hidden",
+			cls: "cristal-file-input-hidden",
 			attr: {
 				accept: ".md,.txt,.json,.yaml,.yml,.js,.ts,.tsx,.jsx,.py,.java,.cpp,.c,.h,.go,.rs,.rb,.php,.html,.css,.xml,.csv,.pdf,.png,.jpg,.jpeg,.gif,.webp,.xlsx,.docx"
 			}
@@ -265,7 +296,7 @@ export class ClaudeChatView extends ItemView {
 		});
 
 		this.sendButton = rightGroup.createEl("button", {
-			cls: "claude-rock-send-btn",
+			cls: "cristal-send-btn",
 			attr: { "aria-label": "Send message" }
 		});
 		setIcon(this.sendButton, "arrow-up");
@@ -379,13 +410,18 @@ export class ClaudeChatView extends ItemView {
 	}
 
 	async onClose(): Promise<void> {
-		// Cleanup
+		// Cleanup both services
 		this.plugin.claudeService.removeAllListeners();
+		this.plugin.codexService.removeAllListeners();
 	}
 
 	private setupServiceListeners(): void {
-		const service = this.plugin.claudeService;
+		// Subscribe to both services - they emit the same events
+		this.attachServiceListeners(this.plugin.claudeService, "claude");
+		this.attachServiceListeners(this.plugin.codexService, "codex");
+	}
 
+	private attachServiceListeners(service: import("./ClaudeService").ClaudeService | import("./CodexService").CodexService, provider: AIProvider): void {
 		// Streaming updates - real-time text as it comes in (UI only for active session)
 		service.on("streaming", (event: StreamingEvent) => {
 			if (event.sessionId !== this.activeSessionId) return;
@@ -411,7 +447,9 @@ export class ClaudeChatView extends ItemView {
 			// Save result to the correct session (even if background)
 			const session = this.plugin.sessions.find(s => s.id === event.sessionId);
 			if (session) {
-				const pending = this.plugin.claudeService.getPendingMessage(event.sessionId);
+				// Use the correct service based on session provider
+				const sessionService = this.plugin.getActiveService(session.provider);
+				const pending = sessionService.getPendingMessage(event.sessionId);
 				if (pending && pending.text) {
 					const assistantMessage: ChatMessage = {
 						id: crypto.randomUUID(),
@@ -423,14 +461,21 @@ export class ClaudeChatView extends ItemView {
 					};
 					session.messages.push(assistantMessage);
 
-					// Update cliSessionId
-					const cliSessionId = this.plugin.claudeService.getCliSessionId(event.sessionId);
-					if (cliSessionId) {
-						session.cliSessionId = cliSessionId;
+					// Update cliSessionId (for Claude) or threadId (for Codex)
+					if (provider === "claude") {
+						const cliSessionId = this.plugin.claudeService.getCliSessionId(event.sessionId);
+						if (cliSessionId) {
+							session.cliSessionId = cliSessionId;
+						}
+					} else {
+						const threadId = this.plugin.codexService.getThreadId(event.sessionId);
+						if (threadId) {
+							session.cliSessionId = threadId;
+						}
 					}
 
 					this.plugin.saveSettings();
-					this.plugin.claudeService.clearPendingMessage(event.sessionId);
+					sessionService.clearPendingMessage(event.sessionId);
 				}
 			}
 
@@ -461,9 +506,10 @@ export class ClaudeChatView extends ItemView {
 			if (isActiveSession) {
 				this.finalizeAssistantMessage();
 				this.setInputEnabled(true);
+				this.resetToolGrouping();  // Reset grouping state for next response
 
-				// Execute pending auto-compact after response is complete
-				if (this.pendingAutoCompact) {
+				// Execute pending auto-compact after response is complete (Claude only)
+				if (this.pendingAutoCompact && this.currentProvider === "claude") {
 					this.pendingAutoCompact = false;
 					this.runCompact();
 				}
@@ -503,10 +549,12 @@ export class ClaudeChatView extends ItemView {
 					this.tokenStats = session.tokenStats;
 					this.updateTokenIndicator();
 
-					// Check if we need to trigger auto-compact
-					const usage = this.calculateContextUsage(this.tokenStats);
-					if (usage.percentage >= ClaudeChatView.AUTO_COMPACT_THRESHOLD * 100 && !this.pendingAutoCompact) {
-						this.pendingAutoCompact = true;
+					// Check if we need to trigger auto-compact (Claude only)
+					if (this.currentProvider === "claude") {
+						const usage = this.calculateContextUsage(this.tokenStats);
+						if (usage.percentage >= CristalChatView.AUTO_COMPACT_THRESHOLD * 100 && !this.pendingAutoCompact) {
+							this.pendingAutoCompact = true;
+						}
 					}
 				}
 			}
@@ -538,11 +586,13 @@ export class ClaudeChatView extends ItemView {
 			this.addToolStep(event.tool);
 		});
 
-		// Rate limit error handling
-		service.on("rateLimitError", (event: { sessionId: string; resetTime: string | null; message: string }) => {
-			if (event.sessionId !== this.activeSessionId) return;
-			this.handleRateLimitError(event.resetTime, event.message);
-		});
+		// Rate limit error handling (Claude only has this event)
+		if (provider === "claude") {
+			(service as import("./ClaudeService").ClaudeService).on("rateLimitError", (event: { sessionId: string; resetTime: string | null; message: string }) => {
+				if (event.sessionId !== this.activeSessionId) return;
+				this.handleRateLimitError(event.resetTime, event.message);
+			});
+		}
 	}
 
 	private createRingIndicator(percentage: number): SVGSVGElement {
@@ -563,7 +613,7 @@ export class ClaudeChatView extends ItemView {
 		svg.setAttribute("width", String(size));
 		svg.setAttribute("height", String(size));
 		svg.setAttribute("viewBox", `0 0 ${size} ${size}`);
-		svg.classList.add("claude-rock-usage-ring");
+		svg.classList.add("cristal-usage-ring");
 
 		// Background ring (gray)
 		const bgCircle = document.createElementNS("http://www.w3.org/2000/svg", "circle");
@@ -587,7 +637,7 @@ export class ClaudeChatView extends ItemView {
 		progressCircle.setAttribute("stroke-dashoffset", String(offset));
 		progressCircle.setAttribute("stroke-linecap", "round");
 		progressCircle.setAttribute("transform", `rotate(-90 ${size / 2} ${size / 2})`);
-		progressCircle.classList.add("claude-rock-usage-progress");
+		progressCircle.classList.add("cristal-usage-progress");
 		svg.appendChild(progressCircle);
 
 		return svg;
@@ -620,11 +670,11 @@ export class ClaudeChatView extends ItemView {
 		});
 
 		// Context info section
-		this.contextPopupInfoEl = this.contextPopupEl.createDiv({ cls: "claude-rock-context-popup-info" });
+		this.contextPopupInfoEl = this.contextPopupEl.createDiv({ cls: "cristal-context-popup-info" });
 
 		// Summary button
 		const summaryBtn = this.contextPopupEl.createEl("button", {
-			cls: "claude-rock-summary-btn",
+			cls: "cristal-summary-btn",
 			text: locale.summary
 		});
 		summaryBtn.addEventListener("click", () => this.runCompact());
@@ -640,25 +690,64 @@ export class ClaudeChatView extends ItemView {
 
 	private openContextPopup(): void {
 		this.isContextPopupOpen = true;
-		this.contextPopupEl.addClass("claude-rock-context-popup-open");
-		this.contextIndicatorBtnEl.addClass("claude-rock-context-indicator-btn-active");
+		this.contextPopupEl.addClass("cristal-context-popup-open");
+		this.contextIndicatorBtnEl.addClass("cristal-context-indicator-btn-active");
 		this.updateContextPopupInfo();
 	}
 
 	private closeContextPopup(): void {
 		this.isContextPopupOpen = false;
-		this.contextPopupEl.removeClass("claude-rock-context-popup-open");
-		this.contextIndicatorBtnEl.removeClass("claude-rock-context-indicator-btn-active");
+		this.contextPopupEl.removeClass("cristal-context-popup-open");
+		this.contextIndicatorBtnEl.removeClass("cristal-context-indicator-btn-active");
+	}
+
+	// Provider indicator methods
+	private updateProviderIndicator(): void {
+		this.providerIndicatorEl.empty();
+		const icon = this.providerIndicatorEl.createSpan({ cls: "cristal-provider-indicator-icon" });
+		setIcon(icon, this.currentProvider === "claude" ? "sparkles" : "bot");
+		this.providerIndicatorEl.createSpan({
+			cls: "cristal-provider-indicator-name",
+			text: this.currentProvider === "claude" ? "Claude" : "Codex"
+		});
+	}
+
+	private toggleProvider(): void {
+		// Can't switch provider after session started
+		if (this.sessionStarted) return;
+
+		this.currentProvider = this.currentProvider === "claude" ? "codex" : "claude";
+		this.updateProviderIndicator();
+
+		// Update model to default for new provider (get from agent)
+		const agent = this.plugin.getAgentByCliType(this.currentProvider);
+		this.currentModel = agent?.model || (this.currentProvider === "claude" ? "claude-haiku-4-5-20251001" : "gpt-5.2-codex");
+		// Update thinking/reasoning state from agent
+		this.thinkingEnabled = agent?.thinkingEnabled || false;
+		this.codexReasoningEnabled = agent?.reasoningEnabled || false;
+		this.updateModelIndicatorState();
+
+		// Update placeholder text
+		this.inputEl.placeholder = this.currentProvider === "claude"
+			? "Ask Claude... (type / for commands)"
+			: "Ask Codex... (type / for commands)";
 	}
 
 	// Model indicator methods
-	private getModelLabel(model: ClaudeModel): string {
-		const found = CLAUDE_MODELS.find(m => m.value === model);
-		return found?.label ?? model;
+	private getModelLabel(model: ClaudeModel | string): string {
+		// Check Claude models first
+		const claudeFound = CLAUDE_MODELS.find(m => m.value === model);
+		if (claudeFound) return claudeFound.label;
+
+		// Check Codex models
+		const codexFound = CODEX_MODELS.find(m => m.value === model);
+		if (codexFound) return codexFound.label;
+
+		return String(model);
 	}
 
 	private updateModelIndicatorState(): void {
-		const nameEl = this.modelIndicatorEl.querySelector(".claude-rock-model-indicator-name");
+		const nameEl = this.modelIndicatorEl.querySelector(".cristal-model-indicator-name");
 		if (nameEl) {
 			nameEl.textContent = this.getModelLabel(this.currentModel);
 		}
@@ -681,76 +770,121 @@ export class ClaudeChatView extends ItemView {
 		this.autocompleteEl.empty();
 		this.modelAutocompleteVisible = true;
 
-		// Model metadata: icons and descriptions
+		// Model metadata: icons and descriptions for both providers
 		const modelMeta: Record<string, { icon: string; desc: string }> = {
+			// Claude models
 			"claude-haiku-4-5-20251001": { icon: "zap", desc: "Самая быстрая на диком западе" },
 			"claude-sonnet-4-5-20250929": { icon: "sun", desc: "Для баланса сил во вселенной" },
-			"claude-opus-4-5-20251101": { icon: "crown", desc: "Чтобы забивать кувалдой гвозди" }
+			"claude-opus-4-5-20251101": { icon: "crown", desc: "Чтобы забивать кувалдой гвозди" },
+			// Codex models
+			"gpt-5.2-codex": { icon: "crown", desc: "Latest frontier agentic coding" },
+			"gpt-5.1-codex-max": { icon: "sparkles", desc: "Deep and fast reasoning" },
+			"gpt-5.1-codex-mini": { icon: "zap", desc: "Cheaper, faster" },
+			"gpt-5.2": { icon: "cpu", desc: "Knowledge, reasoning, coding" }
 		};
 
-		for (const model of CLAUDE_MODELS) {
+		// Select models based on current provider
+		const models = this.currentProvider === "claude" ? CLAUDE_MODELS : CODEX_MODELS;
+
+		for (const model of models) {
 			const itemEl = this.autocompleteEl.createDiv({
-				cls: `claude-rock-autocomplete-item${model.value === this.currentModel ? " claude-rock-autocomplete-item-selected" : ""}`
+				cls: `cristal-autocomplete-item${model.value === this.currentModel ? " cristal-autocomplete-item-selected" : ""}`
 			});
 
 			const meta = modelMeta[model.value] || { icon: "cpu", desc: model.value };
-			const iconEl = itemEl.createDiv({ cls: "claude-rock-autocomplete-icon" });
+			const iconEl = itemEl.createDiv({ cls: "cristal-autocomplete-icon" });
 			setIcon(iconEl, meta.icon);
 
-			const textEl = itemEl.createDiv({ cls: "claude-rock-autocomplete-text" });
-			textEl.createDiv({ cls: "claude-rock-autocomplete-name", text: model.label });
-			textEl.createDiv({ cls: "claude-rock-autocomplete-desc", text: meta.desc });
+			const textEl = itemEl.createDiv({ cls: "cristal-autocomplete-text" });
+			textEl.createDiv({ cls: "cristal-autocomplete-name", text: model.label });
+			textEl.createDiv({ cls: "cristal-autocomplete-desc", text: meta.desc });
 
 			itemEl.addEventListener("click", () => {
 				this.selectModel(model.value);
 			});
 		}
 
-		// Separator
-		this.autocompleteEl.createDiv({ cls: "claude-rock-autocomplete-separator" });
+		// Separator and thinking toggle only for Claude
+		if (this.currentProvider === "claude") {
+			this.autocompleteEl.createDiv({ cls: "cristal-autocomplete-separator" });
 
-		// Thinking toggle item
-		const locale = getButtonLocale(this.plugin.settings.language);
-		const thinkingItemEl = this.autocompleteEl.createDiv({
-			cls: "claude-rock-autocomplete-item claude-rock-thinking-item"
-		});
+			// Thinking toggle item
+			const locale = getButtonLocale(this.plugin.settings.language);
+			const thinkingItemEl = this.autocompleteEl.createDiv({
+				cls: "cristal-autocomplete-item cristal-thinking-item"
+			});
 
-		const thinkingIconEl = thinkingItemEl.createDiv({ cls: "claude-rock-autocomplete-icon" });
-		setIcon(thinkingIconEl, "brain");
+			const thinkingIconEl = thinkingItemEl.createDiv({ cls: "cristal-autocomplete-icon" });
+			setIcon(thinkingIconEl, "brain");
 
-		const thinkingTextEl = thinkingItemEl.createDiv({ cls: "claude-rock-autocomplete-text" });
-		thinkingTextEl.createDiv({ cls: "claude-rock-autocomplete-name", text: locale.thinkingDeeper || "Think deeper" });
-		thinkingTextEl.createDiv({ cls: "claude-rock-autocomplete-desc", text: "Extended thinking mode" });
+			const thinkingTextEl = thinkingItemEl.createDiv({ cls: "cristal-autocomplete-text" });
+			thinkingTextEl.createDiv({ cls: "cristal-autocomplete-name", text: locale.thinkingDeeper || "Think deeper" });
+			thinkingTextEl.createDiv({ cls: "cristal-autocomplete-desc", text: "Extended thinking mode" });
 
-		// Toggle switch
-		const toggleEl = thinkingItemEl.createDiv({ cls: "claude-rock-thinking-switch" });
-		const toggleTrack = toggleEl.createDiv({ cls: "claude-rock-thinking-switch-track" });
-		toggleTrack.createDiv({ cls: "claude-rock-thinking-switch-thumb" });
-		if (this.thinkingEnabled) {
-			toggleTrack.addClass("claude-rock-thinking-switch-on");
+			// Toggle switch
+			const toggleEl = thinkingItemEl.createDiv({ cls: "cristal-thinking-switch" });
+			const toggleTrack = toggleEl.createDiv({ cls: "cristal-thinking-switch-track" });
+			toggleTrack.createDiv({ cls: "cristal-thinking-switch-thumb" });
+			if (this.thinkingEnabled) {
+				toggleTrack.addClass("cristal-thinking-switch-on");
+			}
+
+			thinkingItemEl.addEventListener("click", (e) => {
+				e.stopPropagation();
+				this.thinkingEnabled = !this.thinkingEnabled;
+				toggleTrack.toggleClass("cristal-thinking-switch-on", this.thinkingEnabled);
+			});
 		}
 
-		thinkingItemEl.addEventListener("click", (e) => {
-			e.stopPropagation();
-			this.thinkingEnabled = !this.thinkingEnabled;
-			toggleTrack.toggleClass("claude-rock-thinking-switch-on", this.thinkingEnabled);
-		});
+		// Separator and deep reasoning toggle for Codex
+		if (this.currentProvider === "codex") {
+			this.autocompleteEl.createDiv({ cls: "cristal-autocomplete-separator" });
 
-		this.autocompleteEl.addClass("claude-rock-autocomplete-visible");
+			// Deep reasoning toggle item
+			const locale = getButtonLocale(this.plugin.settings.language);
+			const reasoningItemEl = this.autocompleteEl.createDiv({
+				cls: "cristal-autocomplete-item cristal-thinking-item"
+			});
+
+			const reasoningIconEl = reasoningItemEl.createDiv({ cls: "cristal-autocomplete-icon" });
+			setIcon(reasoningIconEl, "brain-cog");
+
+			const reasoningTextEl = reasoningItemEl.createDiv({ cls: "cristal-autocomplete-text" });
+			reasoningTextEl.createDiv({ cls: "cristal-autocomplete-name", text: locale.deepReasoning || "Deep reasoning" });
+			reasoningTextEl.createDiv({ cls: "cristal-autocomplete-desc", text: "Extra High reasoning mode" });
+
+			// Toggle switch
+			const toggleEl = reasoningItemEl.createDiv({ cls: "cristal-thinking-switch" });
+			const toggleTrack = toggleEl.createDiv({ cls: "cristal-thinking-switch-track" });
+			toggleTrack.createDiv({ cls: "cristal-thinking-switch-thumb" });
+			if (this.codexReasoningEnabled) {
+				toggleTrack.addClass("cristal-thinking-switch-on");
+			}
+
+			reasoningItemEl.addEventListener("click", (e) => {
+				e.stopPropagation();
+				this.codexReasoningEnabled = !this.codexReasoningEnabled;
+				toggleTrack.toggleClass("cristal-thinking-switch-on", this.codexReasoningEnabled);
+				// Sync to ~/.codex/config.toml
+				setCodexReasoningLevel(this.codexReasoningEnabled ? "xhigh" : "medium");
+			});
+		}
+
+		this.autocompleteEl.addClass("cristal-autocomplete-visible");
 	}
 
-	private selectModel(model: ClaudeModel): void {
+	private selectModel(model: ClaudeModel | string): void {
 		this.currentModel = model;
 		this.updateModelIndicatorState();
 		this.hideModelAutocomplete();
-		this.inputEl.value = "";
+		// Не очищаем input - промпт должен сохраняться при смене модели
 		this.inputEl.focus();
 	}
 
 	private hideModelAutocomplete(): void {
 		this.modelAutocompleteVisible = false;
 		if (this.autocompleteEl) {
-			this.autocompleteEl.removeClass("claude-rock-autocomplete-visible");
+			this.autocompleteEl.removeClass("cristal-autocomplete-visible");
 			this.autocompleteEl.empty();
 		}
 	}
@@ -793,22 +927,22 @@ export class ClaudeChatView extends ItemView {
 
 		for (const level of difficultyLevels) {
 			const itemEl = this.autocompleteEl.createDiv({
-				cls: "claude-rock-autocomplete-item"
+				cls: "cristal-autocomplete-item"
 			});
 
-			const iconEl = itemEl.createDiv({ cls: "claude-rock-autocomplete-icon" });
+			const iconEl = itemEl.createDiv({ cls: "cristal-autocomplete-icon" });
 			setIcon(iconEl, level.icon);
 
-			const textEl = itemEl.createDiv({ cls: "claude-rock-autocomplete-text" });
-			textEl.createDiv({ cls: "claude-rock-autocomplete-name", text: level.name });
-			textEl.createDiv({ cls: "claude-rock-autocomplete-desc", text: level.desc });
+			const textEl = itemEl.createDiv({ cls: "cristal-autocomplete-text" });
+			textEl.createDiv({ cls: "cristal-autocomplete-name", text: level.name });
+			textEl.createDiv({ cls: "cristal-autocomplete-desc", text: level.desc });
 
 			itemEl.addEventListener("click", () => {
 				this.selectDifficulty(level.id);
 			});
 		}
 
-		this.autocompleteEl.addClass("claude-rock-autocomplete-visible");
+		this.autocompleteEl.addClass("cristal-autocomplete-visible");
 	}
 
 	private selectDifficulty(level: string): void {
@@ -860,7 +994,7 @@ export class ClaudeChatView extends ItemView {
 	private hideDifficultyAutocomplete(): void {
 		this.difficultyAutocompleteVisible = false;
 		if (this.autocompleteEl) {
-			this.autocompleteEl.removeClass("claude-rock-autocomplete-visible");
+			this.autocompleteEl.removeClass("cristal-autocomplete-visible");
 			this.autocompleteEl.empty();
 		}
 	}
@@ -925,40 +1059,40 @@ export class ClaudeChatView extends ItemView {
 
 		// Main usage line
 		this.contextPopupInfoEl.createDiv({
-			cls: "claude-rock-context-row claude-rock-context-row-main",
+			cls: "cristal-context-row cristal-context-row-main",
 			text: `${this.formatTokens(usage.used)} / ${this.formatTokens(usage.limit)}`
 		});
 
 		// Details
 		this.contextPopupInfoEl.createDiv({
-			cls: "claude-rock-context-row",
+			cls: "cristal-context-row",
 			text: `${locale.inputTokens || "Input"}: ${this.formatTokens(this.tokenStats.inputTokens)}`
 		});
 		this.contextPopupInfoEl.createDiv({
-			cls: "claude-rock-context-row",
+			cls: "cristal-context-row",
 			text: `${locale.outputTokens || "Output"}: ${this.formatTokens(this.tokenStats.outputTokens)}`
 		});
 
 		if (this.tokenStats.cacheReadTokens > 0) {
 			this.contextPopupInfoEl.createDiv({
-				cls: "claude-rock-context-row",
+				cls: "cristal-context-row",
 				text: `${locale.cacheTokens || "Cache"}: ${this.formatTokens(this.tokenStats.cacheReadTokens)}`
 			});
 		}
 
 		// Info about context limit and auto-compact
 		this.contextPopupInfoEl.createDiv({
-			cls: "claude-rock-context-row claude-rock-context-row-info",
-			text: `${locale.contextLimit || "Limit"}: ${this.formatTokens(ClaudeChatView.CONTEXT_LIMIT)}`
+			cls: "cristal-context-row cristal-context-row-info",
+			text: `${locale.contextLimit || "Limit"}: ${this.formatTokens(CristalChatView.CONTEXT_LIMIT)}`
 		});
 		this.contextPopupInfoEl.createDiv({
-			cls: "claude-rock-context-row claude-rock-context-row-info",
+			cls: "cristal-context-row cristal-context-row-info",
 			text: `${locale.autoCompactAt || "Auto-compact at"} 85%`
 		});
 
 		if (this.tokenStats.compactCount > 0) {
 			this.contextPopupInfoEl.createDiv({
-				cls: "claude-rock-context-row claude-rock-context-row-info",
+				cls: "cristal-context-row cristal-context-row-info",
 				text: `${locale.compactions || "Compactions"}: ${this.tokenStats.compactCount}`
 			});
 		}
@@ -1070,12 +1204,12 @@ Provide only the summary, no additional commentary.`;
 		const locale = getButtonLocale(this.plugin.settings.language);
 
 		this.compactOverlayEl = this.messagesContainer.createDiv({
-			cls: "claude-rock-compact-overlay"
+			cls: "cristal-compact-overlay"
 		});
 
-		this.compactOverlayEl.createDiv({ cls: "claude-rock-compact-spinner" });
+		this.compactOverlayEl.createDiv({ cls: "cristal-compact-spinner" });
 		this.compactOverlayEl.createDiv({
-			cls: "claude-rock-compact-text",
+			cls: "cristal-compact-text",
 			text: locale.creatingSummary
 		});
 
@@ -1093,18 +1227,19 @@ Provide only the summary, no additional commentary.`;
 
 	private addSystemMessage(text: string): void {
 		const msgEl = this.messagesContainer.createDiv({
-			cls: "claude-rock-message claude-rock-message-system"
+			cls: "cristal-message cristal-message-system"
 		});
-		msgEl.createDiv({ cls: "claude-rock-message-content", text });
+		msgEl.createDiv({ cls: "cristal-message-content", text });
 		this.scrollToBottom();
 	}
 
 	private handleSendButtonClick(): void {
 		if (this.isGenerating) {
-			// Stop generation for current session
+			// Stop generation for current session on the active service
 			const currentSession = this.plugin.getCurrentSession();
 			if (currentSession) {
-				this.plugin.claudeService.abort(currentSession.id);
+				const service = this.plugin.getActiveService(this.currentProvider);
+				service.abort(currentSession.id);
 			}
 		} else {
 			this.sendMessage();
@@ -1152,7 +1287,9 @@ Provide only the summary, no additional commentary.`;
 		if (session.model) {
 			this.currentModel = session.model;
 		} else {
-			this.currentModel = this.plugin.settings.defaultModel;
+			// Get model from default agent
+			const defaultAgent = this.plugin.getDefaultAgent();
+			this.currentModel = defaultAgent?.model || "claude-haiku-4-5-20251001";
 		}
 		this.updateModelIndicatorState();
 
@@ -1161,10 +1298,10 @@ Provide only the summary, no additional commentary.`;
 
 	private renderUserMessage(content: string, id: string): void {
 		const msgEl = this.messagesContainer.createDiv({
-			cls: "claude-rock-message claude-rock-message-user"
+			cls: "cristal-message cristal-message-user"
 		});
 		msgEl.dataset.id = id;
-		const contentEl = msgEl.createDiv({ cls: "claude-rock-message-content" });
+		const contentEl = msgEl.createDiv({ cls: "cristal-message-content" });
 		contentEl.setText(content);
 	}
 
@@ -1175,10 +1312,10 @@ Provide only the summary, no additional commentary.`;
 		}
 
 		const msgEl = this.messagesContainer.createDiv({
-			cls: "claude-rock-message claude-rock-message-assistant"
+			cls: "cristal-message cristal-message-assistant"
 		});
 		msgEl.dataset.id = id;
-		const contentEl = msgEl.createDiv({ cls: "claude-rock-message-content" });
+		const contentEl = msgEl.createDiv({ cls: "cristal-message-content" });
 		MarkdownRenderer.render(this.app, content, contentEl, "", this);
 		this.removeEditableAttributes(contentEl);
 		this.addCopyButton(msgEl, content, selectionContext);
@@ -1188,22 +1325,251 @@ Provide only the summary, no additional commentary.`;
 		const locale = getButtonLocale(this.plugin.settings.language);
 
 		const thinkingBlock = this.messagesContainer.createDiv({
-			cls: "claude-rock-thinking-block claude-rock-thinking-done"
+			cls: "cristal-thinking-block cristal-thinking-done"
 		});
 
-		const header = thinkingBlock.createDiv({ cls: "claude-rock-thinking-header" });
-		const iconEl = header.createSpan({ cls: "claude-rock-thinking-icon" });
+		const header = thinkingBlock.createDiv({ cls: "cristal-thinking-header" });
+		const iconEl = header.createSpan({ cls: "cristal-thinking-icon" });
 		setIcon(iconEl, "brain");
-		header.createSpan({ cls: "claude-rock-thinking-text", text: locale.thinking });
+		header.createSpan({ cls: "cristal-thinking-text", text: locale.thinking });
 
-		const stepsContainer = thinkingBlock.createDiv({ cls: "claude-rock-thinking-steps" });
+		const stepsContainer = thinkingBlock.createDiv({ cls: "cristal-thinking-steps" });
+
+		// Separate thinking steps from tool steps
+		const thinkingSteps = steps.filter(t => t.name === "thinking");
+		const toolSteps = steps.filter(t => t.name !== "thinking");
+
+		// Determine if this was a Codex session (has reasoning blocks)
+		const isCodexSession = thinkingSteps.length > 0;
+
+		// Render Codex reasoning steps in collapsible group
+		if (thinkingSteps.length > 0) {
+			this.renderHistoricReasoningGroup(stepsContainer, thinkingSteps, locale);
+		}
+
+		// Render tool steps:
+		// - Codex: simple list (original behavior)
+		// - Claude: collapsible group
+		if (toolSteps.length > 0) {
+			if (isCodexSession) {
+				// Codex: simple tool steps list
+				this.renderHistoricToolStepsSimple(stepsContainer, toolSteps, locale);
+			} else {
+				// Claude: collapsible group
+				this.renderHistoricToolStepsGroup(stepsContainer, toolSteps, locale);
+			}
+		}
+	}
+
+	/**
+	 * Renders a collapsible reasoning group for historic messages
+	 */
+	private renderHistoricReasoningGroup(container: HTMLElement, steps: ToolUseBlock[], locale: ButtonLocale): void {
+		const groupEl = container.createDiv({ cls: "cristal-reasoning-group" });
+
+		// Header
+		const headerEl = groupEl.createDiv({ cls: "cristal-reasoning-group-header" });
+		const iconEl = headerEl.createSpan({ cls: "cristal-reasoning-icon" });
+		setIcon(iconEl, "brain");
+
+		const titleEl = headerEl.createSpan({ cls: "cristal-reasoning-group-title" });
+		titleEl.setText(locale.thinking || "Думает...");
+
+		if (steps.length > 1) {
+			const counterEl = headerEl.createSpan({ cls: "cristal-reasoning-group-counter" });
+			counterEl.setText(`(${steps.length})`);
+		}
+
+		const expandEl = headerEl.createSpan({ cls: "cristal-reasoning-group-expand" });
+
+		// Content
+		const contentEl = groupEl.createDiv({ cls: "cristal-reasoning-group-content" });
+
+		for (let i = 0; i < steps.length; i++) {
+			const step = steps[i];
+			if (!step) continue;
+			if (i > 0) {
+				contentEl.createEl("br");
+				contentEl.createEl("br");
+			}
+			this.renderReasoningStep(contentEl, step, locale);
+		}
+
+		// Click handler for expand/collapse
+		headerEl.addEventListener("click", () => {
+			const isExpanded = contentEl.style.display !== "none";
+			this.reasoningGroupsExpanded = !isExpanded;
+
+			if (this.reasoningGroupsExpanded) {
+				this.expandAllReasoningGroups();
+			} else {
+				this.collapseAllReasoningGroups();
+			}
+		});
+
+		// Apply global state
+		if (this.reasoningGroupsExpanded) {
+			groupEl.addClass("expanded");
+			contentEl.style.display = "block";
+			setIcon(expandEl, "chevron-up");
+		} else {
+			contentEl.style.display = "none";
+			setIcon(expandEl, "chevron-down");
+		}
+	}
+
+	/**
+	 * Renders a collapsible tool steps group for historic messages
+	 */
+	private renderHistoricToolStepsGroup(container: HTMLElement, steps: ToolUseBlock[], locale: ButtonLocale): void {
+		const groupEl = container.createDiv({ cls: "cristal-reasoning-group cristal-tool-steps-group" });
+
+		// Header
+		const headerEl = groupEl.createDiv({ cls: "cristal-reasoning-group-header" });
+		const iconEl = headerEl.createSpan({ cls: "cristal-reasoning-icon" });
+		setIcon(iconEl, "brain");
+
+		const titleEl = headerEl.createSpan({ cls: "cristal-reasoning-group-title" });
+		titleEl.setText(locale.thinking || "Думает...");
+
+		if (steps.length > 1) {
+			const counterEl = headerEl.createSpan({ cls: "cristal-reasoning-group-counter" });
+			counterEl.setText(`(${steps.length})`);
+		}
+
+		const expandEl = headerEl.createSpan({ cls: "cristal-reasoning-group-expand" });
+
+		// Content
+		const contentEl = groupEl.createDiv({ cls: "cristal-reasoning-group-content cristal-tool-steps-content" });
 
 		for (const tool of steps) {
-			const stepEl = stepsContainer.createDiv({ cls: "claude-rock-tool-step" });
-			const stepIconEl = stepEl.createSpan({ cls: "claude-rock-tool-step-icon" });
+			const stepEl = contentEl.createDiv({ cls: "cristal-tool-step-item" });
+			const stepIconEl = stepEl.createSpan({ cls: "cristal-tool-step-icon" });
 			setIcon(stepIconEl, this.getToolIcon(tool.name));
-			const textEl = stepEl.createSpan({ cls: "claude-rock-tool-step-text" });
+			const textEl = stepEl.createSpan({ cls: "cristal-tool-step-text" });
 			textEl.setText(this.formatToolStep(tool, locale));
+		}
+
+		// Click handler for expand/collapse
+		headerEl.addEventListener("click", () => {
+			const isExpanded = contentEl.style.display !== "none";
+			this.reasoningGroupsExpanded = !isExpanded;
+
+			if (this.reasoningGroupsExpanded) {
+				this.expandAllReasoningGroups();
+			} else {
+				this.collapseAllReasoningGroups();
+			}
+		});
+
+		// Apply global state
+		if (this.reasoningGroupsExpanded) {
+			groupEl.addClass("expanded");
+			contentEl.style.display = "block";
+			setIcon(expandEl, "chevron-up");
+		} else {
+			contentEl.style.display = "none";
+			setIcon(expandEl, "chevron-down");
+		}
+	}
+
+	/**
+	 * Renders tool steps as simple list for Codex (original behavior)
+	 */
+	private renderHistoricToolStepsSimple(container: HTMLElement, steps: ToolUseBlock[], locale: ButtonLocale): void {
+		for (const tool of steps) {
+			const stepEl = container.createDiv({ cls: "cristal-tool-step" });
+			const stepIconEl = stepEl.createSpan({ cls: "cristal-tool-step-icon" });
+			setIcon(stepIconEl, this.getToolIcon(tool.name));
+			const textEl = stepEl.createSpan({ cls: "cristal-tool-step-text" });
+			textEl.setText(this.formatToolStep(tool, locale));
+		}
+	}
+
+	/**
+	 * Parse reasoning text from JSON or string format
+	 */
+	private parseReasoningText(input: unknown): string {
+		if (typeof input === "string") {
+			return input;
+		}
+		if (typeof input === "object" && input !== null) {
+			const obj = input as Record<string, unknown>;
+			// Try to extract "text" field from JSON
+			if (typeof obj.text === "string") {
+				return obj.text;
+			}
+			// Fallback: stringify JSON nicely
+			return JSON.stringify(input, null, 2);
+		}
+		return String(input || "");
+	}
+
+	/**
+	 * Extract title and body from reasoning text
+	 * Title is usually wrapped in **asterisks** on the first line
+	 */
+	private parseReasoningTitle(text: string): { title: string; body: string } {
+		const lines = text.split("\n");
+		const firstLine = lines[0] || "";
+
+		// Extract title from **Title** format
+		const titleMatch = firstLine.match(/^\*\*(.+?)\*\*$/);
+		if (titleMatch && titleMatch[1]) {
+			return {
+				title: titleMatch[1],
+				body: lines.slice(1).join("\n").trim()
+			};
+		}
+
+		// No markdown title — use first line as title
+		return {
+			title: firstLine.substring(0, 60) + (firstLine.length > 60 ? "..." : ""),
+			body: lines.slice(1).join("\n").trim()
+		};
+	}
+
+	/**
+	 * Renders a Codex reasoning step - simple text with **bold** support
+	 */
+	private renderReasoningStep(container: HTMLElement, tool: ToolUseBlock, _locale: ButtonLocale): void {
+		const input = tool.input as { text?: unknown; summary?: string[]; content?: string[] };
+
+		// Parse the text from JSON if needed
+		const rawText = this.parseReasoningText(input.text);
+
+		// Create text block (no separate header/body, just text)
+		const textEl = container.createDiv({ cls: "cristal-reasoning-text" });
+
+		// Render text with **bold** support
+		this.renderMarkdownBold(textEl, rawText);
+	}
+
+	/**
+	 * Renders text with **bold** markdown support
+	 */
+	private renderMarkdownBold(container: HTMLElement, text: string): void {
+		// Split by **bold** patterns
+		const parts = text.split(/(\*\*[^*]+\*\*)/g);
+
+		for (const part of parts) {
+			if (part.startsWith("**") && part.endsWith("**")) {
+				// Bold text
+				const boldText = part.slice(2, -2);
+				container.createEl("strong", { text: boldText });
+			} else if (part) {
+				// Regular text - preserve newlines
+				const lines = part.split("\n");
+				for (let i = 0; i < lines.length; i++) {
+					const line = lines[i];
+					if (line) {
+						container.appendText(line);
+					}
+					if (i < lines.length - 1) {
+						container.createEl("br");
+					}
+				}
+			}
 		}
 	}
 
@@ -1215,37 +1581,43 @@ Provide only the summary, no additional commentary.`;
 		const currentSession = sessions.find(s => s.id === currentId);
 		this.sessionTriggerEl.empty();
 
-		// Show spinner if current session is running
-		if (currentSession && this.plugin.claudeService.isRunning(currentSession.id)) {
-			const spinnerEl = this.sessionTriggerEl.createSpan({ cls: "claude-rock-session-spinner" });
+		// Show spinner if current session is running (check both services)
+		const isCurrentRunning = currentSession && (
+			this.plugin.claudeService.isRunning(currentSession.id) ||
+			this.plugin.codexService.isRunning(currentSession.id)
+		);
+		if (isCurrentRunning) {
+			const spinnerEl = this.sessionTriggerEl.createSpan({ cls: "cristal-session-spinner" });
 			setIcon(spinnerEl, "loader-2");
 		}
 
-		const triggerText = this.sessionTriggerEl.createSpan({ cls: "claude-rock-session-trigger-text" });
+		const triggerText = this.sessionTriggerEl.createSpan({ cls: "cristal-session-trigger-text" });
 		triggerText.setText(currentSession ? this.getSessionLabel(currentSession) : "Select chat");
-		const triggerIcon = this.sessionTriggerEl.createSpan({ cls: "claude-rock-session-trigger-icon" });
+		const triggerIcon = this.sessionTriggerEl.createSpan({ cls: "cristal-session-trigger-icon" });
 		setIcon(triggerIcon, "chevron-down");
 
 		// Update list
 		this.sessionListEl.empty();
 		for (const session of sessions) {
-			const isRunning = this.plugin.claudeService.isRunning(session.id);
+			// Check both services for running state
+			const isRunning = this.plugin.claudeService.isRunning(session.id) ||
+				this.plugin.codexService.isRunning(session.id);
 			const item = this.sessionListEl.createDiv({
-				cls: `claude-rock-session-item ${session.id === currentId ? "claude-rock-session-item-active" : ""} ${isRunning ? "claude-rock-session-item-running" : ""}`
+				cls: `cristal-session-item ${session.id === currentId ? "cristal-session-item-active" : ""} ${isRunning ? "cristal-session-item-running" : ""}`
 			});
 			item.dataset.id = session.id;
 
 			// Show spinner for running sessions
 			if (isRunning) {
-				const spinnerEl = item.createSpan({ cls: "claude-rock-session-spinner" });
+				const spinnerEl = item.createSpan({ cls: "cristal-session-spinner" });
 				setIcon(spinnerEl, "loader-2");
 			}
 
-			const titleEl = item.createSpan({ cls: "claude-rock-session-title" });
+			const titleEl = item.createSpan({ cls: "cristal-session-title" });
 			titleEl.setText(this.getSessionLabel(session));
 
 			const deleteBtn = item.createEl("button", {
-				cls: "claude-rock-session-delete",
+				cls: "cristal-session-delete",
 				attr: { "aria-label": "Delete session" }
 			});
 			setIcon(deleteBtn, "x");
@@ -1275,8 +1647,8 @@ Provide only the summary, no additional commentary.`;
 	private toggleSessionDropdown(): void {
 		this.isSessionDropdownOpen = !this.isSessionDropdownOpen;
 		if (this.isSessionDropdownOpen) {
-			this.sessionListEl.addClass("claude-rock-session-list-open");
-			this.sessionTriggerEl.addClass("claude-rock-session-trigger-open");
+			this.sessionListEl.addClass("cristal-session-list-open");
+			this.sessionTriggerEl.addClass("cristal-session-trigger-open");
 		} else {
 			this.closeSessionDropdown();
 		}
@@ -1284,8 +1656,8 @@ Provide only the summary, no additional commentary.`;
 
 	private closeSessionDropdown(): void {
 		this.isSessionDropdownOpen = false;
-		this.sessionListEl.removeClass("claude-rock-session-list-open");
-		this.sessionTriggerEl.removeClass("claude-rock-session-trigger-open");
+		this.sessionListEl.removeClass("cristal-session-list-open");
+		this.sessionTriggerEl.removeClass("cristal-session-trigger-open");
 	}
 
 	private selectSession(sessionId: string): void {
@@ -1371,22 +1743,22 @@ Provide only the summary, no additional commentary.`;
 
 		// Show/hide container
 		if (hasContent) {
-			this.contextIndicatorEl.addClass("claude-rock-context-active");
+			this.contextIndicatorEl.addClass("cristal-context-active");
 		} else {
-			this.contextIndicatorEl.removeClass("claude-rock-context-active");
+			this.contextIndicatorEl.removeClass("cristal-context-active");
 		}
 	}
 
 	private addContextChip(icon: string, label: string, onRemove: () => void): void {
-		const chip = this.contextIndicatorEl.createDiv({ cls: "claude-rock-context-chip" });
+		const chip = this.contextIndicatorEl.createDiv({ cls: "cristal-context-chip" });
 
-		const iconEl = chip.createSpan({ cls: "claude-rock-context-icon" });
+		const iconEl = chip.createSpan({ cls: "cristal-context-icon" });
 		setIcon(iconEl, icon);
 
-		chip.createSpan({ cls: "claude-rock-context-name", text: label });
+		chip.createSpan({ cls: "cristal-context-name", text: label });
 
 		const removeBtn = chip.createEl("button", {
-			cls: "claude-rock-context-remove",
+			cls: "cristal-context-remove",
 			attr: { "aria-label": "Remove" }
 		});
 		setIcon(removeBtn, "x");
@@ -1518,16 +1890,16 @@ Provide only the summary, no additional commentary.`;
 	private showWelcome(): void {
 		if (this.messages.length === 0) {
 			const locale = getButtonLocale(this.plugin.settings.language);
-			const welcome = this.messagesContainer.createDiv({ cls: "claude-rock-welcome" });
+			const welcome = this.messagesContainer.createDiv({ cls: "cristal-welcome" });
 
 			// Title
-			welcome.createEl("h2", { cls: "claude-rock-welcome-title", text: locale.welcomeTitle });
+			welcome.createEl("h2", { cls: "cristal-welcome-title", text: locale.welcomeTitle });
 
 			// Subtitle
-			welcome.createEl("p", { cls: "claude-rock-welcome-subtitle", text: locale.welcomeSubtitle });
+			welcome.createEl("p", { cls: "cristal-welcome-subtitle", text: locale.welcomeSubtitle });
 
 			// Features list
-			const features = welcome.createDiv({ cls: "claude-rock-welcome-features" });
+			const features = welcome.createDiv({ cls: "cristal-welcome-features" });
 			const featureData = [
 				{ icon: "message-circle", text: locale.welcomeFeature1 },
 				{ icon: "paperclip", text: locale.welcomeFeature2 },
@@ -1536,22 +1908,22 @@ Provide only the summary, no additional commentary.`;
 			];
 
 			for (const feature of featureData) {
-				const item = features.createDiv({ cls: "claude-rock-welcome-feature" });
-				const icon = item.createSpan({ cls: "claude-rock-welcome-feature-icon" });
+				const item = features.createDiv({ cls: "cristal-welcome-feature" });
+				const icon = item.createSpan({ cls: "cristal-welcome-feature-icon" });
 				setIcon(icon, feature.icon);
 				item.createSpan({ text: feature.text });
 			}
 
 			// Tip
-			welcome.createEl("p", { cls: "claude-rock-welcome-hint", text: locale.welcomeTip });
+			welcome.createEl("p", { cls: "cristal-welcome-hint", text: locale.welcomeTip });
 
 			// Joke
-			welcome.createEl("p", { cls: "claude-rock-welcome-joke", text: locale.welcomeJoke });
+			welcome.createEl("p", { cls: "cristal-welcome-joke", text: locale.welcomeJoke });
 		}
 	}
 
 	private clearWelcome(): void {
-		const welcome = this.messagesContainer.querySelector(".claude-rock-welcome");
+		const welcome = this.messagesContainer.querySelector(".cristal-welcome");
 		if (welcome) {
 			welcome.remove();
 		}
@@ -1560,7 +1932,12 @@ Provide only the summary, no additional commentary.`;
 	private async sendMessage(): Promise<void> {
 		const userInput = this.inputEl.value.trim();
 		const currentSession = this.plugin.getCurrentSession();
-		if (!userInput || !currentSession || this.plugin.claudeService.isRunning(currentSession.id)) {
+		// Check if either service is running for this session
+		const isAnyServiceRunning = currentSession && (
+			this.plugin.claudeService.isRunning(currentSession.id) ||
+			this.plugin.codexService.isRunning(currentSession.id)
+		);
+		if (!userInput || !currentSession || isAnyServiceRunning) {
 			return;
 		}
 
@@ -1650,27 +2027,38 @@ Provide only the summary, no additional commentary.`;
 			this.compactSummary = null; // Clear after use
 		}
 
-		// Get CLI session ID - either from ClaudeService (current) or from saved session
-		const cliSessionId = this.plugin.claudeService.getCliSessionId(currentSession.id)
-			?? currentSession.cliSessionId
-			?? undefined;
+		// Get the active service based on current provider
+		const service = this.plugin.getActiveService(this.currentProvider);
 
-		// Lock model after first message
+		// Get CLI session ID - either from service (current) or from saved session
+		let cliSessionId: string | undefined;
+		if (this.currentProvider === "claude") {
+			cliSessionId = this.plugin.claudeService.getCliSessionId(currentSession.id)
+				?? currentSession.cliSessionId
+				?? undefined;
+		} else {
+			cliSessionId = this.plugin.codexService.getThreadId(currentSession.id)
+				?? currentSession.cliSessionId
+				?? undefined;
+		}
+
+		// Lock model and provider after first message
 		if (!this.sessionStarted) {
 			this.sessionStarted = true;
 			this.updateModelIndicatorState();
-			// Save model to session
+			// Save model and provider to session
 			currentSession.model = this.currentModel;
+			currentSession.provider = this.currentProvider;
 			this.plugin.saveSettings();
 		}
 
-		// Add ultrathink prefix if thinking mode is enabled
-		if (this.thinkingEnabled) {
+		// Add ultrathink prefix if thinking mode is enabled (Claude only)
+		if (this.thinkingEnabled && this.currentProvider === "claude") {
 			fullPrompt = `ultrathink: ${fullPrompt}`;
 		}
 
-		// Send to Claude with model and session ID
-		await this.plugin.claudeService.sendMessage(
+		// Send to the active service with model and session ID
+		await service.sendMessage(
 			fullPrompt,
 			currentSession.id,
 			cliSessionId,
@@ -1689,18 +2077,21 @@ Provide only the summary, no additional commentary.`;
 		this.messages.push(message);
 
 		const msgEl = this.messagesContainer.createDiv({
-			cls: "claude-rock-message claude-rock-message-user"
+			cls: "cristal-message cristal-message-user"
 		});
 		msgEl.dataset.id = msgId;
 
-		const contentEl = msgEl.createDiv({ cls: "claude-rock-message-content" });
+		const contentEl = msgEl.createDiv({ cls: "cristal-message-content" });
 		contentEl.setText(content);
 
 		// Show expanded prompt for slash commands
 		if (expandedPrompt && content.startsWith("/")) {
-			const expandedEl = msgEl.createDiv({ cls: "claude-rock-expanded-prompt" });
+			const expandedEl = msgEl.createDiv({ cls: "cristal-expanded-prompt" });
 			expandedEl.setText(expandedPrompt);
 		}
+
+		// Add copy and edit buttons
+		this.addUserMessageActions(msgEl, content, msgId);
 
 		this.scrollToBottom();
 	}
@@ -1724,17 +2115,17 @@ Provide only the summary, no additional commentary.`;
 
 		// Create thinking block container
 		this.currentThinkingBlock = this.messagesContainer.createDiv({
-			cls: "claude-rock-thinking-block"
+			cls: "cristal-thinking-block"
 		});
 
 		// Header with "Thinking..." text
-		const header = this.currentThinkingBlock.createDiv({ cls: "claude-rock-thinking-header" });
-		const iconEl = header.createSpan({ cls: "claude-rock-thinking-icon" });
+		const header = this.currentThinkingBlock.createDiv({ cls: "cristal-thinking-header" });
+		const iconEl = header.createSpan({ cls: "cristal-thinking-icon" });
 		setIcon(iconEl, "brain");
-		header.createSpan({ cls: "claude-rock-thinking-text", text: locale.thinking });
+		header.createSpan({ cls: "cristal-thinking-text", text: locale.thinking });
 
 		// Steps container
-		this.currentThinkingSteps = this.currentThinkingBlock.createDiv({ cls: "claude-rock-thinking-steps" });
+		this.currentThinkingSteps = this.currentThinkingBlock.createDiv({ cls: "cristal-thinking-steps" });
 	}
 
 	private updateAssistantMessage(fullText: string): void {
@@ -1790,11 +2181,11 @@ Provide only the summary, no additional commentary.`;
 		// Create final message block
 		const msgId = crypto.randomUUID();
 		const msgEl = this.messagesContainer.createDiv({
-			cls: "claude-rock-message claude-rock-message-assistant"
+			cls: "cristal-message cristal-message-assistant"
 		});
 		msgEl.dataset.id = msgId;
 
-		const contentEl = msgEl.createDiv({ cls: "claude-rock-message-content" });
+		const contentEl = msgEl.createDiv({ cls: "cristal-message-content" });
 		MarkdownRenderer.render(
 			this.app,
 			this.currentAssistantContent,
@@ -1823,22 +2214,10 @@ Provide only the summary, no additional commentary.`;
 		// Mark current thinking block as done (stop animation)
 		this.markThinkingDone();
 
-		// Create NEW thinking block for streaming text
-		this.currentThinkingBlock = this.messagesContainer.createDiv({
-			cls: "claude-rock-thinking-block claude-rock-thinking-done"  // Already "done" style (no animation)
-		});
-
-		// Header (same as thinking block)
-		const locale = getButtonLocale(this.plugin.settings.language);
-		const header = this.currentThinkingBlock.createDiv({ cls: "claude-rock-thinking-header" });
-		const iconEl = header.createSpan({ cls: "claude-rock-thinking-icon" });
-		setIcon(iconEl, "message-square");  // Different icon for text
-		header.createSpan({ cls: "claude-rock-thinking-text", text: locale.agentResponse || "Response" });
-
-		// Steps container with streaming text
-		this.currentThinkingSteps = this.currentThinkingBlock.createDiv({ cls: "claude-rock-thinking-steps" });
-		this.currentAssistantMessage = this.currentThinkingSteps.createDiv({
-			cls: "claude-rock-streaming-text"
+		// Create streaming text element directly without "Response" header
+		// This makes output consistent between Claude Code and Codex
+		this.currentAssistantMessage = this.messagesContainer.createDiv({
+			cls: "cristal-streaming-text"
 		});
 	}
 
@@ -1855,7 +2234,7 @@ Provide only the summary, no additional commentary.`;
 
 	private markThinkingDone(): void {
 		if (this.currentThinkingBlock) {
-			this.currentThinkingBlock.addClass("claude-rock-thinking-done");
+			this.currentThinkingBlock.addClass("cristal-thinking-done");
 		}
 	}
 
@@ -1888,11 +2267,11 @@ Provide only the summary, no additional commentary.`;
 			// Create message block only if there's text content
 			if (hasContent) {
 				const msgEl = this.messagesContainer.createDiv({
-					cls: "claude-rock-message claude-rock-message-assistant"
+					cls: "cristal-message cristal-message-assistant"
 				});
 				msgEl.dataset.id = msgId;
 
-				const contentEl = msgEl.createDiv({ cls: "claude-rock-message-content" });
+				const contentEl = msgEl.createDiv({ cls: "cristal-message-content" });
 				MarkdownRenderer.render(
 					this.app,
 					this.currentAssistantContent,
@@ -1930,11 +2309,11 @@ Provide only the summary, no additional commentary.`;
 
 	private addCopyButton(messageEl: HTMLElement, content: string, selectionContext?: SelectionContext): void {
 		const locale = getButtonLocale(this.plugin.settings.language);
-		const actionsEl = messageEl.createDiv({ cls: "claude-rock-message-actions" });
+		const actionsEl = messageEl.createDiv({ cls: "cristal-message-actions" });
 
 		// Copy button (icon-only)
 		const copyBtn = actionsEl.createEl("button", {
-			cls: "claude-rock-action-btn-icon",
+			cls: "cristal-action-btn-icon",
 			attr: { "aria-label": locale.copy, "title": locale.copy }
 		});
 		setIcon(copyBtn, "copy");
@@ -1946,14 +2325,14 @@ Provide only the summary, no additional commentary.`;
 				copyBtn.empty();
 				setIcon(copyBtn, "check");
 				copyBtn.setAttribute("title", locale.copySuccess);
-				copyBtn.addClass("claude-rock-action-btn-success");
+				copyBtn.addClass("cristal-action-btn-success");
 
 				// Reset after 2 seconds
 				setTimeout(() => {
 					copyBtn.empty();
 					setIcon(copyBtn, "copy");
 					copyBtn.setAttribute("title", locale.copy);
-					copyBtn.removeClass("claude-rock-action-btn-success");
+					copyBtn.removeClass("cristal-action-btn-success");
 				}, 2000);
 			} catch (err) {
 				console.error("Failed to copy:", err);
@@ -1962,7 +2341,7 @@ Provide only the summary, no additional commentary.`;
 
 		// Replace button (icon-only)
 		const replaceBtn = actionsEl.createEl("button", {
-			cls: "claude-rock-action-btn-icon claude-rock-note-action",
+			cls: "cristal-action-btn-icon cristal-note-action",
 			attr: { "aria-label": locale.replace, "title": locale.replace }
 		});
 		setIcon(replaceBtn, "replace");
@@ -1973,7 +2352,7 @@ Provide only the summary, no additional commentary.`;
 
 		// Append button (icon-only)
 		const appendBtn = actionsEl.createEl("button", {
-			cls: "claude-rock-action-btn-icon claude-rock-note-action",
+			cls: "cristal-action-btn-icon cristal-note-action",
 			attr: { "aria-label": locale.append, "title": locale.append }
 		});
 		setIcon(appendBtn, "file-plus");
@@ -1984,7 +2363,7 @@ Provide only the summary, no additional commentary.`;
 
 		// New Page button (icon-only)
 		const newPageBtn = actionsEl.createEl("button", {
-			cls: "claude-rock-action-btn-icon",
+			cls: "cristal-action-btn-icon",
 			attr: { "aria-label": locale.newPage, "title": locale.newPage }
 		});
 		setIcon(newPageBtn, "file-plus-2");
@@ -1999,7 +2378,7 @@ Provide only the summary, no additional commentary.`;
 
 	private updateNoteActionButtons(actionsEl: HTMLElement): void {
 		const activeFile = this.app.workspace.getActiveFile();
-		const noteButtons = actionsEl.querySelectorAll(".claude-rock-note-action");
+		const noteButtons = actionsEl.querySelectorAll(".cristal-note-action");
 
 		noteButtons.forEach(btn => {
 			if (activeFile && activeFile.extension === "md") {
@@ -2011,7 +2390,7 @@ Provide only the summary, no additional commentary.`;
 	}
 
 	private updateAllNoteActionButtons(): void {
-		const allActions = this.messagesContainer.querySelectorAll(".claude-rock-message-actions");
+		const allActions = this.messagesContainer.querySelectorAll(".cristal-message-actions");
 		allActions.forEach(actionsEl => {
 			this.updateNoteActionButtons(actionsEl as HTMLElement);
 		});
@@ -2109,24 +2488,62 @@ Provide only the summary, no additional commentary.`;
 		btn.empty();
 		setIcon(btn, successIcon);
 		btn.setAttribute("title", successTitle);
-		btn.addClass("claude-rock-action-btn-success");
+		btn.addClass("cristal-action-btn-success");
 
 		setTimeout(() => {
 			btn.empty();
 			setIcon(btn, defaultIcon);
 			btn.setAttribute("title", defaultTitle);
-			btn.removeClass("claude-rock-action-btn-success");
+			btn.removeClass("cristal-action-btn-success");
 		}, 2000);
+	}
+
+	/**
+	 * Determines the grouping type for a tool (for consecutive command grouping)
+	 */
+	private getToolGroupType(tool: ToolUseBlock): string {
+		// Reasoning/thinking is a special group
+		if (tool.name === "thinking") {
+			return "thinking";
+		}
+
+		// Command execution - group by command type
+		if (tool.name === "command_execution") {
+			const cmd = ((tool.input as { command?: string })?.command || "").toLowerCase();
+			if (cmd.includes("rg ") || cmd.includes("ripgrep")) return "search";
+			if (cmd.includes("find ")) return "find";
+			if (cmd.includes("sed ") || cmd.includes("cat ") || cmd.includes("head ") || cmd.includes("tail ")) return "read";
+			if (cmd.includes("python") || cmd.includes("node") || cmd.includes("npm") || cmd.includes("npx")) return "script";
+			return "command";
+		}
+
+		// File operations group together
+		if (tool.name === "file_read" || tool.name === "Read") return "file_read";
+		if (tool.name === "file_write" || tool.name === "Write" || tool.name === "Edit") return "file_write";
+
+		// Other tools by name
+		return tool.name;
+	}
+
+	/**
+	 * Resets grouping state (call when response finishes or context changes)
+	 */
+	private resetToolGrouping(): void {
+		this.currentToolGroup = null;
+		this.currentReasoningGroup = null;
+		this.currentToolStepsGroup = null;
 	}
 
 	private addToolStep(tool: ToolUseBlock): void {
 		const locale = getButtonLocale(this.plugin.settings.language);
+		const toolType = this.getToolGroupType(tool);
 
 		// If we already received text, save it as separate message before new tools
 		if (this.hasReceivedText) {
 			this.saveTextAsMessage();      // Save current text as separate message
 			this.hasReceivedText = false;  // Reset so next text creates new response block
 			this.createThinkingBlock();    // Create new thinking block after previous response
+			this.resetToolGrouping();      // Reset grouping on context change
 		}
 
 		// Ensure we have a thinking block
@@ -2136,39 +2553,384 @@ Provide only the summary, no additional commentary.`;
 
 		if (!this.currentThinkingSteps) return;
 
-		const stepEl = this.currentThinkingSteps.createDiv({ cls: "claude-rock-tool-step" });
+		// Handle reasoning/thinking blocks separately - merge into one group
+		if (toolType === "thinking") {
+			this.addReasoningToGroup(tool, locale);
+			this.currentToolStepsGroup = null; // Reset tool steps group when reasoning comes
+			this.currentToolGroup = null; // Reset old tool grouping
+			this.currentMessageThinkingSteps.push(tool);
+			this.scrollToBottom();
+			return;
+		}
 
-		// Header with icon, text, and expand arrow
-		const stepHeader = stepEl.createDiv({ cls: "claude-rock-tool-step-header" });
+		// For non-thinking tools, finalize reasoning group if active
+		if (this.currentReasoningGroup) {
+			this.currentReasoningGroup = null;
+		}
 
-		const iconEl = stepHeader.createSpan({ cls: "claude-rock-tool-step-icon" });
-		setIcon(iconEl, this.getToolIcon(tool.name));
-
-		const textEl = stepHeader.createSpan({ cls: "claude-rock-tool-step-text" });
-		textEl.setText(this.formatToolStep(tool, locale));
-
-		// Expand arrow
-		const expandEl = stepHeader.createSpan({ cls: "claude-rock-tool-step-expand" });
-		setIcon(expandEl, "chevron-down");
-
-		// Hidden details block
-		const detailsEl = stepEl.createDiv({ cls: "claude-rock-tool-step-details" });
-		detailsEl.style.display = "none";
-		this.renderToolDetails(detailsEl, tool);
-
-		// Click handler for expand/collapse
-		stepHeader.addEventListener("click", () => {
-			const isExpanded = detailsEl.style.display !== "none";
-			detailsEl.style.display = isExpanded ? "none" : "block";
-			stepEl.toggleClass("expanded", !isExpanded);
-			expandEl.empty();
-			setIcon(expandEl, isExpanded ? "chevron-down" : "chevron-up");
-		});
+		// Different display for Claude vs Codex:
+		// - Claude: tool steps in collapsible group (like Codex reasoning)
+		// - Codex: tool steps as simple list (original behavior)
+		if (this.currentProvider === "claude") {
+			// Claude: unified collapsible group for tool steps
+			this.addToolToStepsGroup(tool, locale);
+		} else {
+			// Codex: original behavior - grouped by tool type
+			if (this.currentToolGroup && this.currentToolGroup.type === toolType && this.currentToolGroup.element) {
+				this.currentToolGroup.tools.push(tool);
+				this.updateToolGroupUI(this.currentToolGroup, locale);
+			} else {
+				this.currentToolGroup = { type: toolType, tools: [tool], element: null };
+				const stepEl = this.createToolStepElement(tool, locale);
+				this.currentToolGroup.element = stepEl;
+			}
+		}
 
 		// Accumulate step for saving to message history
 		this.currentMessageThinkingSteps.push(tool);
 
 		this.scrollToBottom();
+	}
+
+	/**
+	 * Adds a tool step to the unified collapsible group (unified with Codex reasoning style)
+	 */
+	private addToolToStepsGroup(tool: ToolUseBlock, locale: ButtonLocale): void {
+		if (!this.currentThinkingSteps) return;
+
+		// Create new group if needed
+		if (!this.currentToolStepsGroup) {
+			// Create the group container (same style as reasoning groups)
+			const groupEl = this.currentThinkingSteps.createDiv({ cls: "cristal-reasoning-group cristal-tool-steps-group" });
+
+			// Group header (clickable to expand/collapse)
+			const headerEl = groupEl.createDiv({ cls: "cristal-reasoning-group-header" });
+			const iconEl = headerEl.createSpan({ cls: "cristal-reasoning-icon" });
+			setIcon(iconEl, "brain");
+
+			const titleEl = headerEl.createSpan({ cls: "cristal-reasoning-group-title" });
+			titleEl.setText(locale.thinking || "Думает...");
+
+			const counterEl = headerEl.createSpan({ cls: "cristal-reasoning-group-counter" });
+			counterEl.style.display = "none";
+
+			const expandEl = headerEl.createSpan({ cls: "cristal-reasoning-group-expand" });
+
+			// Content area for tool steps
+			const contentEl = groupEl.createDiv({ cls: "cristal-reasoning-group-content cristal-tool-steps-content" });
+
+			// Click header to expand/collapse (synced across all groups)
+			headerEl.addEventListener("click", () => {
+				const isExpanded = contentEl.style.display !== "none";
+
+				// Update global state
+				this.reasoningGroupsExpanded = !isExpanded;
+
+				// Synchronized expand/collapse all groups
+				if (this.reasoningGroupsExpanded) {
+					this.expandAllReasoningGroups();
+				} else {
+					this.collapseAllReasoningGroups();
+				}
+			});
+
+			// Start with global state
+			if (this.reasoningGroupsExpanded) {
+				groupEl.addClass("expanded");
+				contentEl.style.display = "block";
+				setIcon(expandEl, "chevron-up");
+			} else {
+				contentEl.style.display = "none";
+				setIcon(expandEl, "chevron-down");
+			}
+
+			this.currentToolStepsGroup = { tools: [tool], element: groupEl, contentEl };
+
+			// Add first tool step
+			this.addToolStepToContent(contentEl, tool, locale);
+			return;
+		}
+
+		// Add to existing group
+		this.currentToolStepsGroup.tools.push(tool);
+		const count = this.currentToolStepsGroup.tools.length;
+
+		// Update counter
+		const counterEl = this.currentToolStepsGroup.element?.querySelector(".cristal-reasoning-group-counter") as HTMLElement;
+		if (counterEl && count > 1) {
+			counterEl.style.display = "inline";
+			counterEl.setText(`(${count})`);
+		}
+
+		// Add tool step to content
+		if (this.currentToolStepsGroup.contentEl) {
+			this.addToolStepToContent(this.currentToolStepsGroup.contentEl, tool, locale);
+		}
+	}
+
+	/**
+	 * Adds a single tool step item inside the collapsible content area
+	 */
+	private addToolStepToContent(container: HTMLElement, tool: ToolUseBlock, locale: ButtonLocale): void {
+		const stepEl = container.createDiv({ cls: "cristal-tool-step-item" });
+
+		const iconEl = stepEl.createSpan({ cls: "cristal-tool-step-icon" });
+		setIcon(iconEl, this.getToolIcon(tool.name));
+
+		const textEl = stepEl.createSpan({ cls: "cristal-tool-step-text" });
+		textEl.setText(this.formatToolStep(tool, locale));
+	}
+
+	/**
+	 * Creates a single tool step UI element
+	 */
+	private createToolStepElement(tool: ToolUseBlock, locale: ButtonLocale): HTMLElement {
+		if (!this.currentThinkingSteps) return document.createElement("div");
+
+		const stepEl = this.currentThinkingSteps.createDiv({ cls: "cristal-tool-step" });
+
+		// Header with icon, text, counter, and expand arrow
+		const stepHeader = stepEl.createDiv({ cls: "cristal-tool-step-header" });
+
+		const iconEl = stepHeader.createSpan({ cls: "cristal-tool-step-icon" });
+		setIcon(iconEl, this.getToolIcon(tool.name));
+
+		const textEl = stepHeader.createSpan({ cls: "cristal-tool-step-text" });
+		textEl.setText(this.formatToolStep(tool, locale));
+
+		// Counter badge (initially hidden, shown when group has >1 items)
+		const counterEl = stepHeader.createSpan({ cls: "cristal-tool-step-counter" });
+		counterEl.style.display = "none";
+
+		// Details block (use simple format without JSON wrapper)
+		const detailsEl = stepEl.createDiv({ cls: "cristal-tool-step-details" });
+		this.renderToolDetailsSimple(detailsEl, tool);
+
+		// Special handling for todo_list: always expanded, no collapse
+		const isTodoList = tool.name === "todo_list";
+		if (isTodoList) {
+			detailsEl.style.display = "block";
+			stepEl.addClass("expanded");
+			stepEl.addClass("cristal-tool-step-no-collapse");
+		} else {
+			// Expand arrow (not for todo_list)
+			const expandEl = stepHeader.createSpan({ cls: "cristal-tool-step-expand" });
+			setIcon(expandEl, "chevron-down");
+			detailsEl.style.display = "none";
+
+			// Click handler for expand/collapse
+			stepHeader.addEventListener("click", () => {
+				const isExpanded = detailsEl.style.display !== "none";
+				detailsEl.style.display = isExpanded ? "none" : "block";
+				stepEl.toggleClass("expanded", !isExpanded);
+				expandEl.empty();
+				setIcon(expandEl, isExpanded ? "chevron-down" : "chevron-up");
+			});
+		}
+
+		return stepEl;
+	}
+
+	/**
+	 * Updates the UI of a tool group when new tools are added
+	 */
+	private updateToolGroupUI(group: { type: string; tools: ToolUseBlock[]; element: HTMLElement | null }, locale: ButtonLocale): void {
+		if (!group.element) return;
+
+		const count = group.tools.length;
+		const lastTool = group.tools[count - 1];
+		if (!lastTool) return;
+
+		// Update the header text to show last tool action
+		const textEl = group.element.querySelector(".cristal-tool-step-text");
+		if (textEl) {
+			textEl.setText(this.formatToolStep(lastTool, locale));
+		}
+
+		// Show and update counter
+		const counterEl = group.element.querySelector(".cristal-tool-step-counter") as HTMLElement;
+		if (counterEl && count > 1) {
+			counterEl.style.display = "inline";
+			counterEl.setText(`(${count})`);
+		}
+
+		// Add new tool details to the details section (no separator, just new line)
+		const detailsEl = group.element.querySelector(".cristal-tool-step-details");
+		if (detailsEl) {
+			this.renderToolDetailsSimple(detailsEl as HTMLElement, lastTool);
+		}
+	}
+
+	/**
+	 * Renders tool details in simple format (no JSON wrapper, just key info)
+	 */
+	private renderToolDetailsSimple(container: HTMLElement, tool: ToolUseBlock): void {
+		const input = tool.input as Record<string, unknown>;
+		const line = container.createDiv({ cls: "cristal-tool-detail-line" });
+
+		switch (tool.name) {
+			case "command_execution":
+				// Extract the actual command, not bash wrapper
+				const cmd = (input.command as string) || "";
+				const match = cmd.match(/^(?:\/bin\/)?bash\s+-lc\s+['"]([\s\S]*)['"]$/);
+				const inner = (match && match[1]) ? match[1] : cmd;
+				line.setText(inner.substring(0, 100) + (inner.length > 100 ? "..." : ""));
+				break;
+			case "Read":
+			case "file_read":
+				line.setText(String(input.file_path || ""));
+				break;
+			case "Grep":
+				line.setText(`${input.pattern} ${input.path ? "в " + input.path : ""}`);
+				break;
+			case "Glob":
+				line.setText(`${input.pattern}`);
+				break;
+			case "todo_list":
+				// Remove default line, render checkboxes instead
+				line.remove();
+				const items = input.items as Array<{ text: string; completed: boolean }> | undefined;
+				if (items && Array.isArray(items)) {
+					for (const item of items) {
+						const itemEl = container.createDiv({ cls: "cristal-todo-item" });
+						const checkbox = itemEl.createEl("input", { type: "checkbox" });
+						checkbox.checked = item.completed;
+						checkbox.disabled = true;  // Read-only display
+						itemEl.createSpan({ cls: "cristal-todo-text", text: item.text });
+					}
+				}
+				break;
+			default:
+				// For other tools, show first meaningful value
+				const firstValue = Object.values(input).find(v => typeof v === "string" && v.length > 0);
+				if (firstValue) {
+					const val = String(firstValue);
+					line.setText(val.substring(0, 80) + (val.length > 80 ? "..." : ""));
+				}
+		}
+	}
+
+	/**
+	 * Adds a reasoning block to the current reasoning group (merges consecutive thinking)
+	 * All text is shown inline, no collapsible sections
+	 */
+	private addReasoningToGroup(tool: ToolUseBlock, locale: ButtonLocale): void {
+		if (!this.currentThinkingSteps) return;
+
+		// If no active reasoning group, create one
+		if (!this.currentReasoningGroup) {
+			this.currentReasoningGroup = { tools: [tool], element: null };
+
+			// Create the group container
+			const groupEl = this.currentThinkingSteps.createDiv({ cls: "cristal-reasoning-group" });
+			this.currentReasoningGroup.element = groupEl;
+
+			// Group header (clickable to expand/collapse)
+			const headerEl = groupEl.createDiv({ cls: "cristal-reasoning-group-header" });
+			const iconEl = headerEl.createSpan({ cls: "cristal-reasoning-icon" });
+			setIcon(iconEl, "brain");
+
+			const titleEl = headerEl.createSpan({ cls: "cristal-reasoning-group-title" });
+			titleEl.setText(locale.thinking || "Думает...");
+
+			const counterEl = headerEl.createSpan({ cls: "cristal-reasoning-group-counter" });
+			counterEl.style.display = "none";
+
+			const expandEl = headerEl.createSpan({ cls: "cristal-reasoning-group-expand" });
+			setIcon(expandEl, "chevron-down");
+
+			// Content area - always visible, click header to collapse
+			const contentEl = groupEl.createDiv({ cls: "cristal-reasoning-group-content" });
+			contentEl.dataset.reasoningGroup = "true";
+
+			// Render the first reasoning item
+			this.renderReasoningStep(contentEl, tool, locale);
+
+			// Click header to expand/collapse (synced across all groups)
+			headerEl.addEventListener("click", () => {
+				const isExpanded = contentEl.style.display !== "none";
+
+				// Update global state
+				this.reasoningGroupsExpanded = !isExpanded;
+
+				// Synchronized expand/collapse all groups
+				if (this.reasoningGroupsExpanded) {
+					this.expandAllReasoningGroups();
+				} else {
+					this.collapseAllReasoningGroups();
+				}
+			});
+
+			// Start with global state (not always expanded)
+			if (this.reasoningGroupsExpanded) {
+				groupEl.addClass("expanded");
+				contentEl.style.display = "block";
+				setIcon(expandEl, "chevron-up");
+			} else {
+				contentEl.style.display = "none";
+				setIcon(expandEl, "chevron-down");
+			}
+
+			return;
+		}
+
+		// Add to existing group - just append text with line break
+		this.currentReasoningGroup.tools.push(tool);
+		const count = this.currentReasoningGroup.tools.length;
+
+		// Update counter
+		const counterEl = this.currentReasoningGroup.element?.querySelector(".cristal-reasoning-group-counter") as HTMLElement;
+		if (counterEl && count > 1) {
+			counterEl.style.display = "inline";
+			counterEl.setText(`(${count})`);
+		}
+
+		// Add new reasoning content (on new line)
+		const contentEl = this.currentReasoningGroup.element?.querySelector(".cristal-reasoning-group-content") as HTMLElement;
+		if (contentEl) {
+			// Add line break before new thought
+			contentEl.createEl("br");
+			contentEl.createEl("br");
+			this.renderReasoningStep(contentEl, tool, locale);
+		}
+	}
+
+	/**
+	 * Expands all reasoning groups in the current view (synchronized expand)
+	 */
+	private expandAllReasoningGroups(): void {
+		const groups = this.messagesContainer.querySelectorAll(".cristal-reasoning-group");
+		groups.forEach(group => {
+			const content = group.querySelector(".cristal-reasoning-group-content") as HTMLElement;
+			const expand = group.querySelector(".cristal-reasoning-group-expand");
+			if (content && content.style.display === "none") {
+				content.style.display = "block";
+				group.addClass("expanded");
+				if (expand) {
+					expand.empty();
+					setIcon(expand as HTMLElement, "chevron-up");
+				}
+			}
+		});
+	}
+
+	/**
+	 * Collapses all reasoning groups in the current view (synchronized collapse)
+	 */
+	private collapseAllReasoningGroups(): void {
+		const groups = this.messagesContainer.querySelectorAll(".cristal-reasoning-group");
+		groups.forEach(group => {
+			const content = group.querySelector(".cristal-reasoning-group-content") as HTMLElement;
+			const expand = group.querySelector(".cristal-reasoning-group-expand");
+			if (content && content.style.display !== "none") {
+				content.style.display = "none";
+				group.removeClass("expanded");
+				if (expand) {
+					expand.empty();
+					setIcon(expand as HTMLElement, "chevron-down");
+				}
+			}
+		});
 	}
 
 	private renderToolDetails(container: HTMLElement, tool: ToolUseBlock): void {
@@ -2218,6 +2980,83 @@ Provide only the summary, no additional commentary.`;
 		}
 	}
 
+	/**
+	 * Converts bash commands to human-readable descriptions
+	 */
+	private humanizeBashCommand(cmd: string, locale: ButtonLocale): { action: string; details: string } {
+		// Extract inner command from bash wrapper: /bin/bash -lc 'command'
+		// Use [\s\S] instead of . with /s flag for compatibility
+		const match = cmd.match(/^(?:\/bin\/)?bash\s+-lc\s+['"]([\s\S]*)['"]$/);
+		const inner = (match && match[1]) ? match[1] : cmd;
+
+		// ripgrep (rg) — search in files
+		if (inner.startsWith("rg ")) {
+			const patternMatch = inner.match(/rg\s+(?:-[a-zA-Z]+\s+)*["']?([^"'\s]+)["']?/);
+			const pathMatch = inner.match(/["']([^"']+)["']\s*$/);
+			const pattern = patternMatch?.[1] || "";
+			const path = pathMatch?.[1]?.split("/").pop() || "";
+			return {
+				action: locale.searching || "Ищет",
+				details: path ? `"${pattern}" в ${path}` : `"${pattern}"`
+			};
+		}
+
+		// find — find files
+		if (inner.startsWith("find ")) {
+			const nameMatch = inner.match(/-name\s+["']([^"']+)["']/);
+			const pathMatch = inner.match(/find\s+["']?([^"'\s]+)["']?\s/);
+			return {
+				action: locale.findingFiles || "Ищет файлы",
+				details: nameMatch?.[1] || pathMatch?.[1] || ""
+			};
+		}
+
+		// sed — read lines from file
+		if (inner.startsWith("sed ")) {
+			const fileMatch = inner.match(/["']([^"']+)["']\s*$/);
+			const rangeMatch = inner.match(/-n\s+['"]?(\d+,\d+)p['"]?/);
+			const fileName = fileMatch?.[1]?.split("/").pop() || "";
+			const range = rangeMatch?.[1] || "";
+			return {
+				action: locale.readingFile || "Читает",
+				details: range ? `${fileName} (строки ${range})` : fileName
+			};
+		}
+
+		// python scripts
+		if (inner.includes("python")) {
+			return { action: "Python скрипт", details: "" };
+		}
+
+		// ls — list directory
+		if (inner.startsWith("ls ")) {
+			const pathMatch = inner.match(/ls\s+(?:-[a-zA-Z]+\s+)*["']?([^"'\s]+)["']?/);
+			const path = pathMatch?.[1]?.split("/").pop() || ".";
+			return { action: "Просматривает", details: path };
+		}
+
+		// cat — read file
+		if (inner.startsWith("cat ")) {
+			const fileMatch = inner.match(/cat\s+["']?([^"'\s|>]+)["']?/);
+			const fileName = fileMatch?.[1]?.split("/").pop() || "";
+			return { action: locale.readingFile || "Читает", details: fileName };
+		}
+
+		// head/tail — read part of file
+		if (inner.startsWith("head ") || inner.startsWith("tail ")) {
+			const fileMatch = inner.match(/(?:head|tail)\s+(?:-[a-zA-Z0-9]+\s+)*["']?([^"'\s|]+)["']?/);
+			const fileName = fileMatch?.[1]?.split("/").pop() || "";
+			return { action: locale.readingFile || "Читает", details: fileName };
+		}
+
+		// Default: truncate command
+		const truncated = inner.substring(0, 50);
+		return {
+			action: locale.usingTool || "Выполняет",
+			details: truncated + (inner.length > 50 ? "..." : "")
+		};
+	}
+
 	private formatToolStep(tool: ToolUseBlock, locale: ButtonLocale): string {
 		const input = tool.input as Record<string, unknown>;
 
@@ -2249,6 +3088,7 @@ Provide only the summary, no additional commentary.`;
 				return `${locale.findingFiles}: ${globPattern}`;
 
 			case "WebSearch":
+			case "web_search":
 				const query = input.query as string || "";
 				return `${locale.webSearch}: "${query.substring(0, 30)}${query.length > 30 ? "..." : ""}"`;
 
@@ -2256,7 +3096,51 @@ Provide only the summary, no additional commentary.`;
 				const url = input.url as string || "";
 				return `${locale.fetchingUrl}: ${url.substring(0, 40)}${url.length > 40 ? "..." : ""}`;
 
+			// Codex-specific tools
+			case "thinking":
+				const summary = input.summary as string[] || [];
+				const firstSummary = summary[0];
+				if (firstSummary) {
+					return firstSummary.substring(0, 50) + (firstSummary.length > 50 ? "..." : "");
+				}
+				return locale.thinking || "Reasoning...";
+
+			case "file_change":
+				const changes = input.changes as Array<{ path: string; kind: string }> || [];
+				if (changes.length === 1 && changes[0]) {
+					const change = changes[0];
+					const name = change.path.split("/").pop() || change.path;
+					return `${change.kind}: ${name}`;
+				}
+				return `${changes.length} file changes`;
+
+			case "command_execution":
+				const bashCmd = input.command as string || "";
+				const { action, details } = this.humanizeBashCommand(bashCmd, locale);
+				return details ? `${action}: ${details}` : action;
+
+			case "file_read":
+				const readPath = input.command as string || input.path as string || "";
+				const readName = readPath.split("/").pop() || readPath;
+				return `${locale.readingFile}: ${readName}`;
+
+			case "file_write":
+				const writePath = input.command as string || input.path as string || "";
+				const writeName = writePath.split("/").pop() || writePath;
+				return `${locale.writingFile}: ${writeName}`;
+
+			case "todo_list":
+				const items = input.items as Array<{ text: string; completed: boolean }> || [];
+				return `Todo: ${items.length} items`;
+
 			default:
+				// Handle MCP tools (format: mcp:server:tool)
+				if (tool.name.startsWith("mcp:")) {
+					const parts = tool.name.split(":");
+					const server = parts[1] || "server";
+					const toolName = parts[2] || "tool";
+					return `MCP: ${server}/${toolName}`;
+				}
 				return `${locale.usingTool} ${tool.name}`;
 		}
 	}
@@ -2264,10 +3148,12 @@ Provide only the summary, no additional commentary.`;
 	private getToolIcon(toolName: string): string {
 		switch (toolName) {
 			case "Read":
+			case "file_read":
 				return "file-text";
 			case "Edit":
 				return "edit";
 			case "Write":
+			case "file_write":
 				return "file-plus";
 			case "Delete":
 				return "trash";
@@ -2276,14 +3162,26 @@ Provide only the summary, no additional commentary.`;
 			case "Glob":
 				return "folder-search";
 			case "WebSearch":
+			case "web_search":
 				return "globe";
 			case "WebFetch":
 				return "download";
 			case "Bash":
+			case "command_execution":
 				return "terminal";
 			case "Task":
+			case "todo_list":
 				return "list-todo";
+			// Codex-specific
+			case "thinking":
+				return "brain";
+			case "file_change":
+				return "file-diff";
 			default:
+				// Handle MCP tools
+				if (toolName.startsWith("mcp:")) {
+					return "plug";
+				}
 				return "wrench";
 		}
 	}
@@ -2299,10 +3197,10 @@ Provide only the summary, no additional commentary.`;
 
 	private addErrorMessage(error: string): void {
 		const msgEl = this.messagesContainer.createDiv({
-			cls: "claude-rock-message claude-rock-message-error"
+			cls: "cristal-message cristal-message-error"
 		});
 
-		const contentEl = msgEl.createDiv({ cls: "claude-rock-message-content" });
+		const contentEl = msgEl.createDiv({ cls: "cristal-message-content" });
 		contentEl.setText(error);
 
 		this.scrollToBottom();
@@ -2317,11 +3215,11 @@ Provide only the summary, no additional commentary.`;
 
 	private setStatus(status: "idle" | "loading" | "streaming" | "error", message?: string): void {
 		this.statusEl.empty();
-		this.statusEl.removeClass("claude-rock-status-error", "claude-rock-status-loading", "claude-rock-status-streaming");
+		this.statusEl.removeClass("cristal-status-error", "cristal-status-loading", "cristal-status-streaming");
 
 		// Only show status bar for errors
 		if (status === "error") {
-			this.statusEl.addClass("claude-rock-status-error");
+			this.statusEl.addClass("cristal-status-error");
 			this.statusEl.setText(message || "An error occurred");
 			this.statusEl.style.display = "block";
 		} else {
@@ -2338,8 +3236,8 @@ Provide only the summary, no additional commentary.`;
 			// Loading state: grey background with spinner
 			setIcon(this.sendButton, "loader-2");
 			this.sendButton.setAttribute("aria-label", "Stop generation");
-			this.sendButton.addClass("claude-rock-send-btn-loading");
-			this.sendButton.removeClass("claude-rock-send-btn-stop");
+			this.sendButton.addClass("cristal-send-btn-loading");
+			this.sendButton.removeClass("cristal-send-btn-stop");
 
 			// Hover listeners: show stop icon on hover
 			this.sendButton.addEventListener("mouseenter", this.showStopIcon);
@@ -2348,8 +3246,8 @@ Provide only the summary, no additional commentary.`;
 			// Idle state: purple background with arrow
 			setIcon(this.sendButton, "arrow-up");
 			this.sendButton.setAttribute("aria-label", "Send message");
-			this.sendButton.removeClass("claude-rock-send-btn-loading");
-			this.sendButton.removeClass("claude-rock-send-btn-stop");
+			this.sendButton.removeClass("cristal-send-btn-loading");
+			this.sendButton.removeClass("cristal-send-btn-stop");
 
 			// Remove hover listeners
 			this.sendButton.removeEventListener("mouseenter", this.showStopIcon);
@@ -2455,15 +3353,15 @@ Provide only the summary, no additional commentary.`;
 
 		for (const cmd of this.filteredCommands) {
 			const item = this.autocompleteEl.createDiv({
-				cls: "claude-rock-autocomplete-item"
+				cls: "cristal-autocomplete-item"
 			});
 
-			const iconEl = item.createSpan({ cls: "claude-rock-autocomplete-icon" });
+			const iconEl = item.createSpan({ cls: "cristal-autocomplete-icon" });
 			setIcon(iconEl, cmd.icon);
 
-			const textEl = item.createDiv({ cls: "claude-rock-autocomplete-text" });
-			textEl.createSpan({ cls: "claude-rock-autocomplete-name", text: cmd.command });
-			textEl.createSpan({ cls: "claude-rock-autocomplete-desc", text: cmd.description });
+			const textEl = item.createDiv({ cls: "cristal-autocomplete-text" });
+			textEl.createSpan({ cls: "cristal-autocomplete-name", text: cmd.command });
+			textEl.createSpan({ cls: "cristal-autocomplete-desc", text: cmd.description });
 
 			const index = this.filteredCommands.indexOf(cmd);
 			item.addEventListener("click", () => this.selectCommand(index));
@@ -2471,31 +3369,31 @@ Provide only the summary, no additional commentary.`;
 		}
 
 		// Highlight first item
-		const firstItem = this.autocompleteEl.querySelector(".claude-rock-autocomplete-item");
+		const firstItem = this.autocompleteEl.querySelector(".cristal-autocomplete-item");
 		if (firstItem) {
-			firstItem.addClass("claude-rock-autocomplete-item-selected");
+			firstItem.addClass("cristal-autocomplete-item-selected");
 		}
 
-		this.autocompleteEl.addClass("claude-rock-autocomplete-visible");
+		this.autocompleteEl.addClass("cristal-autocomplete-visible");
 	}
 
 	private hideAutocomplete(): void {
 		if (!this.autocompleteEl) return;
 
 		this.autocompleteVisible = false;
-		this.autocompleteEl.removeClass("claude-rock-autocomplete-visible");
+		this.autocompleteEl.removeClass("cristal-autocomplete-visible");
 		this.autocompleteEl.empty();
 	}
 
 	private highlightCommand(index: number): void {
 		if (!this.autocompleteEl) return;
 
-		const items = this.autocompleteEl.querySelectorAll(".claude-rock-autocomplete-item");
+		const items = this.autocompleteEl.querySelectorAll(".cristal-autocomplete-item");
 		items.forEach((item, i) => {
 			if (i === index) {
-				item.addClass("claude-rock-autocomplete-item-selected");
+				item.addClass("cristal-autocomplete-item-selected");
 			} else {
-				item.removeClass("claude-rock-autocomplete-item-selected");
+				item.removeClass("cristal-autocomplete-item-selected");
 			}
 		});
 		this.selectedCommandIndex = index;
@@ -2518,7 +3416,7 @@ Provide only the summary, no additional commentary.`;
 	private scrollAutocompleteToSelected(): void {
 		if (!this.autocompleteEl) return;
 
-		const selected = this.autocompleteEl.querySelector(".claude-rock-autocomplete-item-selected");
+		const selected = this.autocompleteEl.querySelector(".cristal-autocomplete-item-selected");
 		if (selected) {
 			selected.scrollIntoView({ block: "nearest" });
 		}
@@ -2606,15 +3504,15 @@ Provide only the summary, no additional commentary.`;
 
 		for (const file of this.filteredFiles) {
 			const item = this.mentionAutocompleteEl.createDiv({
-				cls: "claude-rock-autocomplete-item"
+				cls: "cristal-autocomplete-item"
 			});
 
-			const iconEl = item.createSpan({ cls: "claude-rock-autocomplete-icon" });
+			const iconEl = item.createSpan({ cls: "cristal-autocomplete-icon" });
 			setIcon(iconEl, "file-text");
 
-			const textEl = item.createDiv({ cls: "claude-rock-autocomplete-text" });
-			textEl.createSpan({ cls: "claude-rock-autocomplete-name", text: file.basename });
-			textEl.createSpan({ cls: "claude-rock-autocomplete-desc", text: file.path });
+			const textEl = item.createDiv({ cls: "cristal-autocomplete-text" });
+			textEl.createSpan({ cls: "cristal-autocomplete-name", text: file.basename });
+			textEl.createSpan({ cls: "cristal-autocomplete-desc", text: file.path });
 
 			const index = this.filteredFiles.indexOf(file);
 			item.addEventListener("click", () => this.selectFile(index));
@@ -2622,19 +3520,19 @@ Provide only the summary, no additional commentary.`;
 		}
 
 		// Highlight first item
-		const firstItem = this.mentionAutocompleteEl.querySelector(".claude-rock-autocomplete-item");
+		const firstItem = this.mentionAutocompleteEl.querySelector(".cristal-autocomplete-item");
 		if (firstItem) {
-			firstItem.addClass("claude-rock-autocomplete-item-selected");
+			firstItem.addClass("cristal-autocomplete-item-selected");
 		}
 
-		this.mentionAutocompleteEl.addClass("claude-rock-autocomplete-visible");
+		this.mentionAutocompleteEl.addClass("cristal-autocomplete-visible");
 	}
 
 	private hideMentionAutocomplete(): void {
 		if (!this.mentionAutocompleteEl) return;
 
 		this.mentionAutocompleteVisible = false;
-		this.mentionAutocompleteEl.removeClass("claude-rock-autocomplete-visible");
+		this.mentionAutocompleteEl.removeClass("cristal-autocomplete-visible");
 		this.mentionAutocompleteEl.empty();
 		this.mentionStartIndex = -1;
 	}
@@ -2642,12 +3540,12 @@ Provide only the summary, no additional commentary.`;
 	private highlightFile(index: number): void {
 		if (!this.mentionAutocompleteEl) return;
 
-		const items = this.mentionAutocompleteEl.querySelectorAll(".claude-rock-autocomplete-item");
+		const items = this.mentionAutocompleteEl.querySelectorAll(".cristal-autocomplete-item");
 		items.forEach((item, i) => {
 			if (i === index) {
-				item.addClass("claude-rock-autocomplete-item-selected");
+				item.addClass("cristal-autocomplete-item-selected");
 			} else {
-				item.removeClass("claude-rock-autocomplete-item-selected");
+				item.removeClass("cristal-autocomplete-item-selected");
 			}
 		});
 		this.selectedFileIndex = index;
@@ -2670,7 +3568,7 @@ Provide only the summary, no additional commentary.`;
 	private scrollMentionAutocompleteToSelected(): void {
 		if (!this.mentionAutocompleteEl) return;
 
-		const selected = this.mentionAutocompleteEl.querySelector(".claude-rock-autocomplete-item-selected");
+		const selected = this.mentionAutocompleteEl.querySelector(".cristal-autocomplete-item-selected");
 		if (selected) {
 			selected.scrollIntoView({ block: "nearest" });
 		}
@@ -2751,13 +3649,13 @@ Provide only the summary, no additional commentary.`;
 				btn.empty();
 				setIcon(btn, "check");
 				btn.setAttribute("title", locale.newPageSuccess);
-				btn.addClass("claude-rock-action-btn-success");
+				btn.addClass("cristal-action-btn-success");
 
 				setTimeout(() => {
 					btn.empty();
 					setIcon(btn, "file-plus-2");
 					btn.setAttribute("title", locale.newPage);
-					btn.removeClass("claude-rock-action-btn-success");
+					btn.removeClass("cristal-action-btn-success");
 				}, 2000);
 			} catch (err) {
 				console.error("Failed to create new page:", err);
@@ -2838,6 +3736,184 @@ Provide only the summary, no additional commentary.`;
 		this.attachedFiles = [];
 		this.updateFileContextIndicator();
 	}
+
+	// ============================================================================
+	// User Message Actions (Copy, Edit)
+	// ============================================================================
+
+	private addUserMessageActions(messageEl: HTMLElement, content: string, messageId: string): void {
+		const locale = getButtonLocale(this.plugin.settings.language);
+		const actionsEl = messageEl.createDiv({ cls: "cristal-message-actions" });
+
+		// Copy button
+		const copyBtn = actionsEl.createEl("button", {
+			cls: "cristal-action-btn-icon",
+			attr: { "aria-label": locale.copy, "title": locale.copy }
+		});
+		setIcon(copyBtn, "copy");
+		copyBtn.addEventListener("click", async () => {
+			try {
+				await navigator.clipboard.writeText(content);
+				copyBtn.empty();
+				setIcon(copyBtn, "check");
+				copyBtn.setAttribute("title", locale.copySuccess);
+				copyBtn.addClass("cristal-action-btn-success");
+				setTimeout(() => {
+					copyBtn.empty();
+					setIcon(copyBtn, "copy");
+					copyBtn.setAttribute("title", locale.copy);
+					copyBtn.removeClass("cristal-action-btn-success");
+				}, 2000);
+			} catch (err) {
+				console.error("Failed to copy:", err);
+			}
+		});
+
+		// Edit button
+		const editBtn = actionsEl.createEl("button", {
+			cls: "cristal-action-btn-icon",
+			attr: { "aria-label": locale.edit, "title": locale.edit }
+		});
+		setIcon(editBtn, "pencil");
+		editBtn.addEventListener("click", () => {
+			this.startEditingMessage(messageEl, content, messageId);
+		});
+	}
+
+	private startEditingMessage(messageEl: HTMLElement, content: string, messageId: string): void {
+		// Cancel any existing editing
+		if (this.editingMessageId) {
+			this.cancelEditing();
+		}
+		this.editingMessageId = messageId;
+
+		const locale = getButtonLocale(this.plugin.settings.language);
+		const contentEl = messageEl.querySelector(".cristal-message-content") as HTMLElement;
+		const actionsEl = messageEl.querySelector(".cristal-message-actions") as HTMLElement;
+
+		if (!contentEl || !actionsEl) return;
+
+		// Hide original content and actions
+		contentEl.style.display = "none";
+		actionsEl.style.display = "none";
+
+		// Create edit container
+		const editContainer = messageEl.createDiv({ cls: "cristal-edit-container" });
+		editContainer.dataset.editContainer = "true";
+
+		const textarea = editContainer.createEl("textarea", {
+			cls: "cristal-edit-textarea"
+		});
+		textarea.value = content;
+
+		// Auto-resize
+		textarea.style.height = "auto";
+		textarea.style.height = textarea.scrollHeight + "px";
+		textarea.addEventListener("input", () => {
+			textarea.style.height = "auto";
+			textarea.style.height = textarea.scrollHeight + "px";
+		});
+
+		// Action buttons
+		const editActionsEl = editContainer.createDiv({ cls: "cristal-edit-actions" });
+
+		const cancelBtn = editActionsEl.createEl("button", {
+			cls: "cristal-edit-cancel-btn",
+			text: locale.cancelEdit
+		});
+		cancelBtn.addEventListener("click", () => this.cancelEditing());
+
+		const submitBtn = editActionsEl.createEl("button", {
+			cls: "cristal-edit-submit-btn mod-cta",
+			text: locale.resend
+		});
+		submitBtn.addEventListener("click", () => {
+			this.submitEditedMessage(messageEl, textarea.value, messageId);
+		});
+
+		// Focus textarea
+		textarea.focus();
+		textarea.setSelectionRange(textarea.value.length, textarea.value.length);
+	}
+
+	private cancelEditing(): void {
+		if (!this.editingMessageId) return;
+
+		const messageEl = this.messagesContainer.querySelector(`[data-id="${this.editingMessageId}"]`) as HTMLElement;
+		if (messageEl) {
+			// Remove edit container
+			const editContainer = messageEl.querySelector("[data-edit-container]");
+			if (editContainer) editContainer.remove();
+
+			// Show original content and actions
+			const contentEl = messageEl.querySelector(".cristal-message-content") as HTMLElement;
+			const actionsEl = messageEl.querySelector(".cristal-message-actions") as HTMLElement;
+			if (contentEl) contentEl.style.display = "block";
+			if (actionsEl) actionsEl.style.display = "flex";
+		}
+
+		this.editingMessageId = null;
+	}
+
+	private async submitEditedMessage(messageEl: HTMLElement, newContent: string, messageId: string): Promise<void> {
+		const trimmedContent = newContent.trim();
+		if (!trimmedContent) {
+			this.cancelEditing();
+			return;
+		}
+
+		// 1. Stop generation if in progress
+		if (this.isGenerating) {
+			const currentSession = this.plugin.getCurrentSession();
+			if (currentSession) {
+				const service = this.plugin.getActiveService(this.currentProvider);
+				service.abort(currentSession.id);
+			}
+		}
+
+		// 2. Remove all messages after the edited one
+		const allMessages = Array.from(this.messagesContainer.querySelectorAll(".cristal-message"));
+		const currentIndex = allMessages.findIndex(el => el.getAttribute("data-id") === messageId);
+
+		if (currentIndex !== -1) {
+			for (let i = allMessages.length - 1; i > currentIndex; i--) {
+				const msg = allMessages[i];
+				if (msg) msg.remove();
+			}
+		}
+
+		// Also remove thinking blocks after edited message
+		const thinkingBlocks = this.messagesContainer.querySelectorAll(".cristal-thinking-block");
+		thinkingBlocks.forEach(block => {
+			if (block.compareDocumentPosition(messageEl) & Node.DOCUMENT_POSITION_PRECEDING) {
+				block.remove();
+			}
+		});
+
+		// 3. Update UI
+		this.cancelEditing();
+		const contentEl = messageEl.querySelector(".cristal-message-content") as HTMLElement;
+		if (contentEl) {
+			contentEl.setText(trimmedContent);
+		}
+
+		// 4. Update messages array
+		const msgIndex = this.messages.findIndex(m => m.id === messageId);
+		if (msgIndex !== -1) {
+			const msgToUpdate = this.messages[msgIndex];
+			if (msgToUpdate) {
+				msgToUpdate.content = trimmedContent;
+				this.messages = this.messages.slice(0, msgIndex + 1);
+			}
+		}
+
+		// 5. Save session
+		this.saveCurrentSession();
+
+		// 6. Set input and send
+		this.inputEl.value = trimmedContent;
+		await this.sendMessage();
+	}
 }
 
 /**
@@ -2859,13 +3935,13 @@ class FileNameModal extends Modal {
 	onOpen(): void {
 		const { contentEl } = this;
 		contentEl.empty();
-		contentEl.addClass("claude-rock-filename-modal");
+		contentEl.addClass("cristal-filename-modal");
 
 		contentEl.createEl("h3", { text: this.title });
 
-		const inputContainer = contentEl.createDiv({ cls: "claude-rock-filename-input-container" });
+		const inputContainer = contentEl.createDiv({ cls: "cristal-filename-input-container" });
 		this.inputEl = new TextComponent(inputContainer);
-		this.inputEl.inputEl.addClass("claude-rock-filename-input");
+		this.inputEl.inputEl.addClass("cristal-filename-input");
 		this.inputEl.setValue(this.defaultName);
 		this.inputEl.inputEl.select();
 
@@ -2877,7 +3953,7 @@ class FileNameModal extends Modal {
 			}
 		});
 
-		const buttonContainer = contentEl.createDiv({ cls: "claude-rock-modal-buttons" });
+		const buttonContainer = contentEl.createDiv({ cls: "cristal-modal-buttons" });
 
 		const cancelBtn = buttonContainer.createEl("button", { text: "Cancel" });
 		cancelBtn.addEventListener("click", () => {

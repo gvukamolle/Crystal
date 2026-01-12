@@ -15,7 +15,7 @@ export interface SettingsLocale {
 	deepThinkingDesc: string;
 
 	// Permissions section
-	claudePermissions: string;
+	agentPermissions: string;
 	permissionsNote: string;
 	webSearch: string;
 	webSearchDesc: string;
@@ -89,6 +89,32 @@ export interface SettingsLocale {
 	systemInstructionsModalDesc: string;
 	resetToDefaultButton: string;
 	loadingPlaceholder: string;
+
+	// Agents section
+	agentsSection: string;
+	addAgent: string;
+	comingSoon: string;
+	agentAlreadyExists: string;
+	defaultAgent: string;
+	defaultAgentDesc: string;
+	agentSettingsTitle: string;
+	settingsButton: string;
+
+	// Codex-specific settings
+	codexCliPath: string;
+	codexCliPathDesc: string;
+	codexSystemInstructions: string;
+	codexSystemInstructionsDesc: string;
+	codexDeepReasoning: string;
+	codexDeepReasoningDesc: string;
+
+	// Updated model description (no /model mention)
+	defaultModelDescNoSlash: string;
+
+	// Terminal integration
+	startIntegration: string;
+	openTerminal: string;
+	integrationNote: string;
 }
 
 export const SETTINGS_LOCALES: Record<LanguageCode, SettingsLocale> = {
@@ -107,7 +133,7 @@ export const SETTINGS_LOCALES: Record<LanguageCode, SettingsLocale> = {
 		deepThinkingDesc: "Включить расширенное мышление для новых чатов. Больше токенов, но глубже анализ.",
 
 		// Permissions section
-		claudePermissions: "Разрешения Claude",
+		agentPermissions: "Разрешения агента",
 		permissionsNote: "Базовые возможности (всегда включены): чтение и редактирование заметок (.md, .canvas, .base). Bash-команды и доступ к папке .obsidian всегда заблокированы.",
 		webSearch: "Веб-поиск",
 		webSearchDesc: "Разрешить Claude искать информацию в интернете",
@@ -180,7 +206,33 @@ export const SETTINGS_LOCALES: Record<LanguageCode, SettingsLocale> = {
 		systemInstructionsTitle: "Системные инструкции",
 		systemInstructionsModalDesc: "Этот файл (CLAUDE.md) находится в корне хранилища. Claude читает его автоматически перед каждым разговором.",
 		resetToDefaultButton: "Сбросить по умолчанию",
-		loadingPlaceholder: "Загрузка..."
+		loadingPlaceholder: "Загрузка...",
+
+		// Agents section
+		agentsSection: "Агенты Cristal",
+		addAgent: "Добавить агента",
+		comingSoon: "Скоро",
+		agentAlreadyExists: "Уже добавлен",
+		defaultAgent: "Агент по умолчанию",
+		defaultAgentDesc: "Какой агент использовать по умолчанию для новых чатов",
+		agentSettingsTitle: "Настройки",
+		settingsButton: "Настройки",
+
+		// Codex-specific settings
+		codexCliPath: "Путь к Codex CLI",
+		codexCliPathDesc: "Путь к исполняемому файлу Codex CLI. Обычно просто 'codex', если установлен глобально.",
+		codexSystemInstructions: "Системные инструкции (AGENT.md)",
+		codexSystemInstructionsDesc: "Файл в корне хранилища, определяющий поведение Codex. Читается автоматически.",
+		codexDeepReasoning: "Глубокое мышление",
+		codexDeepReasoningDesc: "Включить расширенное мышление (режим Extra High)",
+
+		// Updated model description
+		defaultModelDescNoSlash: "Модель для новых чатов.",
+
+		// Terminal integration
+		startIntegration: "Начать интеграцию",
+		openTerminal: "Открыть терминал",
+		integrationNote: "Откроет терминал и начнёт установку CLI"
 	},
 
 	en: {
@@ -198,7 +250,7 @@ export const SETTINGS_LOCALES: Record<LanguageCode, SettingsLocale> = {
 		deepThinkingDesc: "Enable extended thinking for new chats. Uses more tokens but provides deeper analysis.",
 
 		// Permissions section
-		claudePermissions: "Claude Permissions",
+		agentPermissions: "Agent Permissions",
 		permissionsNote: "Basic capabilities (always enabled): Reading and editing notes (.md, .canvas, .base). Bash commands and .obsidian folder access are always blocked.",
 		webSearch: "Web Search",
 		webSearchDesc: "Allow Claude to search the internet for information",
@@ -271,7 +323,33 @@ export const SETTINGS_LOCALES: Record<LanguageCode, SettingsLocale> = {
 		systemInstructionsTitle: "System Instructions",
 		systemInstructionsModalDesc: "This file (CLAUDE.md) is located in your vault root. Claude reads it automatically before each conversation.",
 		resetToDefaultButton: "Reset to default",
-		loadingPlaceholder: "Loading..."
+		loadingPlaceholder: "Loading...",
+
+		// Agents section
+		agentsSection: "Cristal Agents",
+		addAgent: "Add agent",
+		comingSoon: "Coming soon",
+		agentAlreadyExists: "Already added",
+		defaultAgent: "Default agent",
+		defaultAgentDesc: "Which agent to use by default for new chats",
+		agentSettingsTitle: "Settings",
+		settingsButton: "Settings",
+
+		// Codex-specific settings
+		codexCliPath: "Codex CLI path",
+		codexCliPathDesc: "Path to the Codex CLI executable. Usually just 'codex' if installed globally.",
+		codexSystemInstructions: "System Instructions (AGENT.md)",
+		codexSystemInstructionsDesc: "A file in your vault root that defines how Codex behaves. Read automatically.",
+		codexDeepReasoning: "Deep thinking",
+		codexDeepReasoningDesc: "Enable extended thinking (Extra High mode)",
+
+		// Updated model description
+		defaultModelDescNoSlash: "Model used for new chats.",
+
+		// Terminal integration
+		startIntegration: "Start Integration",
+		openTerminal: "Open Terminal",
+		integrationNote: "Opens terminal and starts CLI installation"
 	},
 
 	fr: {
@@ -289,7 +367,7 @@ export const SETTINGS_LOCALES: Record<LanguageCode, SettingsLocale> = {
 		deepThinkingDesc: "Activer la réflexion étendue pour les nouveaux chats. Utilise plus de tokens mais offre une analyse plus profonde.",
 
 		// Permissions section
-		claudePermissions: "Permissions de Claude",
+		agentPermissions: "Permissions de l'agent",
 		permissionsNote: "Capacités de base (toujours activées): Lecture et édition de notes (.md, .canvas, .base). Les commandes Bash et l'accès au dossier .obsidian sont toujours bloqués.",
 		webSearch: "Recherche Web",
 		webSearchDesc: "Autoriser Claude à chercher des informations sur internet",
@@ -362,7 +440,33 @@ export const SETTINGS_LOCALES: Record<LanguageCode, SettingsLocale> = {
 		systemInstructionsTitle: "Instructions système",
 		systemInstructionsModalDesc: "Ce fichier (CLAUDE.md) se trouve à la racine de votre coffre. Claude le lit automatiquement avant chaque conversation.",
 		resetToDefaultButton: "Réinitialiser par défaut",
-		loadingPlaceholder: "Chargement..."
+		loadingPlaceholder: "Chargement...",
+
+		// Agents section
+		agentsSection: "Agents Cristal",
+		addAgent: "Ajouter un agent",
+		comingSoon: "Bientôt",
+		agentAlreadyExists: "Déjà ajouté",
+		defaultAgent: "Agent par défaut",
+		defaultAgentDesc: "Quel agent utiliser par défaut pour les nouveaux chats",
+		agentSettingsTitle: "Paramètres",
+		settingsButton: "Paramètres",
+
+		// Codex-specific settings
+		codexCliPath: "Chemin du CLI Codex",
+		codexCliPathDesc: "Chemin vers l'exécutable Codex CLI. Généralement juste 'codex' s'il est installé globalement.",
+		codexSystemInstructions: "Instructions système (AGENT.md)",
+		codexSystemInstructionsDesc: "Un fichier à la racine de votre coffre qui définit le comportement de Codex. Lu automatiquement.",
+		codexDeepReasoning: "Réflexion approfondie",
+		codexDeepReasoningDesc: "Activer la réflexion étendue (mode Extra High)",
+
+		// Updated model description
+		defaultModelDescNoSlash: "Modèle utilisé pour les nouveaux chats.",
+
+		// Terminal integration
+		startIntegration: "Démarrer l'intégration",
+		openTerminal: "Ouvrir le terminal",
+		integrationNote: "Ouvre le terminal et démarre l'installation du CLI"
 	},
 
 	de: {
@@ -380,7 +484,7 @@ export const SETTINGS_LOCALES: Record<LanguageCode, SettingsLocale> = {
 		deepThinkingDesc: "Erweitertes Denken für neue Chats aktivieren. Verbraucht mehr Tokens, bietet aber tiefere Analyse.",
 
 		// Permissions section
-		claudePermissions: "Claude Berechtigungen",
+		agentPermissions: "Agent-Berechtigungen",
 		permissionsNote: "Grundfunktionen (immer aktiviert): Lesen und Bearbeiten von Notizen (.md, .canvas, .base). Bash-Befehle und .obsidian Ordnerzugriff sind immer blockiert.",
 		webSearch: "Websuche",
 		webSearchDesc: "Claude erlauben, im Internet nach Informationen zu suchen",
@@ -453,7 +557,33 @@ export const SETTINGS_LOCALES: Record<LanguageCode, SettingsLocale> = {
 		systemInstructionsTitle: "Systemanweisungen",
 		systemInstructionsModalDesc: "Diese Datei (CLAUDE.md) befindet sich im Wurzelverzeichnis Ihres Tresors. Claude liest sie automatisch vor jedem Gespräch.",
 		resetToDefaultButton: "Auf Standard zurücksetzen",
-		loadingPlaceholder: "Laden..."
+		loadingPlaceholder: "Laden...",
+
+		// Agents section
+		agentsSection: "Cristal Agenten",
+		addAgent: "Agent hinzufügen",
+		comingSoon: "Demnächst",
+		agentAlreadyExists: "Bereits hinzugefügt",
+		defaultAgent: "Standard-Agent",
+		defaultAgentDesc: "Welcher Agent standardmäßig für neue Chats verwendet werden soll",
+		agentSettingsTitle: "Einstellungen",
+		settingsButton: "Einstellungen",
+
+		// Codex-specific settings
+		codexCliPath: "Codex CLI Pfad",
+		codexCliPathDesc: "Pfad zur Codex CLI ausführbaren Datei. Normalerweise nur 'codex', wenn global installiert.",
+		codexSystemInstructions: "Systemanweisungen (AGENT.md)",
+		codexSystemInstructionsDesc: "Eine Datei im Wurzelverzeichnis Ihres Tresors, die das Verhalten von Codex definiert. Wird automatisch gelesen.",
+		codexDeepReasoning: "Tiefes Denken",
+		codexDeepReasoningDesc: "Erweitertes Denken aktivieren (Extra High Modus)",
+
+		// Updated model description
+		defaultModelDescNoSlash: "Modell für neue Chats.",
+
+		// Terminal integration
+		startIntegration: "Integration starten",
+		openTerminal: "Terminal öffnen",
+		integrationNote: "Öffnet das Terminal und startet die CLI-Installation"
 	},
 
 	es: {
@@ -471,7 +601,7 @@ export const SETTINGS_LOCALES: Record<LanguageCode, SettingsLocale> = {
 		deepThinkingDesc: "Habilitar pensamiento extendido para nuevos chats. Usa más tokens pero proporciona un análisis más profundo.",
 
 		// Permissions section
-		claudePermissions: "Permisos de Claude",
+		agentPermissions: "Permisos del agente",
 		permissionsNote: "Capacidades básicas (siempre habilitadas): Lectura y edición de notas (.md, .canvas, .base). Los comandos Bash y el acceso a la carpeta .obsidian están siempre bloqueados.",
 		webSearch: "Búsqueda web",
 		webSearchDesc: "Permitir que Claude busque información en internet",
@@ -544,7 +674,33 @@ export const SETTINGS_LOCALES: Record<LanguageCode, SettingsLocale> = {
 		systemInstructionsTitle: "Instrucciones del sistema",
 		systemInstructionsModalDesc: "Este archivo (CLAUDE.md) está ubicado en la raíz de tu bóveda. Claude lo lee automáticamente antes de cada conversación.",
 		resetToDefaultButton: "Restablecer por defecto",
-		loadingPlaceholder: "Cargando..."
+		loadingPlaceholder: "Cargando...",
+
+		// Agents section
+		agentsSection: "Agentes de Cristal",
+		addAgent: "Agregar agente",
+		comingSoon: "Próximamente",
+		agentAlreadyExists: "Ya agregado",
+		defaultAgent: "Agente predeterminado",
+		defaultAgentDesc: "Qué agente usar por defecto para nuevos chats",
+		agentSettingsTitle: "Configuración",
+		settingsButton: "Configuración",
+
+		// Codex-specific settings
+		codexCliPath: "Ruta del CLI de Codex",
+		codexCliPathDesc: "Ruta al ejecutable de Codex CLI. Normalmente solo 'codex' si está instalado globalmente.",
+		codexSystemInstructions: "Instrucciones del sistema (AGENT.md)",
+		codexSystemInstructionsDesc: "Un archivo en la raíz de tu bóveda que define cómo se comporta Codex. Se lee automáticamente.",
+		codexDeepReasoning: "Pensamiento profundo",
+		codexDeepReasoningDesc: "Habilitar pensamiento extendido (modo Extra High)",
+
+		// Updated model description
+		defaultModelDescNoSlash: "Modelo usado para nuevos chats.",
+
+		// Terminal integration
+		startIntegration: "Iniciar integración",
+		openTerminal: "Abrir terminal",
+		integrationNote: "Abre el terminal e inicia la instalación del CLI"
 	},
 
 	hi: {
@@ -562,7 +718,7 @@ export const SETTINGS_LOCALES: Record<LanguageCode, SettingsLocale> = {
 		deepThinkingDesc: "नई चैट के लिए विस्तारित सोच सक्षम करें। अधिक टोकन का उपयोग करता है लेकिन गहरा विश्लेषण प्रदान करता है।",
 
 		// Permissions section
-		claudePermissions: "Claude अनुमतियाँ",
+		agentPermissions: "एजेंट अनुमतियाँ",
 		permissionsNote: "बुनियादी क्षमताएं (हमेशा सक्षम): नोट्स पढ़ना और संपादित करना (.md, .canvas, .base)। Bash कमांड और .obsidian फ़ोल्डर एक्सेस हमेशा अवरुद्ध हैं।",
 		webSearch: "वेब खोज",
 		webSearchDesc: "Claude को इंटरनेट पर जानकारी खोजने की अनुमति दें",
@@ -635,7 +791,33 @@ export const SETTINGS_LOCALES: Record<LanguageCode, SettingsLocale> = {
 		systemInstructionsTitle: "सिस्टम निर्देश",
 		systemInstructionsModalDesc: "यह फ़ाइल (CLAUDE.md) आपके वॉल्ट रूट में स्थित है। Claude इसे प्रत्येक वार्तालाप से पहले स्वचालित रूप से पढ़ता है।",
 		resetToDefaultButton: "डिफ़ॉल्ट पर रीसेट करें",
-		loadingPlaceholder: "लोड हो रहा है..."
+		loadingPlaceholder: "लोड हो रहा है...",
+
+		// Agents section
+		agentsSection: "Cristal एजेंट",
+		addAgent: "एजेंट जोड़ें",
+		comingSoon: "जल्द आ रहा है",
+		agentAlreadyExists: "पहले से जोड़ा गया",
+		defaultAgent: "डिफ़ॉल्ट एजेंट",
+		defaultAgentDesc: "नई चैट के लिए कौन सा एजेंट डिफ़ॉल्ट रूप से उपयोग करना है",
+		agentSettingsTitle: "सेटिंग्स",
+		settingsButton: "सेटिंग्स",
+
+		// Codex-specific settings
+		codexCliPath: "Codex CLI पथ",
+		codexCliPathDesc: "Codex CLI निष्पादन योग्य फ़ाइल का पथ। आमतौर पर बस 'codex' अगर विश्व स्तर पर स्थापित है।",
+		codexSystemInstructions: "सिस्टम निर्देश (AGENT.md)",
+		codexSystemInstructionsDesc: "आपके वॉल्ट रूट में एक फ़ाइल जो Codex के व्यवहार को परिभाषित करती है। स्वचालित रूप से पढ़ा जाता है।",
+		codexDeepReasoning: "गहन सोच",
+		codexDeepReasoningDesc: "विस्तारित सोच सक्षम करें (Extra High मोड)",
+
+		// Updated model description
+		defaultModelDescNoSlash: "नई चैट के लिए मॉडल।",
+
+		// Terminal integration
+		startIntegration: "एकीकरण शुरू करें",
+		openTerminal: "टर्मिनल खोलें",
+		integrationNote: "टर्मिनल खोलता है और CLI इंस्टॉलेशन शुरू करता है"
 	},
 
 	zh: {
@@ -653,7 +835,7 @@ export const SETTINGS_LOCALES: Record<LanguageCode, SettingsLocale> = {
 		deepThinkingDesc: "为新聊天启用扩展思考。使用更多令牌但提供更深入的分析。",
 
 		// Permissions section
-		claudePermissions: "Claude 权限",
+		agentPermissions: "代理权限",
 		permissionsNote: "基本功能（始终启用）：读取和编辑笔记（.md、.canvas、.base）。Bash 命令和 .obsidian 文件夹访问始终被阻止。",
 		webSearch: "网络搜索",
 		webSearchDesc: "允许 Claude 在互联网上搜索信息",
@@ -726,7 +908,33 @@ export const SETTINGS_LOCALES: Record<LanguageCode, SettingsLocale> = {
 		systemInstructionsTitle: "系统指令",
 		systemInstructionsModalDesc: "此文件 (CLAUDE.md) 位于您的保险库根目录。Claude 在每次对话前自动读取它。",
 		resetToDefaultButton: "重置为默认",
-		loadingPlaceholder: "加载中..."
+		loadingPlaceholder: "加载中...",
+
+		// Agents section
+		agentsSection: "Cristal 代理",
+		addAgent: "添加代理",
+		comingSoon: "即将推出",
+		agentAlreadyExists: "已添加",
+		defaultAgent: "默认代理",
+		defaultAgentDesc: "新聊天默认使用哪个代理",
+		agentSettingsTitle: "设置",
+		settingsButton: "设置",
+
+		// Codex-specific settings
+		codexCliPath: "Codex CLI 路径",
+		codexCliPathDesc: "Codex CLI 可执行文件的路径。如果全局安装，通常只需 'codex'。",
+		codexSystemInstructions: "系统指令 (AGENT.md)",
+		codexSystemInstructionsDesc: "位于您保险库根目录的文件，定义 Codex 的行为方式。自动读取。",
+		codexDeepReasoning: "深度思考",
+		codexDeepReasoningDesc: "启用扩展思考（Extra High 模式）",
+
+		// Updated model description
+		defaultModelDescNoSlash: "用于新聊天的模型。",
+
+		// Terminal integration
+		startIntegration: "开始集成",
+		openTerminal: "打开终端",
+		integrationNote: "打开终端并开始 CLI 安装"
 	},
 
 	ja: {
@@ -744,7 +952,7 @@ export const SETTINGS_LOCALES: Record<LanguageCode, SettingsLocale> = {
 		deepThinkingDesc: "新しいチャットで拡張思考を有効にする。より多くのトークンを使用しますが、より深い分析を提供します。",
 
 		// Permissions section
-		claudePermissions: "Claude 権限",
+		agentPermissions: "エージェント権限",
 		permissionsNote: "基本機能（常に有効）：ノートの読み取りと編集（.md、.canvas、.base）。Bash コマンドと .obsidian フォルダへのアクセスは常にブロックされます。",
 		webSearch: "ウェブ検索",
 		webSearchDesc: "Claude にインターネットでの情報検索を許可",
@@ -817,7 +1025,33 @@ export const SETTINGS_LOCALES: Record<LanguageCode, SettingsLocale> = {
 		systemInstructionsTitle: "システム指示",
 		systemInstructionsModalDesc: "このファイル（CLAUDE.md）は保管庫のルートにあります。Claude は各会話の前に自動的に読み込みます。",
 		resetToDefaultButton: "デフォルトにリセット",
-		loadingPlaceholder: "読み込み中..."
+		loadingPlaceholder: "読み込み中...",
+
+		// Agents section
+		agentsSection: "Cristal エージェント",
+		addAgent: "エージェントを追加",
+		comingSoon: "近日公開",
+		agentAlreadyExists: "追加済み",
+		defaultAgent: "デフォルトエージェント",
+		defaultAgentDesc: "新しいチャットでデフォルトで使用するエージェント",
+		agentSettingsTitle: "設定",
+		settingsButton: "設定",
+
+		// Codex-specific settings
+		codexCliPath: "Codex CLI パス",
+		codexCliPathDesc: "Codex CLI 実行ファイルへのパス。グローバルにインストールされている場合は通常 'codex' のみ。",
+		codexSystemInstructions: "システム指示 (AGENT.md)",
+		codexSystemInstructionsDesc: "Codex の動作を定義する保管庫ルートのファイル。自動的に読み込まれます。",
+		codexDeepReasoning: "深い思考",
+		codexDeepReasoningDesc: "拡張思考を有効にする（Extra High モード）",
+
+		// Updated model description
+		defaultModelDescNoSlash: "新しいチャットで使用するモデル。",
+
+		// Terminal integration
+		startIntegration: "統合を開始",
+		openTerminal: "ターミナルを開く",
+		integrationNote: "ターミナルを開いてCLIのインストールを開始します"
 	}
 };
 
