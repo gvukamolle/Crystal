@@ -1,17 +1,26 @@
-# Obsidian Claude Plugin
+# Cristal - Multi-Agent Obsidian Plugin
 
 ## Обзор проекта
 
-Плагин для Obsidian, интегрирующий Claude AI через Claude Code CLI. Использует существующую подписку Claude Pro/Max через OAuth аутентификацию CLI.
+Плагин для Obsidian, интегрирующий несколько AI провайдеров через CLI:
+- **Claude AI** (Anthropic) через Claude Code CLI
+- **Codex** (OpenAI) через Codex CLI
+- Расширяемая архитектура для добавления новых агентов (Gemini, Grok и другие)
+
+Использует существующие подписки через OAuth аутентификацию CLI.
 
 ### Цель
-Нативный AI-ассистент в Obsidian с UX уровня Notion AI, но с полной мощью Claude и доступом к vault.
+Нативная multi-agent система в Obsidian с:
+- Полным доступом к vault
+- Гибкими разрешениями (для Claude)
+- Встроенным терминалом для управления CLI
+- Статистикой использования с визуальными лимитами
 
 ### Ключевое ограничение
-Anthropic **официально не разрешает** third-party приложениям использовать OAuth подписку:
+Anthropic и OpenAI **официально не разрешают** third-party приложениям использовать OAuth подписку напрямую:
 > "Unless previously approved, we do not allow third party developers to offer Claude.ai login or rate limits for their products"
 
-Плагин работает как wrapper над локально установленным Claude Code CLI — пользователь должен сам залогиниться в CLI.
+**Решение:** Плагин работает как wrapper над локально установленными CLI — пользователь сам авторизуется в CLI, и плагин использует их как subprocess. Это легальный способ интеграции, так как CLI принадлежат самим провайдерам.
 
 ---
 
@@ -20,37 +29,76 @@ Anthropic **официально не разрешает** third-party прил�
 ### High-level flow
 
 ```
-┌─────────────────┐     spawn + stdin/stdout      ┌─────────────────┐
-│  Obsidian       │ ──────────────────────────────▶│  Claude CLI     │
-│  Plugin         │ ◀────────────────────────────── │  (subprocess)   │
-│                 │         JSONL stream           │                 │
-└─────────────────┘                                └─────────────────┘
-                                                          │
-                                                          ▼
-                                                   ┌─────────────────┐
-                                                   │  Anthropic API  │
-                                                   │  (OAuth auth)   │
-                                                   └─────────────────┘
+┌──────────────────────────────────────────────────────────────┐
+│                      Obsidian Plugin                         │
+│                                                              │
+│  ┌──────────────┐  ┌──────────────┐  ┌──────────────┐     │
+│  │   ChatView   │  │TerminalView  │  │   Settings   │     │
+│  │              │  │              │  │              │     │
+│  └──────┬───────┘  └──────┬───────┘  └──────┬───────┘     │
+│         │                  │                  │              │
+│  ┌──────▼──────────────────▼──────────────────▼───────┐    │
+│  │            CristalPlugin (main.ts)                  │    │
+│  │  - settings.agents (AgentConfig[])                  │    │
+│  │  - settings.defaultAgentId                          │    │
+│  │  - ChatView переключает между сервисами             │    │
+│  └──────┬───────────────────┬──────────────────────────┘    │
+│         │                   │                                │
+│  ┌──────▼──────┐     ┌──────▼──────┐                       │
+│  │ClaudeService│     │CodexService │                       │
+│  │- spawn CLI  │     │- spawn CLI  │                       │
+│  │- stream-json│     │- json events│                       │
+│  │- sessions   │     │- threads    │                       │
+│  └──────┬──────┘     └──────┬──────┘                       │
+│         │                   │                                │
+│  ┌──────▼───────────────────▼──────┐                       │
+│  │     UsageLimitsService           │                       │
+│  │  - fetchClaudeUsage() (API)      │                       │
+│  │  - fetchCodexUsage() (sessions)  │                       │
+│  └──────────────────────────────────┘                       │
+└─────────┼───────────────────┼────────────────────────────────┘
+          │                   │
+    ┌─────▼──────┐     ┌─────▼──────┐
+    │Claude CLI  │     │Codex CLI   │
+    │(subprocess)│     │(subprocess)│
+    └─────┬──────┘     └─────┬──────┘
+          │                   │
+    ┌─────▼──────┐     ┌─────▼──────┐
+    │Anthropic   │     │OpenAI      │
+    │API (OAuth) │     │API (OAuth) │
+    └────────────┘     └────────────┘
 ```
 
 ### Структура проекта
 
 ```
-obsidian-claude/
+cristal/
 ├── src/
-│   ├── main.ts              # Plugin entry, регистрация view и commands
-│   ├── ClaudeService.ts     # Управление subprocess, IPC с CLI
-│   ├── ChatView.ts          # ItemView для sidebar чата
-│   ├── MessageParser.ts     # JSONL stream parser
-│   ├── SessionManager.ts    # Управление сессиями (multi-turn)
-│   └── types.ts             # TypeScript типы
-├── styles.css               # Стили чата
-├── manifest.json            # Obsidian plugin manifest
+│   ├── main.ts                    # Plugin entry (CristalPlugin class)
+│   ├── ClaudeService.ts           # Claude Code CLI wrapper
+│   ├── CodexService.ts            # Codex CLI wrapper
+│   ├── ChatView.ts                # Chat UI (ItemView)
+│   ├── UsageLimitsService.ts      # Token tracking & API limits
+│   ├── cliDetector.ts             # CLI auto-detection (which/where)
+│   ├── codexConfig.ts             # Codex config.toml manager
+│   ├── settings.ts                # Settings UI & persistence
+│   ├── systemPrompts.ts           # AI instructions (8 languages)
+│   ├── types.ts                   # TypeScript types & interfaces
+│   └── terminal/
+│       ├── TerminalView.ts        # Terminal UI (ItemView)
+│       ├── TerminalService.ts     # Terminal session management
+│       ├── XtermWrapper.ts        # xterm.js wrapper
+│       └── types.ts               # Terminal types (IPtyBackend, etc.)
+├── styles.css
+├── manifest.json
 ├── package.json
-├── tsconfig.json
-├── esbuild.config.mjs       # Build config
-└── README.md
+└── tsconfig.json
 ```
+
+**Ключевые отличия от типичного Obsidian плагина:**
+- Нет отдельного AgentManager.ts (управление через settings.agents в main.ts)
+- Терминал в отдельной папке terminal/
+- UsageLimitsService работает с обоими CLI разными способами (API vs session parsing)
 
 ---
 
@@ -299,37 +347,147 @@ export class ClaudeChatView extends ItemView {
 
 ---
 
-## Milestones
+## Codex CLI
 
-### Milestone 1: Basic Chat
-**Точка А:** Пустая папка  
-**Точка Б:** Работающий плагин с sidebar чатом
+### Установка
+```bash
+npm install -g @openai/codex-cli
+```
 
-- [ ] Scaffold плагина (manifest, package.json, tsconfig)
-- [ ] ClaudeService — spawn CLI, parse JSONL
-- [ ] ChatView — базовый UI (input + messages)
-- [ ] Регистрация view в Obsidian
-- [ ] Error handling (CLI not found, auth errors)
+### Аутентификация
+OAuth flow через `codex` команду — откроется браузер для авторизации.
 
-### Milestone 2: Sessions & UX
-- [ ] Session management (continue conversation)
-- [ ] Message history persistence
-- [ ] Markdown rendering в ответах
-- [ ] Code blocks с syntax highlighting
-- [ ] Copy button для code blocks
+### Хранение credentials
+- Config: `~/.codex/config.toml`
+- Sessions: `~/.codex/sessions/` (JSONL файлы с историей)
 
-### Milestone 3: Vault Integration
-- [ ] Context: текущий файл
-- [ ] Context: выделенный текст
-- [ ] Tool use: чтение файлов vault
-- [ ] Tool use: запись/редактирование файлов
+### Headless Mode
+```bash
+codex exec --json --skip-git-repo-check \
+  --sandbox danger-full-access \
+  --reasoning-level medium \
+  --message "your prompt"
+```
 
-### Milestone 4: Advanced
-- [ ] MCP servers integration
-- [ ] Custom system prompts
-- [ ] Settings UI
-- [ ] Keyboard shortcuts
-- [ ] Mobile support (если возможно)
+### Output Format — JSON Events
+```json
+{"event": "thread.started", "thread_id": "..."}
+{"event": "turn.started"}
+{"event": "item.started", "type": "agent_message"}
+{"event": "item.updated", "delta": {"text": "..."}}
+{"event": "item.completed"}
+{"event": "turn.completed", "usage": {...}}
+```
+
+### Item Types
+- `agent_message` — AI response
+- `reasoning` — deep reasoning output
+- `command_execution` — bash commands
+- `file_read` / `file_write` / `file_change`
+- `mcp_tool_call`
+- `web_search`
+- `todo_list`
+- `error`
+
+---
+
+## Multi-Agent Architecture
+
+### AgentConfig
+```typescript
+interface AgentConfig {
+  id: string;                      // Unique ID
+  cliType: "claude" | "codex";     // CLI type
+  name: string;                    // Display name
+  description: string;             // Agent description
+  enabled: boolean;                // Active/inactive
+  cliPath: string;                 // Path to CLI binary
+  model: string;                   // Default model
+
+  // Claude-specific
+  thinkingEnabled?: boolean;       // Extended thinking
+  permissions?: {
+    webSearch: boolean;
+    webFetch: boolean;
+    task: boolean;
+  };
+
+  // Codex-specific
+  reasoningEnabled?: boolean;      // false=medium, true=xhigh
+}
+```
+
+### Default Agents (types.ts:234)
+1. **Claude** (id: "claude-default")
+   - enabled: true
+   - model: claude-haiku-4-5-20251001
+   - thinkingEnabled: false
+   - permissions: { webSearch: false, webFetch: false, task: false }
+
+2. **Codex** (id: "codex-default")
+   - enabled: false
+   - model: gpt-5.2-codex
+   - reasoningEnabled: false (= medium)
+
+### CLI Auto-Detection (cliDetector.ts)
+- `which` / `where` команды
+- Platform-specific paths:
+  - macOS: `/usr/local/bin`, `/opt/homebrew/bin`, `~/.npm/bin`
+  - Linux: `/usr/local/bin`, `/usr/bin`, `~/.npm/bin`
+  - Windows: `%APPDATA%/npm`, `C:\Program Files\nodejs`
+- NVM support — рекурсивный поиск в `~/.nvm/versions/node/*/bin`
+
+---
+
+## Terminal Integration
+
+### Компоненты
+- `terminal/TerminalView.ts` — Obsidian ItemView с xterm.js
+- `terminal/TerminalService.ts` — управление сессиями
+- `terminal/XtermWrapper.ts` — обертка над xterm.js
+- `terminal/types.ts` — IPtyBackend, TerminalSession
+
+### Возможности
+- Установка CLI через встроенный терминал
+- OAuth авторизация прямо в плагине
+- Настройки: fontSize, fontFamily, scrollback, cursorStyle
+- Restart и Close через UI
+
+---
+
+## Usage Tracking
+
+### UsageLimitsService
+
+#### Claude Usage (API)
+Источник: `https://api.anthropic.com/api/oauth/usage`
+
+Получение токена:
+- macOS: Keychain — `security find-generic-password -s "Claude Code-credentials" -w`
+- Linux: `~/.claude/.credentials.json`
+
+Response:
+```typescript
+interface ClaudeUsageLimits {
+  fiveHour: { utilization: number; resetsAt: string | null };
+  sevenDay: { utilization: number; resetsAt: string | null };
+  sevenDayOpus?: { utilization: number; resetsAt: string | null };
+  sevenDaySonnet?: { utilization: number; resetsAt: string | null };
+}
+```
+
+#### Codex Usage (Session Parsing)
+Источник: `~/.codex/sessions/` — парсинг `token_count` events
+
+Формат:
+```json
+{"type": "event_msg", "payload": {"type": "token_count", "rate_limits": {
+  "primary": {"used_percent": 0.42, "resets_at": 1736780400},
+  "secondary": {"used_percent": 0.15, "resets_at": 1737385200}
+}}}
+```
+
+Маппинг: `primary` → 5-hour, `secondary` → 7-day
 
 ---
 
@@ -357,48 +515,72 @@ Claude Pro/Max имеет rate limits на количество сообщени
 
 ## Development Setup
 
+### Prerequisites
+- Node.js 18+
+- Claude CLI и/или Codex CLI (для тестирования)
+- Obsidian desktop app
+
+### Installation
 ```bash
-# Clone repo
-git clone <repo-url>
-cd obsidian-claude
-
-# Install dependencies
+git clone <repo>
+cd cristal
 npm install
+```
 
-# Development build (watch mode)
-npm run dev
-
-# Production build
-npm run build
-
-# Install to Obsidian vault (symlink)
-ln -s $(pwd) /path/to/vault/.obsidian/plugins/obsidian-claude
+### Development
+```bash
+npm run dev  # Watch mode compilation
 ```
 
 ### Testing
+1. Symlink plugin to Obsidian vault:
+   ```bash
+   ln -s $(pwd) /path/to/vault/.obsidian/plugins/cristal
+   ```
+2. Reload Obsidian (Cmd/Ctrl+R)
+3. Enable plugin in Settings → Community Plugins
+4. Убедитесь, что хотя бы один CLI установлен и авторизован
 
-1. Убедись что Claude CLI установлен и залогинен
-2. Открой Obsidian с dev vault
-3. Enable plugin в Settings → Community Plugins
-4. Открой Claude Chat view
+### Building
+```bash
+npm run build  # Production build
+```
+
+### Debugging
+- Chrome DevTools: View → Toggle Developer Tools
+- Console logs с префиксом `[Cristal]`
+- Terminal logs для CLI output
+- Используйте встроенный терминал плагина для отладки CLI
 
 ---
 
 ## Resources
 
+### Obsidian
 - [Obsidian Plugin Sample](https://github.com/obsidianmd/obsidian-sample-plugin)
 - [Obsidian API Docs](https://docs.obsidian.md/Plugins/Getting+started/Build+a+plugin)
+
+### Claude
 - [Claude Code Docs - Headless Mode](https://code.claude.com/docs/en/headless)
 - [Claude Agent SDK TypeScript](https://github.com/anthropics/claude-agent-sdk-typescript)
 - [Claude Code CLI Reference](https://code.claude.com/docs/en/cli-reference)
+- [Anthropic API Docs](https://docs.anthropic.com)
+
+### Codex
+- [OpenAI Codex CLI Docs](https://platform.openai.com/docs/guides/codex)
+- [OpenAI API Reference](https://platform.openai.com/docs/api-reference)
+
+### Libraries
+- [xterm.js](https://xtermjs.org/) — Terminal emulator
+- [node-pty](https://github.com/microsoft/node-pty) — Pseudoterminal bindings
 
 ---
 
 ## Legal Note
 
-Этот плагин использует Claude Code CLI как subprocess. Пользователь самостоятельно:
-- Устанавливает Claude Code CLI
-- Проходит аутентификацию
-- Несёт ответственность за соблюдение Terms of Service Anthropic
+Этот плагин использует CLI инструменты как subprocess. Пользователь самостоятельно:
+- Устанавливает Claude Code CLI и/или Codex CLI
+- Проходит аутентификацию через официальные OAuth flows
+- Несёт ответственность за соблюдение Terms of Service провайдеров (Anthropic, OpenAI)
 
-Плагин не хранит и не передаёт credentials пользователя.
+Плагин не хранит и не передаёт credentials пользователя. Все токены управляются CLI инструментами.
