@@ -1,7 +1,8 @@
 import { spawn, ChildProcess } from "child_process";
 import { EventEmitter } from "events";
 import * as os from "os";
-import type { ToolUseBlock, PendingMessage } from "./types";
+import type { ToolUseBlock, PendingMessage, CodexPermissions } from "./types";
+import { DEFAULT_CODEX_PERMISSIONS } from "./types";
 
 // Codex CLI event types
 interface CodexThreadStarted {
@@ -65,12 +66,18 @@ export class CodexService extends EventEmitter {
 	private pendingMessages: Map<string, PendingMessage> = new Map();
 	private cliPath: string;
 	private workingDir: string;
+	private permissions: CodexPermissions;
 	private debug = true;
 
 	constructor(cliPath: string = "codex", workingDir: string = process.cwd()) {
 		super();
 		this.cliPath = cliPath;
 		this.workingDir = workingDir;
+		this.permissions = { ...DEFAULT_CODEX_PERMISSIONS };
+	}
+
+	setPermissions(permissions: CodexPermissions): void {
+		this.permissions = permissions;
 	}
 
 	private log(...args: unknown[]): void {
@@ -97,8 +104,8 @@ export class CodexService extends EventEmitter {
 
 		this.pendingMessages.set(sessionId, { text: "", tools: [] });
 
-		// Build args - use workspace-write sandbox for security (only vault access by default)
-		const args = ["exec", "--json", "--skip-git-repo-check", "--sandbox", "workspace-write"];
+		// Build args using permissions
+		const args = ["exec", "--json", "--skip-git-repo-check", "--sandbox", this.permissions.sandboxMode];
 
 		// Add directories for attached files outside vault
 		if (additionalDirs && additionalDirs.length > 0) {

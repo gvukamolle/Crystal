@@ -42,7 +42,15 @@ export class ClaudeService extends EventEmitter {
 		super();
 		this.cliPath = cliPath;
 		this.workingDir = workingDir;
-		this.permissions = { webSearch: false, webFetch: false, task: false };
+		this.permissions = {
+			webSearch: false,
+			webFetch: false,
+			task: false,
+			fileRead: true,
+			fileWrite: true,
+			fileEdit: true,
+			extendedThinking: false
+		};
 	}
 
 	private log(...args: unknown[]): void {
@@ -68,30 +76,44 @@ export class ClaudeService extends EventEmitter {
 		const claudeDir = path.join(this.workingDir, ".claude");
 		const configPath = path.join(claudeDir, "settings.json");
 
-		// Build permissions config
-		const allowRules: string[] = [
-			// Always allow reading/editing Obsidian file types
-			"Read(./**/*.md)",
-			"Read(./**/*.canvas)",
-			"Read(./**/*.base)",
-			"Edit(./**/*.md)",
-			"Edit(./**/*.canvas)",
-			"Edit(./**/*.base)",
-			"Write(./**/*.md)",
-			"Write(./**/*.canvas)",
-			"Write(./**/*.base)",
-			"Delete(./**/*.md)",
-			"Delete(./**/*.canvas)",
-			"Delete(./**/*.base)"
-		];
+		// Build permissions config based on user settings
+		const allowRules: string[] = [];
 
-		// Optional permissions
+		// File operations - granular control
+		if (this.permissions.fileRead) {
+			allowRules.push(
+				"Read(./**/*.md)",
+				"Read(./**/*.canvas)",
+				"Read(./**/*.base)"
+			);
+		}
+		if (this.permissions.fileEdit) {
+			allowRules.push(
+				"Edit(./**/*.md)",
+				"Edit(./**/*.canvas)",
+				"Edit(./**/*.base)"
+			);
+		}
+		if (this.permissions.fileWrite) {
+			allowRules.push(
+				"Write(./**/*.md)",
+				"Write(./**/*.canvas)",
+				"Write(./**/*.base)",
+				"Delete(./**/*.md)",
+				"Delete(./**/*.canvas)",
+				"Delete(./**/*.base)"
+			);
+		}
+
+		// Web operations
 		if (this.permissions.webSearch) {
 			allowRules.push("WebSearch");
 		}
 		if (this.permissions.webFetch) {
 			allowRules.push("WebFetch");
 		}
+
+		// Agent operations
 		if (this.permissions.task) {
 			allowRules.push("Task");
 		}

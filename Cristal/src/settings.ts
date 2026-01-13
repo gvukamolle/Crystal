@@ -1,7 +1,7 @@
 import { App, PluginSettingTab, Setting, Modal, TextComponent, setIcon } from "obsidian";
 import type CristalPlugin from "./main";
-import type { SlashCommand, LanguageCode, ClaudeModel, AgentConfig, CLIType, ClaudePermissions } from "./types";
-import { CLAUDE_MODELS, CODEX_MODELS, CLI_INFO } from "./types";
+import type { SlashCommand, LanguageCode, ClaudeModel, AgentConfig, CLIType, ClaudePermissions, CodexPermissions } from "./types";
+import { CLAUDE_MODELS, CODEX_MODELS, CLI_INFO, DEFAULT_CLAUDE_PERMISSIONS, DEFAULT_CODEX_PERMISSIONS } from "./types";
 import { getBuiltinCommands } from "./commands";
 import { LANGUAGE_NAMES } from "./systemPrompts";
 import { checkCLIInstalled, checkCodexInstalled, detectCLIPath, detectCodexCLIPath } from "./cliDetector";
@@ -456,7 +456,8 @@ export class CristalSettingTab extends PluginSettingTab {
 
 		if (cliType === "claude") {
 			newAgent.thinkingEnabled = false;
-			newAgent.permissions = { webSearch: false, webFetch: false, task: false };
+			newAgent.permissions = { ...DEFAULT_CLAUDE_PERMISSIONS };
+			newAgent.enabledSkills = [];
 			// Try to detect CLI path
 			const detected = detectCLIPath();
 			if (detected.found) {
@@ -464,6 +465,8 @@ export class CristalSettingTab extends PluginSettingTab {
 			}
 		} else if (cliType === "codex") {
 			newAgent.reasoningEnabled = false;
+			newAgent.codexPermissions = { ...DEFAULT_CODEX_PERMISSIONS };
+			newAgent.enabledSkills = [];
 			// Try to detect CLI path
 			const detected = detectCodexCLIPath();
 			if (detected.found) {
@@ -672,7 +675,7 @@ class AgentSettingsModal extends Modal {
 		const cliStatusEl = contentEl.createDiv({ cls: "cristal-cli-status" });
 		this.checkAndDisplayCLIStatus(cliStatusEl);
 
-		// System Instructions (CLAUDE.md for Claude, AGENT.md for Codex)
+		// System Instructions (CLAUDE.md for Claude, AGENTS.md for Codex)
 		new Setting(contentEl)
 			.setName(this.agent.cliType === "codex" ? this.locale.codexSystemInstructions : this.locale.systemInstructions)
 			.setDesc(this.agent.cliType === "codex" ? this.locale.codexSystemInstructionsDesc : this.locale.systemInstructionsDesc)
@@ -752,13 +755,20 @@ class AgentSettingsModal extends Modal {
 
 		// Claude-specific settings
 		if (this.agent.cliType === "claude") {
-			// Deep thinking mode
+			const permissions = this.agent.permissions || { ...DEFAULT_CLAUDE_PERMISSIONS };
+
+			// Extended Thinking (moved from permissions, placed right after model selection)
 			new Setting(contentEl)
-				.setName(this.locale.deepThinking)
-				.setDesc(this.locale.deepThinkingDesc)
+				.setName(this.locale.extendedThinking || "Extended Thinking")
+				.setDesc(this.locale.extendedThinkingDesc || "Enable deeper analysis mode for complex tasks")
 				.addToggle(toggle => toggle
-					.setValue(this.agent.thinkingEnabled || false)
+					.setValue(permissions.extendedThinking)
 					.onChange(async (value) => {
+						if (!this.agent.permissions) {
+							this.agent.permissions = { ...DEFAULT_CLAUDE_PERMISSIONS };
+						}
+						this.agent.permissions.extendedThinking = value;
+						// Also sync to legacy field for backwards compatibility
 						this.agent.thinkingEnabled = value;
 						await this.plugin.saveSettings();
 					}));
@@ -771,7 +781,50 @@ class AgentSettingsModal extends Modal {
 				text: this.locale.permissionsNote
 			});
 
-			const permissions = this.agent.permissions || { webSearch: false, webFetch: false, task: false };
+			// File Operations
+			contentEl.createEl("h4", { text: this.locale.fileOperations || "File Operations" });
+
+			new Setting(contentEl)
+				.setName(this.locale.fileRead || "Read files")
+				.setDesc(this.locale.fileReadDesc || "Allow reading files in vault")
+				.addToggle(toggle => toggle
+					.setValue(permissions.fileRead)
+					.onChange(async (value) => {
+						if (!this.agent.permissions) {
+							this.agent.permissions = { ...DEFAULT_CLAUDE_PERMISSIONS };
+						}
+						this.agent.permissions.fileRead = value;
+						await this.plugin.saveSettings();
+					}));
+
+			new Setting(contentEl)
+				.setName(this.locale.fileWrite || "Write files")
+				.setDesc(this.locale.fileWriteDesc || "Allow creating new files")
+				.addToggle(toggle => toggle
+					.setValue(permissions.fileWrite)
+					.onChange(async (value) => {
+						if (!this.agent.permissions) {
+							this.agent.permissions = { ...DEFAULT_CLAUDE_PERMISSIONS };
+						}
+						this.agent.permissions.fileWrite = value;
+						await this.plugin.saveSettings();
+					}));
+
+			new Setting(contentEl)
+				.setName(this.locale.fileEdit || "Edit files")
+				.setDesc(this.locale.fileEditDesc || "Allow editing existing files")
+				.addToggle(toggle => toggle
+					.setValue(permissions.fileEdit)
+					.onChange(async (value) => {
+						if (!this.agent.permissions) {
+							this.agent.permissions = { ...DEFAULT_CLAUDE_PERMISSIONS };
+						}
+						this.agent.permissions.fileEdit = value;
+						await this.plugin.saveSettings();
+					}));
+
+			// Web Operations
+			contentEl.createEl("h4", { text: this.locale.webOperations || "Web Operations" });
 
 			new Setting(contentEl)
 				.setName(this.locale.webSearch)
@@ -780,7 +833,7 @@ class AgentSettingsModal extends Modal {
 					.setValue(permissions.webSearch)
 					.onChange(async (value) => {
 						if (!this.agent.permissions) {
-							this.agent.permissions = { webSearch: false, webFetch: false, task: false };
+							this.agent.permissions = { ...DEFAULT_CLAUDE_PERMISSIONS };
 						}
 						this.agent.permissions.webSearch = value;
 						await this.plugin.saveSettings();
@@ -793,11 +846,14 @@ class AgentSettingsModal extends Modal {
 					.setValue(permissions.webFetch)
 					.onChange(async (value) => {
 						if (!this.agent.permissions) {
-							this.agent.permissions = { webSearch: false, webFetch: false, task: false };
+							this.agent.permissions = { ...DEFAULT_CLAUDE_PERMISSIONS };
 						}
 						this.agent.permissions.webFetch = value;
 						await this.plugin.saveSettings();
 					}));
+
+			// Advanced
+			contentEl.createEl("h4", { text: this.locale.advanced || "Advanced" });
 
 			new Setting(contentEl)
 				.setName(this.locale.subAgents)
@@ -806,7 +862,7 @@ class AgentSettingsModal extends Modal {
 					.setValue(permissions.task)
 					.onChange(async (value) => {
 						if (!this.agent.permissions) {
-							this.agent.permissions = { webSearch: false, webFetch: false, task: false };
+							this.agent.permissions = { ...DEFAULT_CLAUDE_PERMISSIONS };
 						}
 						this.agent.permissions.task = value;
 						await this.plugin.saveSettings();
@@ -815,19 +871,68 @@ class AgentSettingsModal extends Modal {
 
 		// Codex-specific settings
 		if (this.agent.cliType === "codex") {
-			// Deep Reasoning (toggle: off = medium, on = xhigh)
+			// Permissions section
+			contentEl.createEl("h3", { text: this.locale.agentPermissions });
+
+			const codexPerms = this.agent.codexPermissions || { ...DEFAULT_CODEX_PERMISSIONS };
+
+			// Sandbox Mode
 			new Setting(contentEl)
-				.setName(this.locale.codexDeepReasoning || "Deep reasoning")
-				.setDesc(this.locale.codexDeepReasoningDesc || "Enable extra high reasoning for deeper analysis")
+				.setName(this.locale.sandboxMode || "Sandbox Mode")
+				.setDesc(this.locale.sandboxModeDesc || "Control file system access level")
+				.addDropdown(dropdown => {
+					dropdown
+						.addOption("read-only", this.locale.sandboxReadOnly || "Read Only")
+						.addOption("workspace-write", this.locale.sandboxWorkspaceWrite || "Workspace Write")
+						.addOption("danger-full-access", this.locale.sandboxFullAccess || "Full Access (Dangerous)")
+						.setValue(codexPerms.sandboxMode)
+						.onChange(async (value) => {
+							if (!this.agent.codexPermissions) {
+								this.agent.codexPermissions = { ...DEFAULT_CODEX_PERMISSIONS };
+							}
+							this.agent.codexPermissions.sandboxMode = value as "read-only" | "workspace-write" | "danger-full-access";
+							await this.plugin.saveSettings();
+						});
+				});
+
+			// Reasoning Level
+			new Setting(contentEl)
+				.setName(this.locale.codexReasoning || "Reasoning Level")
+				.setDesc(this.locale.codexReasoningDesc || "Depth of analysis for complex tasks")
+				.addDropdown(dropdown => {
+					dropdown
+						.addOption("off", this.locale.reasoningOff || "Off")
+						.addOption("medium", this.locale.reasoningMedium || "Medium")
+						.addOption("xhigh", this.locale.reasoningHigh || "Extra High")
+						.setValue(codexPerms.reasoning)
+						.onChange(async (value) => {
+							if (!this.agent.codexPermissions) {
+								this.agent.codexPermissions = { ...DEFAULT_CODEX_PERMISSIONS };
+							}
+							this.agent.codexPermissions.reasoning = value as "off" | "medium" | "xhigh";
+							await this.plugin.saveSettings();
+							// Write to ~/.codex/config.toml
+							setCodexReasoningLevel(value as "off" | "medium" | "xhigh");
+						});
+				});
+
+			// Web Search
+			new Setting(contentEl)
+				.setName(this.locale.webSearch)
+				.setDesc(this.locale.webSearchDesc)
 				.addToggle(toggle => toggle
-					.setValue(this.agent.reasoningEnabled || false)
+					.setValue(codexPerms.webSearch)
 					.onChange(async (value) => {
-						this.agent.reasoningEnabled = value;
+						if (!this.agent.codexPermissions) {
+							this.agent.codexPermissions = { ...DEFAULT_CODEX_PERMISSIONS };
+						}
+						this.agent.codexPermissions.webSearch = value;
 						await this.plugin.saveSettings();
-						// Write to ~/.codex/config.toml
-						setCodexReasoningLevel(value ? "xhigh" : "medium");
 					}));
 		}
+
+		// Skills section (for both Claude and Codex)
+		this.displaySkillsSection(contentEl);
 
 		// Getting Started section (collapsible)
 		this.displayGettingStarted(contentEl);
@@ -949,6 +1054,64 @@ class AgentSettingsModal extends Modal {
 		refreshBtn.addEventListener("click", () => {
 			this.checkAndDisplayCLIStatus(container);
 		});
+	}
+
+	private displaySkillsSection(container: HTMLElement): void {
+		// Skills section
+		container.createEl("h3", { text: this.locale.skills || "Skills" });
+
+		container.createEl("p", {
+			cls: "cristal-settings-note",
+			text: this.locale.skillsNote || "Skills provide specialized knowledge for Obsidian workflows"
+		});
+
+		// Get skills from plugin
+		const skillRefs = this.plugin.skillLoader?.getSkillReferences() || [];
+		const enabledSkills = this.agent.enabledSkills || [];
+
+		if (skillRefs.length === 0) {
+			container.createEl("p", {
+				cls: "cristal-settings-note",
+				text: this.locale.noSkillsAvailable || "No skills available. Skills will load when the plugin initializes."
+			});
+			return;
+		}
+
+		for (const skill of skillRefs) {
+			const isEnabled = enabledSkills.includes(skill.id);
+			const desc = skill.isBuiltin
+				? skill.description
+				: `${skill.description} (${this.locale.customSkill || "custom"})`;
+
+			new Setting(container)
+				.setName(skill.name)
+				.setDesc(desc)
+				.addToggle(toggle => toggle
+					.setValue(isEnabled)
+					.onChange(async (value) => {
+						if (!this.agent.enabledSkills) {
+							this.agent.enabledSkills = [];
+						}
+						if (value) {
+							if (!this.agent.enabledSkills.includes(skill.id)) {
+								this.agent.enabledSkills.push(skill.id);
+							}
+						} else {
+							this.agent.enabledSkills = this.agent.enabledSkills.filter(
+								id => id !== skill.id
+							);
+						}
+						await this.plugin.saveSettings();
+
+						// Sync skills to CLI directory
+						if (this.agent.cliType === "claude" || this.agent.cliType === "codex") {
+							await this.plugin.skillLoader?.syncSkillsForAgent(
+								this.agent.cliType,
+								this.agent.enabledSkills || []
+							);
+						}
+					}));
+		}
 	}
 
 	private displayGettingStarted(container: HTMLElement): void {
@@ -1277,7 +1440,7 @@ class CommandModal extends Modal {
 }
 
 /**
- * Modal for editing agent system instructions (CLAUDE.md or AGENT.md)
+ * Modal for editing agent system instructions (CLAUDE.md or AGENTS.md)
  */
 class AgentMdModal extends Modal {
 	private plugin: CristalPlugin;
@@ -1299,7 +1462,7 @@ class AgentMdModal extends Modal {
 		contentEl.empty();
 		contentEl.addClass("cristal-claudemd-modal");
 
-		const filename = this.agentType === "claude" ? "CLAUDE.md" : "AGENT.md";
+		const filename = this.agentType === "claude" ? "CLAUDE.md" : "AGENTS.md";
 		contentEl.createEl("h2", { text: `${filename} ${this.locale.systemInstructionsTitle || "Instructions"}` });
 
 		contentEl.createEl("p", {

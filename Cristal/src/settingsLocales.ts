@@ -23,6 +23,34 @@ export interface SettingsLocale {
 	webFetchDesc: string;
 	subAgents: string;
 	subAgentsDesc: string;
+	// New permissions
+	fileOperations: string;
+	fileRead: string;
+	fileReadDesc: string;
+	fileWrite: string;
+	fileWriteDesc: string;
+	fileEdit: string;
+	fileEditDesc: string;
+	webOperations: string;
+	advanced: string;
+	extendedThinking: string;
+	extendedThinkingDesc: string;
+	// Codex permissions
+	sandboxMode: string;
+	sandboxModeDesc: string;
+	sandboxReadOnly: string;
+	sandboxWorkspaceWrite: string;
+	sandboxFullAccess: string;
+	codexReasoning: string;
+	codexReasoningDesc: string;
+	reasoningOff: string;
+	reasoningMedium: string;
+	reasoningHigh: string;
+	// Skills section
+	skills: string;
+	skillsNote: string;
+	noSkillsAvailable: string;
+	customSkill: string;
 
 	// Slash Commands section
 	slashCommands: string;
@@ -172,6 +200,34 @@ export const SETTINGS_LOCALES: Record<LanguageCode, SettingsLocale> = {
 		webFetchDesc: "Разрешить Claude читать содержимое веб-страниц",
 		subAgents: "Субагенты (Task)",
 		subAgentsDesc: "Разрешить Claude запускать вспомогательных агентов для сложных задач",
+		// New permissions
+		fileOperations: "Операции с файлами",
+		fileRead: "Чтение файлов",
+		fileReadDesc: "Разрешить агенту читать файлы (.md, .canvas, .base)",
+		fileWrite: "Создание файлов",
+		fileWriteDesc: "Разрешить агенту создавать новые файлы",
+		fileEdit: "Редактирование файлов",
+		fileEditDesc: "Разрешить агенту изменять существующие файлы",
+		webOperations: "Веб-операции",
+		advanced: "Продвинутые",
+		extendedThinking: "Расширенное мышление",
+		extendedThinkingDesc: "Использовать extended thinking для глубокого анализа",
+		// Codex permissions
+		sandboxMode: "Режим песочницы",
+		sandboxModeDesc: "Уровень доступа Codex к файловой системе",
+		sandboxReadOnly: "Только чтение",
+		sandboxWorkspaceWrite: "Запись в рабочую область",
+		sandboxFullAccess: "Полный доступ (опасно)",
+		codexReasoning: "Уровень рассуждений",
+		codexReasoningDesc: "Глубина анализа Codex",
+		reasoningOff: "Выключено",
+		reasoningMedium: "Средний",
+		reasoningHigh: "Высокий",
+		// Skills section
+		skills: "Навыки",
+		skillsNote: "Навыки предоставляют агенту специализированные инструкции для работы с Obsidian",
+		noSkillsAvailable: "Нет доступных навыков",
+		customSkill: "Пользовательский",
 
 		// Slash Commands section
 		slashCommands: "Слеш-команды",
@@ -252,7 +308,7 @@ export const SETTINGS_LOCALES: Record<LanguageCode, SettingsLocale> = {
 		// Codex-specific settings
 		codexCliPath: "Путь к Codex CLI",
 		codexCliPathDesc: "Путь к исполняемому файлу Codex CLI. Обычно просто 'codex', если установлен глобально.",
-		codexSystemInstructions: "Системные инструкции (AGENT.md)",
+		codexSystemInstructions: "Системные инструкции (AGENTS.md)",
 		codexSystemInstructionsDesc: "Файл в корне хранилища, определяющий поведение Codex. Читается автоматически.",
 		codexDeepReasoning: "Глубокое мышление",
 		codexDeepReasoningDesc: "Включить расширенное мышление (режим Extra High)",
@@ -318,6 +374,34 @@ export const SETTINGS_LOCALES: Record<LanguageCode, SettingsLocale> = {
 		webFetchDesc: "Allow Claude to read content from web pages",
 		subAgents: "Sub-agents (Task)",
 		subAgentsDesc: "Allow Claude to launch helper agents for complex tasks",
+		// New permissions
+		fileOperations: "File Operations",
+		fileRead: "Read Files",
+		fileReadDesc: "Allow agent to read files (.md, .canvas, .base)",
+		fileWrite: "Create Files",
+		fileWriteDesc: "Allow agent to create new files",
+		fileEdit: "Edit Files",
+		fileEditDesc: "Allow agent to modify existing files",
+		webOperations: "Web Operations",
+		advanced: "Advanced",
+		extendedThinking: "Extended Thinking",
+		extendedThinkingDesc: "Use extended thinking for deep analysis",
+		// Codex permissions
+		sandboxMode: "Sandbox Mode",
+		sandboxModeDesc: "Codex's level of file system access",
+		sandboxReadOnly: "Read Only",
+		sandboxWorkspaceWrite: "Workspace Write",
+		sandboxFullAccess: "Full Access (dangerous)",
+		codexReasoning: "Reasoning Level",
+		codexReasoningDesc: "Depth of Codex analysis",
+		reasoningOff: "Off",
+		reasoningMedium: "Medium",
+		reasoningHigh: "High",
+		// Skills section
+		skills: "Skills",
+		skillsNote: "Skills provide specialized instructions for working with Obsidian",
+		noSkillsAvailable: "No skills available",
+		customSkill: "Custom",
 
 		// Slash Commands section
 		slashCommands: "Slash Commands",
@@ -398,7 +482,7 @@ export const SETTINGS_LOCALES: Record<LanguageCode, SettingsLocale> = {
 		// Codex-specific settings
 		codexCliPath: "Codex CLI path",
 		codexCliPathDesc: "Path to the Codex CLI executable. Usually just 'codex' if installed globally.",
-		codexSystemInstructions: "System Instructions (AGENT.md)",
+		codexSystemInstructions: "System Instructions (AGENTS.md)",
 		codexSystemInstructionsDesc: "A file in your vault root that defines how Codex behaves. Read automatically.",
 		codexDeepReasoning: "Deep thinking",
 		codexDeepReasoningDesc: "Enable extended thinking (Extra High mode)",
@@ -464,6 +548,34 @@ export const SETTINGS_LOCALES: Record<LanguageCode, SettingsLocale> = {
 		webFetchDesc: "Autoriser Claude à lire le contenu des pages web",
 		subAgents: "Sous-agents (Task)",
 		subAgentsDesc: "Autoriser Claude à lancer des agents auxiliaires pour les tâches complexes",
+		// New permissions
+		fileOperations: "Opérations sur les fichiers",
+		fileRead: "Lire les fichiers",
+		fileReadDesc: "Autoriser l'agent à lire les fichiers (.md, .canvas, .base)",
+		fileWrite: "Créer des fichiers",
+		fileWriteDesc: "Autoriser l'agent à créer de nouveaux fichiers",
+		fileEdit: "Modifier les fichiers",
+		fileEditDesc: "Autoriser l'agent à modifier les fichiers existants",
+		webOperations: "Opérations web",
+		advanced: "Avancé",
+		extendedThinking: "Réflexion étendue",
+		extendedThinkingDesc: "Utiliser la réflexion étendue pour une analyse approfondie",
+		// Codex permissions
+		sandboxMode: "Mode sandbox",
+		sandboxModeDesc: "Niveau d'accès de Codex au système de fichiers",
+		sandboxReadOnly: "Lecture seule",
+		sandboxWorkspaceWrite: "Écriture dans l'espace de travail",
+		sandboxFullAccess: "Accès complet (dangereux)",
+		codexReasoning: "Niveau de raisonnement",
+		codexReasoningDesc: "Profondeur d'analyse de Codex",
+		reasoningOff: "Désactivé",
+		reasoningMedium: "Moyen",
+		reasoningHigh: "Élevé",
+		// Skills section
+		skills: "Compétences",
+		skillsNote: "Les compétences fournissent des instructions spécialisées pour travailler avec Obsidian",
+		noSkillsAvailable: "Aucune compétence disponible",
+		customSkill: "Personnalisé",
 
 		// Slash Commands section
 		slashCommands: "Commandes Slash",
@@ -544,7 +656,7 @@ export const SETTINGS_LOCALES: Record<LanguageCode, SettingsLocale> = {
 		// Codex-specific settings
 		codexCliPath: "Chemin du CLI Codex",
 		codexCliPathDesc: "Chemin vers l'exécutable Codex CLI. Généralement juste 'codex' s'il est installé globalement.",
-		codexSystemInstructions: "Instructions système (AGENT.md)",
+		codexSystemInstructions: "Instructions système (AGENTS.md)",
 		codexSystemInstructionsDesc: "Un fichier à la racine de votre coffre qui définit le comportement de Codex. Lu automatiquement.",
 		codexDeepReasoning: "Réflexion approfondie",
 		codexDeepReasoningDesc: "Activer la réflexion étendue (mode Extra High)",
@@ -610,6 +722,34 @@ export const SETTINGS_LOCALES: Record<LanguageCode, SettingsLocale> = {
 		webFetchDesc: "Claude erlauben, Inhalte von Webseiten zu lesen",
 		subAgents: "Unteragenten (Task)",
 		subAgentsDesc: "Claude erlauben, Hilfsagenten für komplexe Aufgaben zu starten",
+		// New permissions
+		fileOperations: "Dateioperationen",
+		fileRead: "Dateien lesen",
+		fileReadDesc: "Agent das Lesen von Dateien erlauben (.md, .canvas, .base)",
+		fileWrite: "Dateien erstellen",
+		fileWriteDesc: "Agent das Erstellen neuer Dateien erlauben",
+		fileEdit: "Dateien bearbeiten",
+		fileEditDesc: "Agent das Ändern bestehender Dateien erlauben",
+		webOperations: "Web-Operationen",
+		advanced: "Erweitert",
+		extendedThinking: "Erweitertes Denken",
+		extendedThinkingDesc: "Erweitertes Denken für tiefgehende Analyse verwenden",
+		// Codex permissions
+		sandboxMode: "Sandbox-Modus",
+		sandboxModeDesc: "Codex Zugriffsstufe auf das Dateisystem",
+		sandboxReadOnly: "Nur Lesen",
+		sandboxWorkspaceWrite: "Arbeitsbereich schreiben",
+		sandboxFullAccess: "Vollzugriff (gefährlich)",
+		codexReasoning: "Reasoning-Stufe",
+		codexReasoningDesc: "Tiefe der Codex-Analyse",
+		reasoningOff: "Aus",
+		reasoningMedium: "Mittel",
+		reasoningHigh: "Hoch",
+		// Skills section
+		skills: "Fähigkeiten",
+		skillsNote: "Fähigkeiten bieten spezialisierte Anweisungen für die Arbeit mit Obsidian",
+		noSkillsAvailable: "Keine Fähigkeiten verfügbar",
+		customSkill: "Benutzerdefiniert",
 
 		// Slash Commands section
 		slashCommands: "Slash-Befehle",
@@ -690,7 +830,7 @@ export const SETTINGS_LOCALES: Record<LanguageCode, SettingsLocale> = {
 		// Codex-specific settings
 		codexCliPath: "Codex CLI Pfad",
 		codexCliPathDesc: "Pfad zur Codex CLI ausführbaren Datei. Normalerweise nur 'codex', wenn global installiert.",
-		codexSystemInstructions: "Systemanweisungen (AGENT.md)",
+		codexSystemInstructions: "Systemanweisungen (AGENTS.md)",
 		codexSystemInstructionsDesc: "Eine Datei im Wurzelverzeichnis Ihres Tresors, die das Verhalten von Codex definiert. Wird automatisch gelesen.",
 		codexDeepReasoning: "Tiefes Denken",
 		codexDeepReasoningDesc: "Erweitertes Denken aktivieren (Extra High Modus)",
@@ -756,6 +896,34 @@ export const SETTINGS_LOCALES: Record<LanguageCode, SettingsLocale> = {
 		webFetchDesc: "Permitir que Claude lea contenido de páginas web",
 		subAgents: "Subagentes (Task)",
 		subAgentsDesc: "Permitir que Claude lance agentes auxiliares para tareas complejas",
+		// New permissions
+		fileOperations: "Operaciones de archivos",
+		fileRead: "Leer archivos",
+		fileReadDesc: "Permitir al agente leer archivos (.md, .canvas, .base)",
+		fileWrite: "Crear archivos",
+		fileWriteDesc: "Permitir al agente crear nuevos archivos",
+		fileEdit: "Editar archivos",
+		fileEditDesc: "Permitir al agente modificar archivos existentes",
+		webOperations: "Operaciones web",
+		advanced: "Avanzado",
+		extendedThinking: "Pensamiento extendido",
+		extendedThinkingDesc: "Usar pensamiento extendido para análisis profundo",
+		// Codex permissions
+		sandboxMode: "Modo sandbox",
+		sandboxModeDesc: "Nivel de acceso de Codex al sistema de archivos",
+		sandboxReadOnly: "Solo lectura",
+		sandboxWorkspaceWrite: "Escritura en área de trabajo",
+		sandboxFullAccess: "Acceso completo (peligroso)",
+		codexReasoning: "Nivel de razonamiento",
+		codexReasoningDesc: "Profundidad del análisis de Codex",
+		reasoningOff: "Desactivado",
+		reasoningMedium: "Medio",
+		reasoningHigh: "Alto",
+		// Skills section
+		skills: "Habilidades",
+		skillsNote: "Las habilidades proporcionan instrucciones especializadas para trabajar con Obsidian",
+		noSkillsAvailable: "No hay habilidades disponibles",
+		customSkill: "Personalizado",
 
 		// Slash Commands section
 		slashCommands: "Comandos Slash",
@@ -836,7 +1004,7 @@ export const SETTINGS_LOCALES: Record<LanguageCode, SettingsLocale> = {
 		// Codex-specific settings
 		codexCliPath: "Ruta del CLI de Codex",
 		codexCliPathDesc: "Ruta al ejecutable de Codex CLI. Normalmente solo 'codex' si está instalado globalmente.",
-		codexSystemInstructions: "Instrucciones del sistema (AGENT.md)",
+		codexSystemInstructions: "Instrucciones del sistema (AGENTS.md)",
 		codexSystemInstructionsDesc: "Un archivo en la raíz de tu bóveda que define cómo se comporta Codex. Se lee automáticamente.",
 		codexDeepReasoning: "Pensamiento profundo",
 		codexDeepReasoningDesc: "Habilitar pensamiento extendido (modo Extra High)",
@@ -904,6 +1072,34 @@ export const SETTINGS_LOCALES: Record<LanguageCode, SettingsLocale> = {
 		webFetchDesc: "Claude को वेब पेजों की सामग्री पढ़ने की अनुमति दें",
 		subAgents: "उप-एजेंट (Task)",
 		subAgentsDesc: "Claude को जटिल कार्यों के लिए सहायक एजेंट लॉन्च करने की अनुमति दें",
+		// New permissions
+		fileOperations: "फ़ाइल ऑपरेशन",
+		fileRead: "फ़ाइलें पढ़ें",
+		fileReadDesc: "एजेंट को फ़ाइलें पढ़ने की अनुमति दें (.md, .canvas, .base)",
+		fileWrite: "फ़ाइलें बनाएं",
+		fileWriteDesc: "एजेंट को नई फ़ाइलें बनाने की अनुमति दें",
+		fileEdit: "फ़ाइलें संपादित करें",
+		fileEditDesc: "एजेंट को मौजूदा फ़ाइलें संशोधित करने की अनुमति दें",
+		webOperations: "वेब ऑपरेशन",
+		advanced: "उन्नत",
+		extendedThinking: "विस्तारित सोच",
+		extendedThinkingDesc: "गहन विश्लेषण के लिए विस्तारित सोच का उपयोग करें",
+		// Codex permissions
+		sandboxMode: "सैंडबॉक्स मोड",
+		sandboxModeDesc: "फ़ाइल सिस्टम तक Codex की पहुंच स्तर",
+		sandboxReadOnly: "केवल पढ़ें",
+		sandboxWorkspaceWrite: "कार्यक्षेत्र में लिखें",
+		sandboxFullAccess: "पूर्ण पहुंच (खतरनाक)",
+		codexReasoning: "तर्क स्तर",
+		codexReasoningDesc: "Codex विश्लेषण की गहराई",
+		reasoningOff: "बंद",
+		reasoningMedium: "मध्यम",
+		reasoningHigh: "उच्च",
+		// Skills section
+		skills: "कौशल",
+		skillsNote: "कौशल Obsidian के साथ काम करने के लिए विशेष निर्देश प्रदान करते हैं",
+		noSkillsAvailable: "कोई कौशल उपलब्ध नहीं",
+		customSkill: "कस्टम",
 
 		// Slash Commands section
 		slashCommands: "स्लैश कमांड",
@@ -984,7 +1180,7 @@ export const SETTINGS_LOCALES: Record<LanguageCode, SettingsLocale> = {
 		// Codex-specific settings
 		codexCliPath: "Codex CLI पथ",
 		codexCliPathDesc: "Codex CLI निष्पादन योग्य फ़ाइल का पथ। आमतौर पर बस 'codex' अगर विश्व स्तर पर स्थापित है।",
-		codexSystemInstructions: "सिस्टम निर्देश (AGENT.md)",
+		codexSystemInstructions: "सिस्टम निर्देश (AGENTS.md)",
 		codexSystemInstructionsDesc: "आपके वॉल्ट रूट में एक फ़ाइल जो Codex के व्यवहार को परिभाषित करती है। स्वचालित रूप से पढ़ा जाता है।",
 		codexDeepReasoning: "गहन सोच",
 		codexDeepReasoningDesc: "विस्तारित सोच सक्षम करें (Extra High मोड)",
@@ -1052,6 +1248,34 @@ export const SETTINGS_LOCALES: Record<LanguageCode, SettingsLocale> = {
 		webFetchDesc: "允许 Claude 读取网页内容",
 		subAgents: "子代理 (Task)",
 		subAgentsDesc: "允许 Claude 为复杂任务启动辅助代理",
+		// New permissions
+		fileOperations: "文件操作",
+		fileRead: "读取文件",
+		fileReadDesc: "允许代理读取文件（.md、.canvas、.base）",
+		fileWrite: "创建文件",
+		fileWriteDesc: "允许代理创建新文件",
+		fileEdit: "编辑文件",
+		fileEditDesc: "允许代理修改现有文件",
+		webOperations: "网络操作",
+		advanced: "高级",
+		extendedThinking: "扩展思考",
+		extendedThinkingDesc: "使用扩展思考进行深度分析",
+		// Codex permissions
+		sandboxMode: "沙盒模式",
+		sandboxModeDesc: "Codex 对文件系统的访问级别",
+		sandboxReadOnly: "只读",
+		sandboxWorkspaceWrite: "工作区写入",
+		sandboxFullAccess: "完全访问（危险）",
+		codexReasoning: "推理级别",
+		codexReasoningDesc: "Codex 分析深度",
+		reasoningOff: "关闭",
+		reasoningMedium: "中等",
+		reasoningHigh: "高",
+		// Skills section
+		skills: "技能",
+		skillsNote: "技能为 Obsidian 工作提供专业指导",
+		noSkillsAvailable: "没有可用的技能",
+		customSkill: "自定义",
 
 		// Slash Commands section
 		slashCommands: "斜杠命令",
@@ -1132,7 +1356,7 @@ export const SETTINGS_LOCALES: Record<LanguageCode, SettingsLocale> = {
 		// Codex-specific settings
 		codexCliPath: "Codex CLI 路径",
 		codexCliPathDesc: "Codex CLI 可执行文件的路径。如果全局安装，通常只需 'codex'。",
-		codexSystemInstructions: "系统指令 (AGENT.md)",
+		codexSystemInstructions: "系统指令 (AGENTS.md)",
 		codexSystemInstructionsDesc: "位于您保险库根目录的文件，定义 Codex 的行为方式。自动读取。",
 		codexDeepReasoning: "深度思考",
 		codexDeepReasoningDesc: "启用扩展思考（Extra High 模式）",
@@ -1200,6 +1424,34 @@ export const SETTINGS_LOCALES: Record<LanguageCode, SettingsLocale> = {
 		webFetchDesc: "Claude にウェブページのコンテンツ読み取りを許可",
 		subAgents: "サブエージェント (Task)",
 		subAgentsDesc: "Claude に複雑なタスクのためのヘルパーエージェント起動を許可",
+		// New permissions
+		fileOperations: "ファイル操作",
+		fileRead: "ファイル読み取り",
+		fileReadDesc: "エージェントにファイルの読み取りを許可（.md、.canvas、.base）",
+		fileWrite: "ファイル作成",
+		fileWriteDesc: "エージェントに新規ファイルの作成を許可",
+		fileEdit: "ファイル編集",
+		fileEditDesc: "エージェントに既存ファイルの変更を許可",
+		webOperations: "ウェブ操作",
+		advanced: "詳細設定",
+		extendedThinking: "拡張思考",
+		extendedThinkingDesc: "深い分析のために拡張思考を使用",
+		// Codex permissions
+		sandboxMode: "サンドボックスモード",
+		sandboxModeDesc: "Codex のファイルシステムへのアクセスレベル",
+		sandboxReadOnly: "読み取り専用",
+		sandboxWorkspaceWrite: "ワークスペースへの書き込み",
+		sandboxFullAccess: "フルアクセス（危険）",
+		codexReasoning: "推論レベル",
+		codexReasoningDesc: "Codex 分析の深さ",
+		reasoningOff: "オフ",
+		reasoningMedium: "中",
+		reasoningHigh: "高",
+		// Skills section
+		skills: "スキル",
+		skillsNote: "スキルは Obsidian での作業に特化した指示を提供します",
+		noSkillsAvailable: "利用可能なスキルがありません",
+		customSkill: "カスタム",
 
 		// Slash Commands section
 		slashCommands: "スラッシュコマンド",
@@ -1280,7 +1532,7 @@ export const SETTINGS_LOCALES: Record<LanguageCode, SettingsLocale> = {
 		// Codex-specific settings
 		codexCliPath: "Codex CLI パス",
 		codexCliPathDesc: "Codex CLI 実行ファイルへのパス。グローバルにインストールされている場合は通常 'codex' のみ。",
-		codexSystemInstructions: "システム指示 (AGENT.md)",
+		codexSystemInstructions: "システム指示 (AGENTS.md)",
 		codexSystemInstructionsDesc: "Codex の動作を定義する保管庫ルートのファイル。自動的に読み込まれます。",
 		codexDeepReasoning: "深い思考",
 		codexDeepReasoningDesc: "拡張思考を有効にする（Extra High モード）",

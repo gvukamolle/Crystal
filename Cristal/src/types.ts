@@ -162,10 +162,28 @@ export const CLAUDE_MODELS: { value: ClaudeModel; label: string }[] = [
 ];
 
 export interface ClaudePermissions {
+	// Web operations
 	webSearch: boolean;
 	webFetch: boolean;
+	// Agent operations
 	task: boolean;
+	// File operations
+	fileRead: boolean;
+	fileWrite: boolean;
+	fileEdit: boolean;
+	// Advanced
+	extendedThinking: boolean;
 }
+
+export const DEFAULT_CLAUDE_PERMISSIONS: ClaudePermissions = {
+	webSearch: false,
+	webFetch: false,
+	task: false,
+	fileRead: true,
+	fileWrite: true,
+	fileEdit: true,
+	extendedThinking: false
+};
 
 // Codex model types
 export const CODEX_MODELS: { value: string; label: string }[] = [
@@ -176,8 +194,27 @@ export const CODEX_MODELS: { value: string; label: string }[] = [
 ];
 
 // Codex reasoning levels (configured via ~/.codex/config.toml)
-// Simplified to toggle: off = medium, on = xhigh
-export type CodexReasoningLevel = "medium" | "xhigh";
+export type CodexReasoningLevel = "off" | "medium" | "xhigh";
+
+// Codex sandbox modes
+export type CodexSandboxMode = "read-only" | "workspace-write" | "danger-full-access";
+
+// Codex approval policies
+export type CodexApprovalPolicy = "untrusted" | "on-failure" | "on-request" | "never";
+
+export interface CodexPermissions {
+	sandboxMode: CodexSandboxMode;
+	approvalPolicy: CodexApprovalPolicy;
+	webSearch: boolean;
+	reasoning: CodexReasoningLevel;
+}
+
+export const DEFAULT_CODEX_PERMISSIONS: CodexPermissions = {
+	sandboxMode: "workspace-write",
+	approvalPolicy: "on-request",
+	webSearch: false,
+	reasoning: "medium"
+};
 
 // ============================================================================
 // Agent Configuration (new multi-agent system)
@@ -195,10 +232,13 @@ export interface AgentConfig {
 	model: string;                   // Default model
 	disabledModels?: string[];       // Models disabled by user (hidden from dropdown)
 	// Claude-specific
-	thinkingEnabled?: boolean;       // Extended thinking mode
+	thinkingEnabled?: boolean;       // Extended thinking mode (legacy, use permissions.extendedThinking)
 	permissions?: ClaudePermissions; // Claude permissions
 	// Codex-specific
-	reasoningEnabled?: boolean;      // Deep reasoning (false = medium, true = xhigh)
+	reasoningEnabled?: boolean;      // Deep reasoning (legacy, use codexPermissions.reasoning)
+	codexPermissions?: CodexPermissions; // Codex permissions
+	// Skills
+	enabledSkills?: string[];        // IDs of enabled skills for this agent
 }
 
 // CLI descriptions for the add agent dropdown

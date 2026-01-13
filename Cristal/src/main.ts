@@ -9,6 +9,7 @@ import { SYSTEM_PROMPTS, type LanguageCode } from "./systemPrompts";
 import { detectCLIPath, detectCodexCLIPath } from "./cliDetector";
 import { setCodexReasoningLevel } from "./codexConfig";
 import { TerminalService, TerminalView, TERMINAL_VIEW_TYPE } from "./terminal";
+import { SkillLoader } from "./skills";
 
 const MAX_SESSIONS = 20;
 
@@ -17,6 +18,7 @@ export default class CristalPlugin extends Plugin {
 	claudeService: ClaudeService;
 	codexService: CodexService;
 	terminalService: TerminalService;
+	skillLoader: SkillLoader;
 	sessions: ChatSession[] = [];
 	currentSessionId: string | null = null;
 
@@ -50,6 +52,11 @@ export default class CristalPlugin extends Plugin {
 		// Initialize terminal service
 		this.terminalService = new TerminalService(vaultPath, this.settings.terminal);
 
+		// Initialize skill loader
+		this.skillLoader = new SkillLoader(this.app.vault);
+		await this.skillLoader.initialize();
+		console.log(`Cristal: Loaded ${this.skillLoader.getSkillReferences().length} skills`);
+
 		// Register terminal view
 		this.registerView(
 			TERMINAL_VIEW_TYPE,
@@ -66,6 +73,9 @@ export default class CristalPlugin extends Plugin {
 		// Ensure agent instructions exist in Cristal Rules folder
 		await this.ensureAgentMd("claude");
 		await this.ensureAgentMd("codex");
+
+		// Sync skills for all agents on startup
+		await this.syncAllAgentSkills();
 
 		// Register the chat view (check if already registered for hot reload)
 		// @ts-ignore - viewRegistry is not in public API but exists
@@ -326,7 +336,15 @@ export default class CristalPlugin extends Plugin {
 			cliPath: oldSettings.cliPath || "claude",
 			model: oldSettings.defaultModel || "claude-haiku-4-5-20251001",
 			thinkingEnabled: oldSettings.thinkingEnabled || false,
-			permissions: oldSettings.permissions || { webSearch: false, webFetch: false, task: false }
+			permissions: oldSettings.permissions || {
+				webSearch: false,
+				webFetch: false,
+				task: false,
+				fileRead: true,
+				fileWrite: true,
+				fileEdit: true,
+				extendedThinking: false
+			}
 		});
 
 		// Migrate Codex settings
@@ -472,7 +490,7 @@ export default class CristalPlugin extends Plugin {
 	 * Gets the vault path for agent instructions file
 	 */
 	getAgentMdPath(agent: "claude" | "codex"): string {
-		const filename = agent === "claude" ? "CLAUDE.md" : "AGENT.md";
+		const filename = agent === "claude" ? "CLAUDE.md" : "AGENTS.md";
 		return `${this.CRISTAL_RULES_FOLDER}/${filename}`;
 	}
 
@@ -567,5 +585,21 @@ export default class CristalPlugin extends Plugin {
 
 	async resetClaudeMd(): Promise<void> {
 		return this.resetAgentMd("claude");
+	}
+
+	/**
+	 * Sync skills for all agents that support them (Claude and Codex)
+	 */
+	async syncAllAgentSkills(): Promise<void> {
+		if (!this.skillLoader) return;
+
+		for (const agent of this.settings.agents) {
+			if (agent.cliType === "claude" || agent.cliType === "codex") {
+				const enabledSkills = agent.enabledSkills || [];
+				if (enabledSkills.length > 0) {
+					await this.skillLoader.syncSkillsForAgent(agent.cliType, enabledSkills);
+				}
+			}
+		}
 	}
 }
