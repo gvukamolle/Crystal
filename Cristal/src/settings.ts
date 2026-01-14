@@ -1,4 +1,4 @@
-import { App, PluginSettingTab, Setting, Modal, TextComponent, setIcon } from "obsidian";
+import { App, PluginSettingTab, Setting, Modal, TextComponent, setIcon, Notice } from "obsidian";
 import type CristalPlugin from "./main";
 import type { SlashCommand, LanguageCode, ClaudeModel, AgentConfig, CLIType, ClaudePermissions, CodexPermissions } from "./types";
 import { CLAUDE_MODELS, CODEX_MODELS, CLI_INFO, DEFAULT_CLAUDE_PERMISSIONS, DEFAULT_CODEX_PERMISSIONS } from "./types";
@@ -7,6 +7,7 @@ import { LANGUAGE_NAMES } from "./systemPrompts";
 import { checkCLIInstalled, checkCodexInstalled, detectCLIPath, detectCodexCLIPath } from "./cliDetector";
 import { setCodexReasoningLevel } from "./codexConfig";
 import { getSettingsLocale, type SettingsLocale } from "./settingsLocales";
+import { CreateSkillModal, ValidateSkillModal } from "./skills";
 
 export class CristalSettingTab extends PluginSettingTab {
 	plugin: CristalPlugin;
@@ -675,17 +676,6 @@ class AgentSettingsModal extends Modal {
 		const cliStatusEl = contentEl.createDiv({ cls: "cristal-cli-status" });
 		this.checkAndDisplayCLIStatus(cliStatusEl);
 
-		// System Instructions (CLAUDE.md for Claude, AGENTS.md for Codex)
-		new Setting(contentEl)
-			.setName(this.agent.cliType === "codex" ? this.locale.codexSystemInstructions : this.locale.systemInstructions)
-			.setDesc(this.agent.cliType === "codex" ? this.locale.codexSystemInstructionsDesc : this.locale.systemInstructionsDesc)
-			.addButton(button => button
-				.setButtonText(this.locale.editButton)
-				.onClick(() => {
-					const agentType = this.agent.cliType === "claude" ? "claude" : "codex";
-					new AgentMdModal(this.app, this.plugin, agentType as "claude" | "codex").open();
-				}));
-
 		// Model selection (no /model mention - feature removed)
 		const allModels = this.agent.cliType === "claude" ? CLAUDE_MODELS : CODEX_MODELS;
 		const disabledModels = this.agent.disabledModels || [];
@@ -895,40 +885,24 @@ class AgentSettingsModal extends Modal {
 						});
 				});
 
-			// Reasoning Level
+			// Extended Thinking (toggle between minimal and high)
 			new Setting(contentEl)
-				.setName(this.locale.codexReasoning || "Reasoning Level")
-				.setDesc(this.locale.codexReasoningDesc || "Depth of analysis for complex tasks")
-				.addDropdown(dropdown => {
-					dropdown
-						.addOption("off", this.locale.reasoningOff || "Off")
-						.addOption("medium", this.locale.reasoningMedium || "Medium")
-						.addOption("xhigh", this.locale.reasoningHigh || "Extra High")
-						.setValue(codexPerms.reasoning)
-						.onChange(async (value) => {
-							if (!this.agent.codexPermissions) {
-								this.agent.codexPermissions = { ...DEFAULT_CODEX_PERMISSIONS };
-							}
-							this.agent.codexPermissions.reasoning = value as "off" | "medium" | "xhigh";
-							await this.plugin.saveSettings();
-							// Write to ~/.codex/config.toml
-							setCodexReasoningLevel(value as "off" | "medium" | "xhigh");
-						});
-				});
-
-			// Web Search
-			new Setting(contentEl)
-				.setName(this.locale.webSearch)
-				.setDesc(this.locale.webSearchDesc)
+				.setName(this.locale.extendedThinking || "Extended Thinking")
+				.setDesc(this.locale.extendedThinkingDesc || "Enable deeper analysis mode for complex tasks")
 				.addToggle(toggle => toggle
-					.setValue(codexPerms.webSearch)
+					.setValue(codexPerms.reasoning === "high")
 					.onChange(async (value) => {
 						if (!this.agent.codexPermissions) {
 							this.agent.codexPermissions = { ...DEFAULT_CODEX_PERMISSIONS };
 						}
-						this.agent.codexPermissions.webSearch = value;
+						const level = value ? "high" : "none";
+						this.agent.codexPermissions.reasoning = level;
+						this.agent.reasoningEnabled = value;
 						await this.plugin.saveSettings();
+						// Write to ~/.codex/config.toml
+						setCodexReasoningLevel(level);
 					}));
+
 		}
 
 		// Skills section (for both Claude and Codex)
@@ -979,48 +953,77 @@ class AgentSettingsModal extends Modal {
 
 	private async checkAndDisplayCLIStatus(container: HTMLElement): Promise<void> {
 		container.empty();
-		container.createEl("span", {
-			cls: "cristal-cli-status-checking",
-			text: this.locale.checkingCli
+		container.addClass("cristal-cli-status-container");
+
+		// Fixed structure: status row (always present) + content area
+		const statusRow = container.createDiv({ cls: "cristal-cli-status-row" });
+		const statusInfo = statusRow.createDiv({ cls: "cristal-cli-status-info" });
+
+		// Refresh button (always in same position)
+		const refreshBtn = statusRow.createEl("button", {
+			cls: "cristal-cli-refresh-btn clickable-icon",
+			attr: { "aria-label": this.locale.refreshButton }
+		});
+		setIcon(refreshBtn, "refresh-cw");
+		refreshBtn.addEventListener("click", () => {
+			this.checkAndDisplayCLIStatus(container);
 		});
 
+		// Content area for buttons/hints
+		const contentArea = container.createDiv({ cls: "cristal-cli-status-content" });
+
+		// Show loading state
+		const loadingEl = statusInfo.createDiv({ cls: "cristal-cli-status-item cristal-cli-status-checking" });
+		const loadingIcon = loadingEl.createSpan({ cls: "cristal-cli-status-icon" });
+		setIcon(loadingIcon, "loader");
+		loadingEl.createSpan({ text: this.locale.checkingCli });
+
+		// Check CLI status
 		const status = this.agent.cliType === "claude"
 			? await checkCLIInstalled(this.agent.cliPath)
 			: await checkCodexInstalled(this.agent.cliPath);
 
-		container.empty();
+		// Update status info (keep structure, just update content)
+		statusInfo.empty();
 
 		if (status.installed) {
-			const foundEl = container.createDiv({ cls: "cristal-cli-status-item cristal-cli-status-success" });
+			const foundEl = statusInfo.createDiv({ cls: "cristal-cli-status-item cristal-cli-status-success" });
 			const iconSpan = foundEl.createSpan({ cls: "cristal-cli-status-icon" });
 			setIcon(iconSpan, "check-circle");
 			foundEl.createSpan({ text: this.locale.cliFound.replace("{version}", status.version || "?") });
 
-			// Open Terminal button for installed CLI
-			const terminalBtn = container.createEl("button", {
-				text: this.locale.openTerminal || "Open Terminal",
+			// Terminal button with description (right-aligned)
+			const terminalSection = contentArea.createDiv({ cls: "cristal-cli-terminal-section" });
+
+			terminalSection.createEl("p", {
+				cls: "cristal-settings-note cristal-terminal-desc",
+				text: this.locale.openTerminalDesc || "Launch CLI in integrated terminal"
+			});
+
+			const terminalBtn = terminalSection.createEl("button", {
 				cls: "mod-cta"
 			});
-			terminalBtn.style.marginTop = "8px";
 			const terminalIcon = terminalBtn.createSpan({ cls: "cristal-btn-icon-left" });
 			setIcon(terminalIcon, "terminal");
+			terminalBtn.createSpan({ text: this.locale.openTerminal || "Open Terminal" });
+
 			terminalBtn.addEventListener("click", async () => {
 				this.close();
 				const cliCmd = this.agent.cliType === "claude" ? "claude" : "codex";
 				await this.plugin.openTerminalWithCommand(cliCmd);
 			});
 		} else {
-			const errorEl = container.createDiv({ cls: "cristal-cli-status-item cristal-cli-status-error" });
+			const errorEl = statusInfo.createDiv({ cls: "cristal-cli-status-item cristal-cli-status-error" });
 			const iconSpan = errorEl.createSpan({ cls: "cristal-cli-status-icon" });
 			setIcon(iconSpan, "x-circle");
 			errorEl.createSpan({ text: this.locale.cliNotFound });
 
-			// Installation hint - improved formatting
+			// Installation hint
 			const installCmd = this.agent.cliType === "claude"
 				? "npm i -g @anthropic-ai/claude-code"
 				: "npm i -g @openai/codex";
 
-			const installHint = container.createDiv({ cls: "cristal-install-hint" });
+			const installHint = contentArea.createDiv({ cls: "cristal-install-hint" });
 			installHint.createEl("p", {
 				cls: "cristal-settings-note",
 				text: this.locale.installWith + ":"
@@ -1031,34 +1034,42 @@ class AgentSettingsModal extends Modal {
 			});
 
 			// Install button
-			const installBtn = container.createEl("button", {
-				text: this.locale.startIntegration || "Open terminal and install CLI",
+			const installBtn = contentArea.createEl("button", {
 				cls: "mod-cta"
 			});
-			installBtn.style.marginTop = "8px";
 			const downloadIcon = installBtn.createSpan({ cls: "cristal-btn-icon-left" });
 			setIcon(downloadIcon, "download");
+			installBtn.createSpan({ text: this.locale.startIntegration || "Open terminal and install CLI" });
+
 			installBtn.addEventListener("click", async () => {
 				this.close();
 				await this.plugin.openTerminalWithCommand(installCmd);
 			});
 		}
-
-		// Refresh button (secondary style)
-		const refreshBtn = container.createEl("button", {
-			text: this.locale.refreshButton,
-			cls: "cristal-cli-refresh-btn"
-		});
-		refreshBtn.style.marginTop = "8px";
-		refreshBtn.style.marginLeft = "8px";
-		refreshBtn.addEventListener("click", () => {
-			this.checkAndDisplayCLIStatus(container);
-		});
 	}
 
 	private displaySkillsSection(container: HTMLElement): void {
-		// Skills section
-		container.createEl("h3", { text: this.locale.skills || "Skills" });
+		// Skills section header with Create button
+		const headerEl = container.createDiv({ cls: "cristal-skills-header" });
+		headerEl.createEl("h3", { text: this.locale.skills || "Skills" });
+
+		// Create new skill button
+		const createBtn = headerEl.createEl("button", {
+			text: this.locale.createNewSkill || "Create new",
+			cls: "cristal-create-skill-btn"
+		});
+		createBtn.addEventListener("click", () => {
+			new CreateSkillModal(
+				this.app,
+				this.plugin.skillLoader,
+				async (skillId: string) => {
+					await this.plugin.skillLoader.refresh();
+					new Notice(`Skill "${skillId}" created successfully`);
+					// Refresh the modal
+					this.onOpen();
+				}
+			).open();
+		});
 
 		container.createEl("p", {
 			cls: "cristal-settings-note",
@@ -1077,40 +1088,72 @@ class AgentSettingsModal extends Modal {
 			return;
 		}
 
-		for (const skill of skillRefs) {
-			const isEnabled = enabledSkills.includes(skill.id);
-			const desc = skill.isBuiltin
-				? skill.description
-				: `${skill.description} (${this.locale.customSkill || "custom"})`;
+		// Separate builtin and custom skills
+		const builtinSkills = skillRefs.filter(s => s.isBuiltin);
+		const customSkills = skillRefs.filter(s => !s.isBuiltin);
 
-			new Setting(container)
-				.setName(skill.name)
-				.setDesc(desc)
-				.addToggle(toggle => toggle
-					.setValue(isEnabled)
-					.onChange(async (value) => {
-						if (!this.agent.enabledSkills) {
-							this.agent.enabledSkills = [];
-						}
-						if (value) {
-							if (!this.agent.enabledSkills.includes(skill.id)) {
-								this.agent.enabledSkills.push(skill.id);
-							}
-						} else {
-							this.agent.enabledSkills = this.agent.enabledSkills.filter(
-								id => id !== skill.id
-							);
-						}
-						await this.plugin.saveSettings();
+		// Built-in skills section
+		if (builtinSkills.length > 0) {
+			container.createEl("h4", { text: this.locale.builtinSkills || "Built-in Skills" });
+			for (const skill of builtinSkills) {
+				this.renderSkillToggle(container, skill, enabledSkills, false);
+			}
+		}
 
-						// Sync skills to CLI directory
-						if (this.agent.cliType === "claude" || this.agent.cliType === "codex") {
-							await this.plugin.skillLoader?.syncSkillsForAgent(
-								this.agent.cliType,
-								this.agent.enabledSkills || []
-							);
+		// Custom skills section
+		if (customSkills.length > 0) {
+			container.createEl("h4", { text: this.locale.customSkills || "Custom Skills" });
+			for (const skill of customSkills) {
+				this.renderSkillToggle(container, skill, enabledSkills, true);
+			}
+		}
+	}
+
+	private renderSkillToggle(
+		container: HTMLElement,
+		skill: { id: string; name: string; description: string; isBuiltin: boolean },
+		enabledSkills: string[],
+		showValidate: boolean
+	): void {
+		const isEnabled = enabledSkills.includes(skill.id);
+
+		const setting = new Setting(container)
+			.setName(skill.name)
+			.setDesc(skill.description)
+			.addToggle(toggle => toggle
+				.setValue(isEnabled)
+				.onChange(async (value) => {
+					if (!this.agent.enabledSkills) {
+						this.agent.enabledSkills = [];
+					}
+					if (value) {
+						if (!this.agent.enabledSkills.includes(skill.id)) {
+							this.agent.enabledSkills.push(skill.id);
 						}
-					}));
+					} else {
+						this.agent.enabledSkills = this.agent.enabledSkills.filter(
+							id => id !== skill.id
+						);
+					}
+					await this.plugin.saveSettings();
+
+					// Sync skills to CLI directory
+					if (this.agent.cliType === "claude" || this.agent.cliType === "codex") {
+						await this.plugin.skillLoader?.syncSkillsForAgent(
+							this.agent.cliType,
+							this.agent.enabledSkills || []
+						);
+					}
+				}));
+
+		// Add validate button for custom skills
+		if (showValidate) {
+			setting.addButton(btn => btn
+				.setIcon("check-circle")
+				.setTooltip(this.locale.validateSkill || "Validate skill")
+				.onClick(() => {
+					new ValidateSkillModal(this.app, this.plugin.skillLoader, skill.id).open();
+				}));
 		}
 	}
 

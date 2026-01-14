@@ -51,6 +51,10 @@ export interface SettingsLocale {
 	skillsNote: string;
 	noSkillsAvailable: string;
 	customSkill: string;
+	createNewSkill: string;
+	builtinSkills: string;
+	customSkills: string;
+	validateSkill: string;
 
 	// Slash Commands section
 	slashCommands: string;
@@ -142,6 +146,7 @@ export interface SettingsLocale {
 	// Terminal integration
 	startIntegration: string;
 	openTerminal: string;
+	openTerminalDesc: string;
 	integrationNote: string;
 
 	// Account Limits
@@ -228,6 +233,10 @@ export const SETTINGS_LOCALES: Record<LanguageCode, SettingsLocale> = {
 		skillsNote: "Навыки предоставляют агенту специализированные инструкции для работы с Obsidian",
 		noSkillsAvailable: "Нет доступных навыков",
 		customSkill: "Пользовательский",
+		createNewSkill: "Создать новый",
+		builtinSkills: "Встроенные навыки",
+		customSkills: "Пользовательские навыки",
+		validateSkill: "Проверить навык",
 
 		// Slash Commands section
 		slashCommands: "Слеш-команды",
@@ -319,6 +328,7 @@ export const SETTINGS_LOCALES: Record<LanguageCode, SettingsLocale> = {
 		// Terminal integration
 		startIntegration: "Начать интеграцию",
 		openTerminal: "Открыть терминал",
+		openTerminalDesc: "Запустить CLI во встроенном терминале",
 		integrationNote: "Откроет терминал и начнёт установку CLI",
 
 		// Account Limits
@@ -402,6 +412,10 @@ export const SETTINGS_LOCALES: Record<LanguageCode, SettingsLocale> = {
 		skillsNote: "Skills provide specialized instructions for working with Obsidian",
 		noSkillsAvailable: "No skills available",
 		customSkill: "Custom",
+		createNewSkill: "Create new",
+		builtinSkills: "Built-in Skills",
+		customSkills: "Custom Skills",
+		validateSkill: "Validate skill",
 
 		// Slash Commands section
 		slashCommands: "Slash Commands",
@@ -493,6 +507,7 @@ export const SETTINGS_LOCALES: Record<LanguageCode, SettingsLocale> = {
 		// Terminal integration
 		startIntegration: "Start Integration",
 		openTerminal: "Open Terminal",
+		openTerminalDesc: "Launch CLI in integrated terminal",
 		integrationNote: "Opens terminal and starts CLI installation",
 
 		// Account Limits
@@ -576,6 +591,10 @@ export const SETTINGS_LOCALES: Record<LanguageCode, SettingsLocale> = {
 		skillsNote: "Les compétences fournissent des instructions spécialisées pour travailler avec Obsidian",
 		noSkillsAvailable: "Aucune compétence disponible",
 		customSkill: "Personnalisé",
+		createNewSkill: "Créer nouveau",
+		builtinSkills: "Compétences intégrées",
+		customSkills: "Compétences personnalisées",
+		validateSkill: "Valider la compétence",
 
 		// Slash Commands section
 		slashCommands: "Commandes Slash",
@@ -667,6 +686,7 @@ export const SETTINGS_LOCALES: Record<LanguageCode, SettingsLocale> = {
 		// Terminal integration
 		startIntegration: "Démarrer l'intégration",
 		openTerminal: "Ouvrir le terminal",
+		openTerminalDesc: "Lancer le CLI dans le terminal intégré",
 		integrationNote: "Ouvre le terminal et démarre l'installation du CLI",
 
 		// Account Limits
@@ -750,6 +770,10 @@ export const SETTINGS_LOCALES: Record<LanguageCode, SettingsLocale> = {
 		skillsNote: "Fähigkeiten bieten spezialisierte Anweisungen für die Arbeit mit Obsidian",
 		noSkillsAvailable: "Keine Fähigkeiten verfügbar",
 		customSkill: "Benutzerdefiniert",
+		createNewSkill: "Neu erstellen",
+		builtinSkills: "Integrierte Fähigkeiten",
+		customSkills: "Benutzerdefinierte Fähigkeiten",
+		validateSkill: "Fähigkeit validieren",
 
 		// Slash Commands section
 		slashCommands: "Slash-Befehle",
@@ -841,6 +865,7 @@ export const SETTINGS_LOCALES: Record<LanguageCode, SettingsLocale> = {
 		// Terminal integration
 		startIntegration: "Integration starten",
 		openTerminal: "Terminal öffnen",
+		openTerminalDesc: "CLI im integrierten Terminal starten",
 		integrationNote: "Öffnet das Terminal und startet die CLI-Installation",
 
 		// Account Limits
@@ -924,6 +949,10 @@ export const SETTINGS_LOCALES: Record<LanguageCode, SettingsLocale> = {
 		skillsNote: "Las habilidades proporcionan instrucciones especializadas para trabajar con Obsidian",
 		noSkillsAvailable: "No hay habilidades disponibles",
 		customSkill: "Personalizado",
+		createNewSkill: "Crear nuevo",
+		builtinSkills: "Habilidades integradas",
+		customSkills: "Habilidades personalizadas",
+		validateSkill: "Validar habilidad",
 
 		// Slash Commands section
 		slashCommands: "Comandos Slash",
@@ -1015,6 +1044,7 @@ export const SETTINGS_LOCALES: Record<LanguageCode, SettingsLocale> = {
 		// Terminal integration
 		startIntegration: "Iniciar integración",
 		openTerminal: "Abrir terminal",
+		openTerminalDesc: "Iniciar CLI en terminal integrado",
 		integrationNote: "Abre el terminal e inicia la instalación del CLI",
 
 		// Account Limits
@@ -1100,6 +1130,10 @@ export const SETTINGS_LOCALES: Record<LanguageCode, SettingsLocale> = {
 		skillsNote: "कौशल Obsidian के साथ काम करने के लिए विशेष निर्देश प्रदान करते हैं",
 		noSkillsAvailable: "कोई कौशल उपलब्ध नहीं",
 		customSkill: "कस्टम",
+		createNewSkill: "नया बनाएं",
+		builtinSkills: "अंतर्निहित कौशल",
+		customSkills: "कस्टम कौशल",
+		validateSkill: "कौशल सत्यापित करें",
 
 		// Slash Commands section
 		slashCommands: "स्लैश कमांड",
@@ -1191,6 +1225,7 @@ export const SETTINGS_LOCALES: Record<LanguageCode, SettingsLocale> = {
 		// Terminal integration
 		startIntegration: "एकीकरण शुरू करें",
 		openTerminal: "टर्मिनल खोलें",
+		openTerminalDesc: "एकीकृत टर्मिनल में CLI लॉन्च करें",
 		integrationNote: "टर्मिनल खोलता है और CLI इंस्टॉलेशन शुरू करता है",
 
 		// Account Limits
@@ -1276,6 +1311,10 @@ export const SETTINGS_LOCALES: Record<LanguageCode, SettingsLocale> = {
 		skillsNote: "技能为 Obsidian 工作提供专业指导",
 		noSkillsAvailable: "没有可用的技能",
 		customSkill: "自定义",
+		createNewSkill: "创建新技能",
+		builtinSkills: "内置技能",
+		customSkills: "自定义技能",
+		validateSkill: "验证技能",
 
 		// Slash Commands section
 		slashCommands: "斜杠命令",
@@ -1367,6 +1406,7 @@ export const SETTINGS_LOCALES: Record<LanguageCode, SettingsLocale> = {
 		// Terminal integration
 		startIntegration: "开始集成",
 		openTerminal: "打开终端",
+		openTerminalDesc: "在集成终端中启动 CLI",
 		integrationNote: "打开终端并开始 CLI 安装",
 
 		// Account Limits
@@ -1452,6 +1492,10 @@ export const SETTINGS_LOCALES: Record<LanguageCode, SettingsLocale> = {
 		skillsNote: "スキルは Obsidian での作業に特化した指示を提供します",
 		noSkillsAvailable: "利用可能なスキルがありません",
 		customSkill: "カスタム",
+		createNewSkill: "新規作成",
+		builtinSkills: "内蔵スキル",
+		customSkills: "カスタムスキル",
+		validateSkill: "スキルを検証",
 
 		// Slash Commands section
 		slashCommands: "スラッシュコマンド",
@@ -1543,6 +1587,7 @@ export const SETTINGS_LOCALES: Record<LanguageCode, SettingsLocale> = {
 		// Terminal integration
 		startIntegration: "統合を開始",
 		openTerminal: "ターミナルを開く",
+		openTerminalDesc: "統合ターミナルでCLIを起動",
 		integrationNote: "ターミナルを開いてCLIのインストールを開始します",
 
 		// Account Limits

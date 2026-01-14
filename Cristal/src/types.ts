@@ -194,7 +194,8 @@ export const CODEX_MODELS: { value: string; label: string }[] = [
 ];
 
 // Codex reasoning levels (configured via ~/.codex/config.toml)
-export type CodexReasoningLevel = "off" | "medium" | "xhigh";
+// none = off, high = extended thinking enabled
+export type CodexReasoningLevel = "none" | "high";
 
 // Codex sandbox modes
 export type CodexSandboxMode = "read-only" | "workspace-write" | "danger-full-access";
@@ -205,15 +206,13 @@ export type CodexApprovalPolicy = "untrusted" | "on-failure" | "on-request" | "n
 export interface CodexPermissions {
 	sandboxMode: CodexSandboxMode;
 	approvalPolicy: CodexApprovalPolicy;
-	webSearch: boolean;
 	reasoning: CodexReasoningLevel;
 }
 
 export const DEFAULT_CODEX_PERMISSIONS: CodexPermissions = {
 	sandboxMode: "workspace-write",
 	approvalPolicy: "on-request",
-	webSearch: false,
-	reasoning: "medium"
+	reasoning: "none"
 };
 
 // ============================================================================

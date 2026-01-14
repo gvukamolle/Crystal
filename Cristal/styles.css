@@ -2060,15 +2060,27 @@
    CLI Status Indicator (Settings)
    ============================================================================ */
 
-.cristal-cli-status {
+/* CLI Status Container - fixed structure to prevent layout jumps */
+.cristal-cli-status-container {
 	display: flex;
 	flex-direction: column;
-	align-items: flex-start;
-	gap: 8px;
+	gap: 12px;
 	margin: 12px 0;
-	padding: 12px;
+}
+
+/* Status row: version info + refresh button */
+.cristal-cli-status-row {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	padding: 10px 14px;
 	background: var(--background-secondary);
 	border-radius: 8px;
+	min-height: 42px;
+}
+
+.cristal-cli-status-info {
+	flex: 1;
 }
 
 .cristal-cli-status-item {
@@ -2099,13 +2111,27 @@
 	font-style: italic;
 }
 
+.cristal-cli-status-checking .cristal-cli-status-icon svg {
+	animation: cristal-spin 1s linear infinite;
+}
+
+@keyframes cristal-spin {
+	from { transform: rotate(0deg); }
+	to { transform: rotate(360deg); }
+}
+
+/* Refresh button - icon style */
 .cristal-cli-refresh-btn {
-	padding: 6px 12px;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	width: 28px;
+	height: 28px;
+	padding: 0;
 	background: transparent;
-	border: 1px solid var(--background-modifier-border);
+	border: none;
 	border-radius: 4px;
 	cursor: pointer;
-	font-size: 12px;
 	color: var(--text-muted);
 	transition: all 0.15s ease;
 }
@@ -2113,7 +2139,32 @@
 .cristal-cli-refresh-btn:hover {
 	background: var(--background-modifier-hover);
 	color: var(--text-normal);
-	border-color: var(--text-muted);
+}
+
+.cristal-cli-refresh-btn svg {
+	width: 16px;
+	height: 16px;
+}
+
+/* Content area for terminal/install buttons */
+.cristal-cli-status-content {
+	display: flex;
+	flex-direction: column;
+	gap: 8px;
+}
+
+/* Terminal section with description - button on the right */
+.cristal-cli-terminal-section {
+	display: flex;
+	flex-direction: row;
+	align-items: center;
+	justify-content: space-between;
+	gap: 12px;
+}
+
+.cristal-terminal-desc {
+	margin: 0 !important;
+	flex: 1;
 }
 
 /* Install hint section */

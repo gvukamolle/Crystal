@@ -5,6 +5,7 @@ import { CLAUDE_MODELS, CODEX_MODELS } from "./types";
 import { getAvailableCommands, filterCommands, parseCommand, buildCommandPrompt } from "./commands";
 import { getButtonLocale, type ButtonLocale } from "./buttonLocales";
 import { setCodexReasoningLevel } from "./codexConfig";
+import { wrapHiddenInstructions } from "./systemPrompts";
 import * as fs from "fs";
 import * as path from "path";
 
@@ -597,9 +598,9 @@ export class CristalChatView extends ItemView {
 		if (this.currentProvider === "claude") {
 			this.thinkingEnabled = !this.thinkingEnabled;
 		} else if (this.currentProvider === "codex") {
-			// Toggle between "off" and "xhigh" (высокий режим)
+			// Toggle between "none" and "high"
 			const currentReasoning = this.getCodexReasoningLevel();
-			const newLevel = currentReasoning === "off" ? "xhigh" : "off";
+			const newLevel = currentReasoning === "none" ? "high" : "none";
 			this.setCodexReasoningLevel(newLevel);
 		}
 		this.updateThinkingButton();
@@ -612,8 +613,8 @@ export class CristalChatView extends ItemView {
 		if (isClaude) {
 			isActive = this.thinkingEnabled;
 		} else {
-			// Codex: active when reasoning !== "off"
-			isActive = this.getCodexReasoningLevel() !== "off";
+			// Codex: active when reasoning === "high"
+			isActive = this.getCodexReasoningLevel() === "high";
 		}
 
 		// Update state
@@ -626,19 +627,20 @@ export class CristalChatView extends ItemView {
 		);
 	}
 
-	private getCodexReasoningLevel(): "off" | "medium" | "xhigh" {
+	private getCodexReasoningLevel(): "none" | "high" {
 		const agent = this.plugin.settings.agents.find(
 			a => a.cliType === "codex" && a.enabled
 		);
-		return agent?.codexPermissions?.reasoning || "medium";
+		return agent?.codexPermissions?.reasoning || "none";
 	}
 
-	private setCodexReasoningLevel(level: "off" | "medium" | "xhigh"): void {
+	private setCodexReasoningLevel(level: "none" | "high"): void {
 		const agent = this.plugin.settings.agents.find(
 			a => a.cliType === "codex" && a.enabled
 		);
 		if (agent?.codexPermissions) {
 			agent.codexPermissions.reasoning = level;
+			agent.reasoningEnabled = level === "high";
 			this.plugin.saveSettings();
 			// Write to ~/.codex/config.toml
 			setCodexReasoningLevel(level);
@@ -820,17 +822,17 @@ export class CristalChatView extends ItemView {
 			const toggleEl = reasoningItemEl.createDiv({ cls: "cristal-thinking-switch" });
 			const toggleTrack = toggleEl.createDiv({ cls: "cristal-thinking-switch-track" });
 			toggleTrack.createDiv({ cls: "cristal-thinking-switch-thumb" });
-			if (this.getCodexReasoningLevel() !== "off") {
+			if (this.getCodexReasoningLevel() === "high") {
 				toggleTrack.addClass("cristal-thinking-switch-on");
 			}
 
 			reasoningItemEl.addEventListener("click", (e) => {
 				e.stopPropagation();
-				// Toggle between "off" and "xhigh"
+				// Toggle between "none" and "high"
 				const currentLevel = this.getCodexReasoningLevel();
-				const newLevel = currentLevel === "off" ? "xhigh" : "off";
+				const newLevel = currentLevel === "none" ? "high" : "none";
 				this.setCodexReasoningLevel(newLevel);
-				toggleTrack.toggleClass("cristal-thinking-switch-on", newLevel !== "off");
+				toggleTrack.toggleClass("cristal-thinking-switch-on", newLevel === "high");
 				this.updateThinkingButton();
 			});
 		}
@@ -2209,6 +2211,15 @@ Provide only the summary, no additional commentary.`;
 		} else {
 			// Clear last selection context if no selection was used
 			this.lastSelectionContext = null;
+		}
+
+		// Add hidden system instructions for first message in new session
+		if (isFirstMessage) {
+			const agentType = this.currentProvider === "claude" ? "claude" : "codex";
+			const agentInstructions = await this.plugin.readAgentMd(agentType);
+			if (agentInstructions) {
+				fullPrompt = `${wrapHiddenInstructions(agentInstructions)}\n\n${fullPrompt}`;
+			}
 		}
 
 		// Add compact summary if exists (system prompt is now read from CLAUDE.md automatically)

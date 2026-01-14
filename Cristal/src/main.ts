@@ -9,7 +9,7 @@ import { SYSTEM_PROMPTS, type LanguageCode } from "./systemPrompts";
 import { detectCLIPath, detectCodexCLIPath } from "./cliDetector";
 import { setCodexReasoningLevel } from "./codexConfig";
 import { TerminalService, TerminalView, TERMINAL_VIEW_TYPE } from "./terminal";
-import { SkillLoader } from "./skills";
+import { SkillLoader, CreateSkillModal, ValidateSkillModal, SkillSelectorModal } from "./skills";
 
 const MAX_SESSIONS = 20;
 
@@ -45,7 +45,7 @@ export default class CristalPlugin extends Plugin {
 
 		// Sync Codex reasoning level to ~/.codex/config.toml on startup
 		if (codexAgent) {
-			const level = codexAgent.reasoningEnabled ? "xhigh" : "medium";
+			const level = codexAgent.reasoningEnabled ? "high" : "none";
 			setCodexReasoningLevel(level);
 		}
 
@@ -107,6 +107,59 @@ export default class CristalPlugin extends Plugin {
 			name: "New chat",
 			callback: async () => {
 				await this.activateView();
+			}
+		});
+
+		// ==================== Skills Commands ====================
+
+		// Command: Create new skill
+		this.addCommand({
+			id: "create-new-skill",
+			name: "Create new skill",
+			callback: () => {
+				new CreateSkillModal(
+					this.app,
+					this.skillLoader,
+					async (skillId: string) => {
+						await this.skillLoader.refresh();
+						await this.syncAllAgentSkills();
+						new (await import("obsidian")).Notice(`Skill "${skillId}" created successfully`);
+					}
+				).open();
+			}
+		});
+
+		// Command: Validate skill
+		this.addCommand({
+			id: "validate-skill",
+			name: "Validate skill",
+			callback: () => {
+				const vaultSkills = this.skillLoader.getSkillReferences().filter(s => !s.isBuiltin);
+
+				if (vaultSkills.length === 0) {
+					new (require("obsidian")).Notice("No custom skills found in .cristal/skills/");
+					return;
+				}
+
+				new SkillSelectorModal(
+					this.app,
+					vaultSkills,
+					(skillId: string) => {
+						new ValidateSkillModal(this.app, this.skillLoader, skillId).open();
+					}
+				).open();
+			}
+		});
+
+		// Command: Refresh skills
+		this.addCommand({
+			id: "refresh-skills",
+			name: "Refresh skills",
+			callback: async () => {
+				await this.skillLoader.refresh();
+				await this.syncAllAgentSkills();
+				const count = this.skillLoader.getSkillReferences().length;
+				new (require("obsidian")).Notice(`Skills refreshed. Found ${count} skills.`);
 			}
 		});
 
@@ -356,7 +409,7 @@ export default class CristalPlugin extends Plugin {
 			enabled: oldSettings.defaultProvider === "codex",
 			cliPath: oldSettings.codexCliPath || "codex",
 			model: oldSettings.codexDefaultModel || "gpt-5.2-codex",
-			reasoningEnabled: oldSettings.codexReasoningLevel === "xhigh"
+			reasoningEnabled: oldSettings.codexReasoningLevel === "high"
 		});
 
 		return agents;
@@ -465,9 +518,9 @@ export default class CristalPlugin extends Plugin {
 	}
 
 	// ==================== Agent Instructions Management ====================
-	// All agent instructions are stored in "Cristal Rules" folder
+	// All agent instructions are stored in ".cristal-rules" folder (hidden)
 
-	private readonly CRISTAL_RULES_FOLDER = "Cristal Rules";
+	private readonly CRISTAL_RULES_FOLDER = ".cristal-rules";
 
 	getVaultPath(): string {
 		return this.app.vault.adapter instanceof FileSystemAdapter
@@ -481,8 +534,15 @@ export default class CristalPlugin extends Plugin {
 	async ensureCristalRulesFolder(): Promise<void> {
 		const folder = this.app.vault.getAbstractFileByPath(this.CRISTAL_RULES_FOLDER);
 		if (!folder) {
-			await this.app.vault.createFolder(this.CRISTAL_RULES_FOLDER);
-			console.log(`Cristal: Created folder "${this.CRISTAL_RULES_FOLDER}"`);
+			try {
+				await this.app.vault.createFolder(this.CRISTAL_RULES_FOLDER);
+				console.log(`Cristal: Created folder "${this.CRISTAL_RULES_FOLDER}"`);
+			} catch (e) {
+				// Folder might already exist (race condition or hidden folder detection issue)
+				if (!(e instanceof Error && e.message.includes("already exists"))) {
+					throw e;
+				}
+			}
 		}
 	}
 
@@ -520,7 +580,14 @@ export default class CristalPlugin extends Plugin {
 		if (file && "extension" in file) {
 			await this.app.vault.modify(file as import("obsidian").TFile, content);
 		} else {
-			await this.app.vault.create(filePath, content);
+			try {
+				await this.app.vault.create(filePath, content);
+			} catch (e) {
+				// File might already exist (hidden folder detection issue)
+				if (!(e instanceof Error && e.message.includes("already exists"))) {
+					throw e;
+				}
+			}
 		}
 	}
 

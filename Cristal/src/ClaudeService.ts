@@ -128,7 +128,16 @@ export class ClaudeService extends EventEmitter {
 			"Read(./.trash/**)",
 			"Edit(./.trash/**)",
 			"Write(./.trash/**)",
-			"Delete(./.trash/**)"
+			"Delete(./.trash/**)",
+			// Hide AGENTS.md from Claude (Claude uses CLAUDE.md only)
+			"Read(./.cristal-rules/AGENTS.md)",
+			"Edit(./.cristal-rules/AGENTS.md)",
+			"Write(./.cristal-rules/AGENTS.md)",
+			"Delete(./.cristal-rules/AGENTS.md)",
+			// Block editing CLAUDE.md (read-only access)
+			"Edit(./.cristal-rules/CLAUDE.md)",
+			"Write(./.cristal-rules/CLAUDE.md)",
+			"Delete(./.cristal-rules/CLAUDE.md)"
 		];
 
 		const config = {

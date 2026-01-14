@@ -107,6 +107,19 @@ export class CodexService extends EventEmitter {
 		// Build args using permissions
 		const args = ["exec", "--json", "--skip-git-repo-check", "--sandbox", this.permissions.sandboxMode];
 
+		// Add approval policy (controls whether Codex can ask for permissions)
+		// "on-request" = ask user, "never" = auto-approve, "on-failure" = ask on error, "untrusted" = deny all
+		if (this.permissions.approvalPolicy && this.permissions.approvalPolicy !== "on-request") {
+			// --full-auto maps to approval_policy: never
+			if (this.permissions.approvalPolicy === "never") {
+				args.push("--full-auto");
+			}
+			// Note: "on-failure" and "untrusted" may not have direct CLI flags
+		}
+
+		// Network access is configured in ~/.codex/config.toml
+		// [sandbox_danger_full_access] enable_network = true
+
 		// Add directories for attached files outside vault
 		if (additionalDirs && additionalDirs.length > 0) {
 			for (const dir of additionalDirs) {
@@ -119,7 +132,7 @@ export class CodexService extends EventEmitter {
 		}
 
 		// Note: --reasoning-effort is not a valid flag for codex exec
-		// Reasoning level is configured via config.toml or future API
+		// Reasoning level is configured via config.toml or OPENAI_REASONING_EFFORT env var
 
 		// Resume or new prompt
 		if (threadId) {

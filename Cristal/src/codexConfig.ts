@@ -33,20 +33,17 @@ export function getCodexConfig(): Record<string, string> {
 
 /**
  * Gets the current reasoning level from config.toml
- * Maps old values (low/high) to new simplified values (off/medium/xhigh)
+ * Maps to simplified values: minimal (off) or high (extended thinking)
  */
 export function getCodexReasoningLevel(): CodexReasoningLevel | null {
 	const config = getCodexConfig();
 	const level = config["model_reasoning_effort"];
-	// Map old values to new simplified ones
-	if (level === "off" || level === "none") {
-		return "off";
+	// Map values: anything low = none, anything high = high
+	if (level === "none" || level === "minimal" || level === "low") {
+		return "none";
 	}
-	if (level === "low" || level === "medium") {
-		return "medium";
-	}
-	if (level === "high" || level === "xhigh") {
-		return "xhigh";
+	if (level === "medium" || level === "high" || level === "xhigh") {
+		return "high";
 	}
 	return null;
 }
