@@ -1,5 +1,5 @@
 {
-	"name": "cristal-cli-llm",
+	"name": "crystal-cli-llm",
 	"version": "0.2.0",
 	"description": "Universal LLM CLI integration for Obsidian",
 	"main": "main.js",

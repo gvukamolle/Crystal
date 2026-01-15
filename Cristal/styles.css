@@ -1,9 +1,9 @@
 /* ============================================================================
-   Cristal - Chat UI Styles
+   Crystal - Chat UI Styles
    ============================================================================ */
 
 /* Container */
-.cristal-container {
+.crystal-container {
 	display: flex;
 	flex-direction: column;
 	height: 100%;
@@ -12,7 +12,7 @@
 }
 
 /* Header */
-.cristal-header {
+.crystal-header {
 	display: flex;
 	align-items: center;
 	justify-content: space-between;
@@ -24,7 +24,7 @@
 }
 
 /* Fade gradient below header */
-.cristal-header::after {
+.crystal-header::after {
 	content: "";
 	position: absolute;
 	bottom: -24px;
@@ -36,18 +36,18 @@
 	z-index: 5;
 }
 
-.cristal-title {
+.crystal-title {
 	font-weight: 600;
 	font-size: 14px;
 	color: var(--text-normal);
 }
 
-.cristal-actions {
+.crystal-actions {
 	display: flex;
 	gap: 8px;
 }
 
-.cristal-action-btn {
+.crystal-action-btn {
 	background: transparent;
 	border: none;
 	width: 28px;
@@ -62,26 +62,26 @@
 	transition: all 0.15s ease;
 }
 
-.cristal-action-btn svg {
+.crystal-action-btn svg {
 	width: 16px !important;
 	height: 16px !important;
 }
 
-.cristal-action-btn:hover {
+.crystal-action-btn:hover {
 	background: var(--background-modifier-hover);
 	color: var(--text-normal);
 	transform: translateY(-1px);
 }
 
 /* Custom Session Dropdown */
-.cristal-session-dropdown-custom {
+.crystal-session-dropdown-custom {
 	position: relative;
 	flex: 1;
 	min-width: 0;
 	max-width: 400px;
 }
 
-.cristal-session-trigger {
+.crystal-session-trigger {
 	display: flex;
 	align-items: center;
 	gap: 4px;
@@ -95,34 +95,34 @@
 	transition: all 0.15s ease;
 }
 
-.cristal-session-trigger:hover {
+.crystal-session-trigger:hover {
 	border-color: var(--interactive-accent);
 }
 
-.cristal-session-trigger-open {
+.crystal-session-trigger-open {
 	border-color: var(--interactive-accent);
 	box-shadow: 0 0 0 2px var(--interactive-accent-hover);
 }
 
-.cristal-session-trigger-text {
+.crystal-session-trigger-text {
 	flex: 1;
 	overflow: hidden;
 	text-overflow: ellipsis;
 	white-space: nowrap;
 }
 
-.cristal-session-trigger-icon {
+.crystal-session-trigger-icon {
 	display: flex;
 	align-items: center;
 	color: var(--text-muted);
 	transition: transform 0.15s ease;
 }
 
-.cristal-session-trigger-open .cristal-session-trigger-icon {
+.crystal-session-trigger-open .crystal-session-trigger-icon {
 	transform: rotate(180deg);
 }
 
-.cristal-session-list {
+.crystal-session-list {
 	display: none;
 	position: absolute;
 	top: calc(100% + 4px);
@@ -137,11 +137,11 @@
 	z-index: 100;
 }
 
-.cristal-session-list-open {
+.crystal-session-list-open {
 	display: block;
 }
 
-.cristal-session-item {
+.crystal-session-item {
 	display: flex;
 	align-items: center;
 	gap: 8px;
@@ -150,15 +150,15 @@
 	transition: background 0.1s ease;
 }
 
-.cristal-session-item:hover {
+.crystal-session-item:hover {
 	background: var(--background-modifier-hover);
 }
 
-.cristal-session-item-active {
+.crystal-session-item-active {
 	background: var(--background-secondary);
 }
 
-.cristal-session-title {
+.crystal-session-title {
 	flex: 1;
 	overflow: hidden;
 	text-overflow: ellipsis;
@@ -167,7 +167,7 @@
 	color: var(--text-normal);
 }
 
-.cristal-session-delete {
+.crystal-session-delete {
 	display: flex;
 	align-items: center;
 	justify-content: center;
@@ -181,52 +181,52 @@
 	transition: all 0.15s ease;
 }
 
-.cristal-session-item:hover .cristal-session-delete {
+.crystal-session-item:hover .crystal-session-delete {
 	opacity: 1;
 }
 
-.cristal-session-delete:hover {
+.crystal-session-delete:hover {
 	background: var(--background-modifier-hover);
 	color: var(--text-error);
 }
 
 /* Session running indicator (spinner) */
-.cristal-session-spinner {
+.crystal-session-spinner {
 	display: flex;
 	align-items: center;
 	justify-content: center;
 	width: 16px;
 	height: 16px;
 	color: var(--interactive-accent);
-	animation: cristal-spin 1s linear infinite;
+	animation: crystal-spin 1s linear infinite;
 	flex-shrink: 0;
 }
 
-.cristal-session-item-running {
+.crystal-session-item-running {
 	background: var(--background-secondary-alt);
 }
 
-@keyframes cristal-spin {
+@keyframes crystal-spin {
 	from { transform: rotate(0deg); }
 	to { transform: rotate(360deg); }
 }
 
 /* Session list scrollbar */
-.cristal-session-list::-webkit-scrollbar {
+.crystal-session-list::-webkit-scrollbar {
 	width: 6px;
 }
 
-.cristal-session-list::-webkit-scrollbar-track {
+.crystal-session-list::-webkit-scrollbar-track {
 	background: transparent;
 }
 
-.cristal-session-list::-webkit-scrollbar-thumb {
+.crystal-session-list::-webkit-scrollbar-thumb {
 	background: var(--background-modifier-border);
 	border-radius: 3px;
 }
 
 /* Messages Area */
-.cristal-messages {
+.crystal-messages {
 	flex: 1;
 	overflow-y: auto;
 	padding: 32px 16px;
@@ -236,7 +236,7 @@
 }
 
 /* Welcome Message */
-.cristal-welcome {
+.crystal-welcome {
 	text-align: center;
 	padding: 40px 24px;
 	color: var(--text-muted);
@@ -244,20 +244,20 @@
 	margin: 0 auto;
 }
 
-.cristal-welcome-title {
+.crystal-welcome-title {
 	margin: 0 0 8px 0;
 	color: var(--text-normal);
 	font-size: 22px;
 	font-weight: 600;
 }
 
-.cristal-welcome-subtitle {
+.crystal-welcome-subtitle {
 	margin: 0 0 24px 0;
 	font-size: 14px;
 	color: var(--text-muted);
 }
 
-.cristal-welcome-features {
+.crystal-welcome-features {
 	display: flex;
 	flex-direction: column;
 	gap: 10px;
@@ -265,7 +265,7 @@
 	text-align: left;
 }
 
-.cristal-welcome-feature {
+.crystal-welcome-feature {
 	display: flex;
 	align-items: center;
 	gap: 10px;
@@ -277,23 +277,23 @@
 	transition: background 0.15s ease, transform 0.1s ease;
 }
 
-.cristal-welcome-feature:hover {
+.crystal-welcome-feature:hover {
 	background: var(--background-secondary-alt);
 	transform: translateX(4px);
 }
 
-.cristal-welcome-feature-icon {
+.crystal-welcome-feature-icon {
 	display: flex;
 	color: var(--interactive-accent);
 	flex-shrink: 0;
 }
 
-.cristal-welcome-feature-icon svg {
+.crystal-welcome-feature-icon svg {
 	width: 16px;
 	height: 16px;
 }
 
-.cristal-welcome-hint {
+.crystal-welcome-hint {
 	font-size: 12px;
 	color: var(--text-muted);
 	margin: 0 0 8px 0;
@@ -303,7 +303,7 @@
 	display: inline-block;
 }
 
-.cristal-welcome-joke {
+.crystal-welcome-joke {
 	font-size: 12px;
 	color: var(--text-faint);
 	margin: 16px 0 0 0;
@@ -311,7 +311,7 @@
 }
 
 /* Message Bubbles */
-.cristal-message {
+.crystal-message {
 	max-width: 90%;
 	padding: 12px 16px;
 	border-radius: 12px;
@@ -319,21 +319,21 @@
 	line-height: 1.6;
 }
 
-.cristal-message-user {
+.crystal-message-user {
 	align-self: flex-end;
 	background: var(--interactive-accent);
 	color: var(--text-on-accent);
 	border-bottom-right-radius: 4px;
 }
 
-.cristal-message-assistant {
+.crystal-message-assistant {
 	align-self: flex-start;
 	background: var(--background-secondary);
 	color: var(--text-normal);
 	border-bottom-left-radius: 4px;
 }
 
-.cristal-message-error {
+.crystal-message-error {
 	align-self: center;
 	background: var(--background-modifier-error);
 	color: var(--text-error);
@@ -343,7 +343,7 @@
 }
 
 /* Message Actions - buttons under message */
-.cristal-message-actions {
+.crystal-message-actions {
 	display: flex;
 	gap: 8px;
 	margin-top: 12px;
@@ -353,7 +353,7 @@
 }
 
 /* Action buttons with icon + text */
-.cristal-action-btn-with-text {
+.crystal-action-btn-with-text {
 	display: flex;
 	align-items: center;
 	gap: 6px;
@@ -368,13 +368,13 @@
 	transition: all 0.15s ease;
 }
 
-.cristal-action-btn-with-text:hover {
+.crystal-action-btn-with-text:hover {
 	background: var(--background-modifier-hover);
 	color: var(--text-normal);
 	border-color: var(--interactive-accent);
 }
 
-.cristal-action-icon {
+.crystal-action-icon {
 	display: flex;
 	align-items: center;
 	justify-content: center;
@@ -382,21 +382,21 @@
 	height: 16px;
 }
 
-.cristal-action-text {
+.crystal-action-text {
 	white-space: nowrap;
 }
 
-.cristal-action-btn-success {
+.crystal-action-btn-success {
 	color: var(--text-success);
 	border-color: var(--text-success);
 }
 
-.cristal-action-btn-success .cristal-action-icon {
+.crystal-action-btn-success .crystal-action-icon {
 	color: var(--text-success);
 }
 
 /* Expanded prompt for slash commands */
-.cristal-expanded-prompt {
+.crystal-expanded-prompt {
 	margin-top: 8px;
 	padding: 8px 12px;
 	background: rgba(0, 0, 0, 0.15);
@@ -409,20 +409,20 @@
 }
 
 /* Message Content */
-.cristal-message-content {
+.crystal-message-content {
 	word-wrap: break-word;
 }
 
-.cristal-message-content p {
+.crystal-message-content p {
 	margin: 0 0 8px 0;
 }
 
-.cristal-message-content p:last-child {
+.crystal-message-content p:last-child {
 	margin-bottom: 0;
 }
 
 /* Code blocks in messages */
-.cristal-message-content pre {
+.crystal-message-content pre {
 	background: var(--background-primary);
 	padding: 12px;
 	border-radius: 6px;
@@ -430,69 +430,69 @@
 	margin: 8px 0;
 }
 
-.cristal-message-content code {
+.crystal-message-content code {
 	font-family: var(--font-monospace);
 	font-size: 13px;
 }
 
-.cristal-message-content :not(pre) > code {
+.crystal-message-content :not(pre) > code {
 	background: var(--background-primary);
 	padding: 2px 6px;
 	border-radius: 4px;
 }
 
 /* Disable cursor but ALLOW text selection */
-.cristal-message-content,
-.cristal-message-content *,
-.cristal-message *,
-.cristal-messages-container * {
+.crystal-message-content,
+.crystal-message-content *,
+.crystal-message *,
+.crystal-messages-container * {
 	caret-color: transparent !important;
 	outline: none !important;
 }
 
-.cristal-message-content [contenteditable],
-.cristal-message-content [contenteditable="true"] {
+.crystal-message-content [contenteditable],
+.crystal-message-content [contenteditable="true"] {
 	caret-color: transparent !important;
 	-webkit-user-modify: read-only !important;
 	user-modify: read-only !important;
 }
 
 /* Allow text selection in completed messages */
-.cristal-message:not(.cristal-message-streaming) .cristal-message-content {
+.crystal-message:not(.crystal-message-streaming) .crystal-message-content {
 	user-select: text;
 	-webkit-user-select: text;
 }
 
 /* Preserve formatting in user messages (line breaks, indents) */
-.cristal-message-user .cristal-message-content {
+.crystal-message-user .crystal-message-content {
 	white-space: pre-wrap;
 	word-wrap: break-word;
 }
 
 /* Loading dots */
-.cristal-loader {
+.crystal-loader {
 	display: flex;
 	gap: 4px;
 	padding: 4px 0;
 }
 
-.cristal-loader-dot {
+.crystal-loader-dot {
 	width: 8px;
 	height: 8px;
 	background: var(--text-muted);
 	border-radius: 50%;
-	animation: cristal-bounce 1.4s ease-in-out infinite both;
+	animation: crystal-bounce 1.4s ease-in-out infinite both;
 }
 
-.cristal-loader-dot:nth-child(1) {
+.crystal-loader-dot:nth-child(1) {
 	animation-delay: -0.32s;
 }
 
-.cristal-loader-dot:nth-child(2) {
+.crystal-loader-dot:nth-child(2) {
 	animation-delay: -0.16s;
 }
 
-@keyframes cristal-bounce {
+@keyframes crystal-bounce {
 	0%, 80%, 100% {
 		transform: scale(0.6);
 		opacity: 0.5;
@@ -504,20 +504,20 @@
 }
 
 /* Hide caret AND disable selection during streaming */
-.cristal-message-streaming .cristal-message-content {
+.crystal-message-streaming .crystal-message-content {
 	caret-color: transparent;
 	user-select: none;
 	-webkit-user-select: none;
 }
 
-.cristal-message-streaming .cristal-message-content * {
+.crystal-message-streaming .crystal-message-content * {
 	caret-color: transparent;
 	user-select: none;
 	-webkit-user-select: none;
 }
 
 /* Status Bar */
-.cristal-status {
+.crystal-status {
 	padding: 8px 16px;
 	font-size: 12px;
 	color: var(--text-muted);
@@ -525,16 +525,16 @@
 	min-height: 20px;
 }
 
-.cristal-status-loading {
+.crystal-status-loading {
 	color: var(--text-accent);
 }
 
-.cristal-status-error {
+.crystal-status-error {
 	color: var(--text-error);
 }
 
 /* Input Area */
-.cristal-input-area {
+.crystal-input-area {
 	display: flex;
 	flex-direction: column;
 	gap: 6px;
@@ -545,7 +545,7 @@
 }
 
 /* Fade gradient above input area */
-.cristal-input-area::before {
+.crystal-input-area::before {
 	content: "";
 	position: absolute;
 	top: -24px;
@@ -557,7 +557,7 @@
 	z-index: 5;
 }
 
-.cristal-input {
+.crystal-input {
 	width: 100%;
 	min-height: 40px;
 	max-height: 200px;
@@ -573,23 +573,23 @@
 	overflow-y: hidden;
 }
 
-.cristal-input:focus {
+.crystal-input:focus {
 	outline: none;
 	border-color: var(--interactive-accent);
 	box-shadow: 0 0 0 2px var(--interactive-accent-hover);
 }
 
-.cristal-input::placeholder {
+.crystal-input::placeholder {
 	color: var(--text-muted);
 }
 
-.cristal-input:disabled {
+.crystal-input:disabled {
 	opacity: 0.6;
 	cursor: not-allowed;
 }
 
 /* Context Indicator */
-.cristal-context-indicator {
+.crystal-context-indicator {
 	display: none;
 	flex-wrap: wrap;
 	gap: 6px;
@@ -597,17 +597,17 @@
 	margin-bottom: 8px;
 }
 
-.cristal-context-indicator.cristal-context-active {
+.crystal-context-indicator.crystal-context-active {
 	display: flex;
 }
 
-.cristal-context-icon {
+.crystal-context-icon {
 	display: flex;
 	align-items: center;
 	color: var(--text-accent);
 }
 
-.cristal-context-name {
+.crystal-context-name {
 	overflow: hidden;
 	text-overflow: ellipsis;
 	white-space: nowrap;
@@ -615,7 +615,7 @@
 	flex: 1;
 }
 
-.cristal-context-remove {
+.crystal-context-remove {
 	display: flex;
 	align-items: center;
 	justify-content: center;
@@ -629,31 +629,31 @@
 	transition: all 0.15s ease;
 }
 
-.cristal-context-remove:hover {
+.crystal-context-remove:hover {
 	background: var(--background-modifier-hover);
 	color: var(--text-error);
 }
 
-.cristal-button-container {
+.crystal-button-container {
 	display: flex;
 	justify-content: space-between;
 	align-items: center;
 	gap: 8px;
 }
 
-.cristal-button-group {
+.crystal-button-group {
 	display: flex;
 	align-items: center;
 	gap: 6px;
 }
 
 /* Model Selector */
-.cristal-model-selector {
+.crystal-model-selector {
 	display: flex;
 	align-items: center;
 }
 
-.cristal-model-select {
+.crystal-model-select {
 	-webkit-appearance: none;
 	-moz-appearance: none;
 	appearance: none;
@@ -672,32 +672,32 @@
 	line-height: 1.4;
 }
 
-.cristal-model-select option {
+.crystal-model-select option {
 	background: var(--background-primary);
 	color: var(--text-normal);
 	padding: 8px;
 }
 
-.cristal-model-select:hover {
+.crystal-model-select:hover {
 	border-color: var(--interactive-accent);
 }
 
-.cristal-model-select:focus {
+.crystal-model-select:focus {
 	outline: none;
 	border-color: var(--interactive-accent);
 	box-shadow: 0 0 0 2px var(--interactive-accent-hover);
 }
 
-.cristal-model-select:disabled {
+.crystal-model-select:disabled {
 	opacity: 0.5;
 	cursor: not-allowed;
 }
 
-.cristal-model-select:disabled:hover {
+.crystal-model-select:disabled:hover {
 	border-color: var(--background-modifier-border);
 }
 
-.cristal-send-btn {
+.crystal-send-btn {
 	width: 32px;
 	height: 32px;
 	padding: 0;
@@ -712,84 +712,84 @@
 	justify-content: center;
 }
 
-.cristal-send-btn svg {
+.crystal-send-btn svg {
 	width: 16px !important;
 	height: 16px !important;
 }
 
-.cristal-send-btn:hover {
+.crystal-send-btn:hover {
 	background: var(--interactive-accent-hover);
 	transform: scale(1.05);
 }
 
-.cristal-send-btn:active {
+.crystal-send-btn:active {
 	transform: scale(0.95);
 }
 
-.cristal-send-btn-stop {
+.crystal-send-btn-stop {
 	background: var(--text-error);
 }
 
-.cristal-send-btn-stop:hover {
+.crystal-send-btn-stop:hover {
 	background: var(--text-error);
 	opacity: 0.9;
 }
 
 /* Loading state with spinner */
-@keyframes cristal-spin {
+@keyframes crystal-spin {
 	from { transform: rotate(0deg); }
 	to { transform: rotate(360deg); }
 }
 
-.cristal-send-btn-loading {
+.crystal-send-btn-loading {
 	background: var(--background-modifier-border);
 	color: var(--text-muted);
 }
 
-.cristal-send-btn-loading svg {
-	animation: cristal-spin 1s linear infinite;
+.crystal-send-btn-loading svg {
+	animation: crystal-spin 1s linear infinite;
 }
 
-.cristal-send-btn-loading:hover {
+.crystal-send-btn-loading:hover {
 	background: var(--text-error);
 	color: var(--text-on-accent);
 }
 
-.cristal-send-btn-loading:hover svg {
+.crystal-send-btn-loading:hover svg {
 	animation: none;
 }
 
 /* Settings Page */
-.cristal-settings-info {
+.crystal-settings-info {
 	background: var(--background-secondary);
 	padding: 16px;
 	border-radius: 8px;
 	margin-top: 16px;
 }
 
-.cristal-settings-info p {
+.crystal-settings-info p {
 	margin: 0 0 12px 0;
 }
 
-.cristal-settings-info ol {
+.crystal-settings-info ol {
 	margin: 12px 0;
 	padding-left: 24px;
 }
 
-.cristal-settings-info li {
+.crystal-settings-info li {
 	margin: 8px 0;
 	font-family: var(--font-monospace);
 	font-size: 13px;
 }
 
-.cristal-settings-note {
+.crystal-settings-note {
 	color: var(--text-muted);
 	font-size: 13px;
 	font-style: italic;
 }
 
 /* Getting Started Collapsible Section */
-.cristal-getting-started-header {
+.crystal-getting-started-header {
 	display: flex;
 	align-items: center;
 	cursor: pointer;
@@ -797,15 +797,15 @@
 	margin-top: 24px;
 }
 
-.cristal-getting-started-header:hover {
+.crystal-getting-started-header:hover {
 	opacity: 0.8;
 }
 
-.cristal-getting-started-header h3 {
+.crystal-getting-started-header h3 {
 	margin: 0;
 }
 
-.cristal-getting-started-chevron {
+.crystal-getting-started-chevron {
 	display: flex;
 	align-items: center;
 	justify-content: center;
@@ -815,54 +815,54 @@
 	color: var(--text-muted);
 }
 
-.cristal-getting-started-chevron svg {
+.crystal-getting-started-chevron svg {
 	width: 16px;
 	height: 16px;
 }
 
-.cristal-getting-started-content {
+.crystal-getting-started-content {
 	margin-top: 8px;
 }
 
-.cristal-getting-started-actions {
+.crystal-getting-started-actions {
 	margin-top: 16px;
 	display: flex;
 	justify-content: flex-end;
 }
 
 /* Scrollbar styling */
-.cristal-messages::-webkit-scrollbar {
+.crystal-messages::-webkit-scrollbar {
 	width: 8px;
 }
 
-.cristal-messages::-webkit-scrollbar-track {
+.crystal-messages::-webkit-scrollbar-track {
 	background: transparent;
 }
 
-.cristal-messages::-webkit-scrollbar-thumb {
+.crystal-messages::-webkit-scrollbar-thumb {
 	background: var(--background-modifier-border);
 	border-radius: 4px;
 }
 
-.cristal-messages::-webkit-scrollbar-thumb:hover {
+.crystal-messages::-webkit-scrollbar-thumb:hover {
 	background: var(--background-modifier-border-hover);
 }
 
 /* Input Wrapper for Autocomplete Positioning */
-.cristal-input-wrapper {
+.crystal-input-wrapper {
 	position: relative;
 	width: 100%;
 }
 
 /* Autocomplete Popup */
-.cristal-autocomplete {
+.crystal-autocomplete {
 	display: none;
 	position: absolute;
 	bottom: 100%;
 	left: 0;
 	right: 0;
 	margin-bottom: 4px;
-	max-height: 200px;
+	max-height: 320px;  /* +60% от 200px для команд */
 	overflow-y: auto;
 	background: var(--background-primary);
 	border: 1px solid var(--background-modifier-border);
@@ -871,11 +871,16 @@
 	z-index: 100;
 }
 
-.cristal-autocomplete.cristal-autocomplete-visible {
+/* Меньшая высота для меню моделей (макс 2 модели) */
+.crystal-autocomplete.crystal-model-autocomplete {
+	max-height: 150px;
+}
+
+.crystal-autocomplete.crystal-autocomplete-visible {
 	display: block;
 }
 
-.cristal-autocomplete-item {
+.crystal-autocomplete-item {
 	display: flex;
 	align-items: center;
 	gap: 10px;
@@ -884,12 +889,12 @@
 	transition: background 0.1s ease;
 }
 
-.cristal-autocomplete-item:hover,
-.cristal-autocomplete-item-selected {
+.crystal-autocomplete-item:hover,
+.crystal-autocomplete-item-selected {
 	background: var(--background-modifier-hover);
 }
 
-.cristal-autocomplete-icon {
+.crystal-autocomplete-icon {
 	display: flex;
 	align-items: center;
 	justify-content: center;
@@ -899,11 +904,11 @@
 	flex-shrink: 0;
 }
 
-.cristal-autocomplete-item-selected .cristal-autocomplete-icon {
+.crystal-autocomplete-item-selected .crystal-autocomplete-icon {
 	color: var(--interactive-accent);
 }
 
-.cristal-autocomplete-text {
+.crystal-autocomplete-text {
 	display: flex;
 	flex-direction: column;
 	gap: 2px;
@@ -911,13 +916,13 @@
 	flex: 1;
 }
 
-.cristal-autocomplete-name {
+.crystal-autocomplete-name {
 	font-weight: 500;
 	font-size: 14px;
 	color: var(--text-normal);
 }
 
-.cristal-autocomplete-desc {
+.crystal-autocomplete-desc {
 	font-size: 12px;
 	color: var(--text-muted);
 	overflow: hidden;
@@ -926,24 +931,24 @@
 }
 
 /* Autocomplete separator */
-.cristal-autocomplete-separator {
+.crystal-autocomplete-separator {
 	height: 1px;
 	background: var(--background-modifier-border);
 	margin: 6px 0;
 }
 
 /* Thinking toggle in model menu */
-.cristal-thinking-item {
+.crystal-thinking-item {
 	display: flex;
 	align-items: center;
 }
 
-.cristal-thinking-switch {
+.crystal-thinking-switch {
 	margin-left: auto;
 	flex-shrink: 0;
 }
 
-.cristal-thinking-switch-track {
+.crystal-thinking-switch-track {
 	width: 36px;
 	height: 20px;
 	background: var(--background-modifier-border);
@@ -953,11 +958,11 @@
 	cursor: pointer;
 }
 
-.cristal-thinking-switch-track.cristal-thinking-switch-on {
+.crystal-thinking-switch-track.crystal-thinking-switch-on {
 	background: var(--interactive-accent);
 }
 
-.cristal-thinking-switch-thumb {
+.crystal-thinking-switch-thumb {
 	width: 16px;
 	height: 16px;
 	background: var(--text-on-accent);
@@ -968,26 +973,26 @@
 	transition: transform 0.2s ease;
 }
 
-.cristal-thinking-switch-track.cristal-thinking-switch-on .cristal-thinking-switch-thumb {
+.crystal-thinking-switch-track.crystal-thinking-switch-on .crystal-thinking-switch-thumb {
 	transform: translateX(16px);
 }
 
 /* Autocomplete scrollbar */
-.cristal-autocomplete::-webkit-scrollbar {
+.crystal-autocomplete::-webkit-scrollbar {
 	width: 6px;
 }
 
-.cristal-autocomplete::-webkit-scrollbar-track {
+.crystal-autocomplete::-webkit-scrollbar-track {
 	background: transparent;
 }
 
-.cristal-autocomplete::-webkit-scrollbar-thumb {
+.crystal-autocomplete::-webkit-scrollbar-thumb {
 	background: var(--background-modifier-border);
 	border-radius: 3px;
 }
 
-/* Mention Autocomplete - inherits from .cristal-autocomplete */
-.cristal-mention-autocomplete {
+/* Mention Autocomplete - inherits from .crystal-autocomplete */
+.crystal-mention-autocomplete {
 	display: none;
 	position: absolute;
 	bottom: 100%;
@@ -1003,29 +1008,29 @@
 	z-index: 100;
 }
 
-.cristal-mention-autocomplete.cristal-autocomplete-visible {
+.crystal-mention-autocomplete.crystal-autocomplete-visible {
 	display: block;
 }
 
-.cristal-mention-autocomplete::-webkit-scrollbar {
+.crystal-mention-autocomplete::-webkit-scrollbar {
 	width: 6px;
 }
 
-.cristal-mention-autocomplete::-webkit-scrollbar-track {
+.crystal-mention-autocomplete::-webkit-scrollbar-track {
 	background: transparent;
 }
 
-.cristal-mention-autocomplete::-webkit-scrollbar-thumb {
+.crystal-mention-autocomplete::-webkit-scrollbar-thumb {
 	background: var(--background-modifier-border);
 	border-radius: 3px;
 }
 
 /* Modal Styles */
-.cristal-prompt-container {
+.crystal-prompt-container {
 	margin-top: 8px;
 }
 
-.cristal-prompt-textarea {
+.crystal-prompt-textarea {
 	width: 100%;
 	min-height: 100px;
 	padding: 12px;
@@ -1039,12 +1044,12 @@
 	resize: vertical;
 }
 
-.cristal-prompt-textarea:focus {
+.crystal-prompt-textarea:focus {
 	outline: none;
 	border-color: var(--interactive-accent);
 }
 
-.cristal-modal-buttons {
+.crystal-modal-buttons {
 	display: flex;
 	justify-content: flex-end;
 	gap: 8px;
@@ -1057,11 +1062,11 @@
    CLAUDE.md Editor (Settings)
    ============================================================================ */
 
-.cristal-claudemd-container {
+.crystal-claudemd-container {
 	margin-top: 12px;
 }
 
-.cristal-claudemd-textarea {
+.crystal-claudemd-textarea {
 	width: 100%;
 	min-height: 200px;
 	padding: 12px;
@@ -1075,24 +1080,24 @@
 	resize: vertical;
 }
 
-.cristal-claudemd-textarea:focus {
+.crystal-claudemd-textarea:focus {
 	outline: none;
 	border-color: var(--interactive-accent);
 	box-shadow: 0 0 0 2px var(--interactive-accent-hover);
 }
 
-.cristal-claudemd-buttons {
+.crystal-claudemd-buttons {
 	display: flex;
 	gap: 8px;
 	margin-top: 12px;
 }
 
-.cristal-claudemd-modal {
+.crystal-claudemd-modal {
 	width: 525px;
 	max-width: 85vw;
 }
 
-.cristal-claudemd-modal .cristal-claudemd-textarea {
+.crystal-claudemd-modal .crystal-claudemd-textarea {
 	min-height: 350px;
 }
 
@@ -1100,11 +1105,12 @@
    Thinking Toggle Button
    ============================================================================ */
 
-.cristal-thinking-toggle-btn {
+.crystal-thinking-toggle-btn {
 	display: flex;
 	align-items: center;
 	justify-content: center;
-	width: 32px;
+	gap: 4px;
+	padding: 4px 10px;
 	height: 32px;
 	border-radius: 6px;
 	border: 1px solid var(--background-modifier-border);
@@ -1112,31 +1118,30 @@
 	color: var(--text-muted);
 	cursor: pointer;
 	transition: all 0.15s ease;
+	font-size: 13px;
 }
 
-.cristal-thinking-toggle-btn:hover {
+.crystal-thinking-toggle-btn:hover {
 	background: var(--background-modifier-hover);
-	border-color: var(--interactive-accent);
 	color: var(--text-normal);
 }
 
-.cristal-thinking-toggle-btn svg {
+.crystal-thinking-toggle-btn svg {
 	width: 16px !important;
 	height: 16px !important;
 }
 
-.cristal-thinking-toggle-btn.cristal-thinking-toggle-active {
+.crystal-thinking-toggle-btn.crystal-thinking-toggle-active {
 	background: var(--interactive-accent);
 	border-color: var(--interactive-accent);
 	color: var(--text-on-accent);
-	box-shadow: 0 0 0 2px var(--interactive-accent-hover);
 }
 
-.cristal-thinking-toggle-btn.cristal-thinking-toggle-active:hover {
+.crystal-thinking-toggle-btn.crystal-thinking-toggle-active:hover {
 	background: var(--interactive-accent-hover);
 }
 
-.cristal-thinking-toggle-btn.cristal-btn-disabled {
+.crystal-thinking-toggle-btn.crystal-btn-disabled {
 	opacity: 0.5;
 	cursor: not-allowed;
 	pointer-events: none;
@@ -1146,7 +1151,7 @@
    Compact Animation Overlay
    ============================================================================ */
 
-.cristal-compact-overlay {
+.crystal-compact-overlay {
 	position: absolute;
 	inset: 0;
 	display: flex;
@@ -1159,20 +1164,20 @@
 	z-index: 50;
 }
 
-.cristal-compact-spinner {
+.crystal-compact-spinner {
 	width: 24px;
 	height: 24px;
 	border: 2px solid var(--background-modifier-border);
 	border-top-color: var(--interactive-accent);
 	border-radius: 50%;
-	animation: cristal-spin 0.8s linear infinite;
+	animation: crystal-spin 0.8s linear infinite;
 }
 
-@keyframes cristal-spin {
+@keyframes crystal-spin {
 	to { transform: rotate(360deg); }
 }
 
-.cristal-compact-text {
+.crystal-compact-text {
 	font-size: 14px;
 	color: var(--text-muted);
 	text-align: center;
@@ -1180,12 +1185,12 @@
 }
 
 /* System message */
-.cristal-message-system {
+.crystal-message-system {
 	justify-content: center;
 	padding: 8px 0;
 }
 
-.cristal-message-system .cristal-message-content {
+.crystal-message-system .crystal-message-content {
 	background: none;
 	color: var(--text-muted);
 	font-size: 12px;
@@ -1196,7 +1201,7 @@
    Icon-only Action Buttons
    ============================================================================ */
 
-.cristal-action-btn-icon {
+.crystal-action-btn-icon {
 	display: flex;
 	align-items: center;
 	justify-content: center;
@@ -1209,13 +1214,13 @@
 	transition: all 0.15s ease;
 }
 
-.cristal-action-btn-icon:hover {
+.crystal-action-btn-icon:hover {
 	background: var(--background-modifier-hover);
 	color: var(--text-normal);
 	border-color: var(--interactive-accent);
 }
 
-.cristal-action-btn-icon.cristal-action-btn-success {
+.crystal-action-btn-icon.crystal-action-btn-success {
 	color: var(--text-success);
 	border-color: var(--text-success);
 }
@@ -1224,7 +1229,7 @@
    Provider Indicator
    ============================================================================ */
 
-.cristal-provider-indicator {
+.crystal-provider-indicator {
 	display: flex;
 	align-items: center;
 	gap: 4px;
@@ -1238,25 +1243,25 @@
 	transition: all 0.15s ease;
 }
 
-.cristal-provider-indicator:hover {
+.crystal-provider-indicator:hover {
 	background: var(--background-modifier-hover);
 	border-color: var(--interactive-accent);
 	color: var(--text-normal);
 	box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
-.cristal-provider-indicator-icon {
+.crystal-provider-indicator-icon {
 	display: flex;
 	align-items: center;
 	color: var(--text-accent);
 }
 
-.cristal-provider-indicator-icon svg {
+.crystal-provider-indicator-icon svg {
 	width: 14px;
 	height: 14px;
 }
 
-.cristal-provider-indicator-name {
+.crystal-provider-indicator-name {
 	font-weight: 500;
 }
 
@@ -1264,7 +1269,7 @@
    Model Indicator
    ============================================================================ */
 
-.cristal-model-indicator {
+.crystal-model-indicator {
 	display: flex;
 	align-items: center;
 	gap: 6px;
@@ -1278,36 +1283,36 @@
 	transition: all 0.15s ease;
 }
 
-.cristal-model-indicator:hover {
+.crystal-model-indicator:hover {
 	background: var(--background-modifier-hover);
 	border-color: var(--interactive-accent);
 	color: var(--text-normal);
 	box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
-.cristal-model-indicator-locked {
+.crystal-model-indicator-locked {
 	cursor: not-allowed;
 	opacity: 0.6;
 }
 
-.cristal-model-indicator-locked:hover {
+.crystal-model-indicator-locked:hover {
 	background: var(--background-primary);
 	border-color: var(--background-modifier-border);
 	color: var(--text-muted);
 }
 
-.cristal-model-indicator-icon {
+.crystal-model-indicator-icon {
 	display: flex;
 	align-items: center;
 	color: var(--text-accent);
 }
 
-.cristal-model-indicator-icon svg {
+.crystal-model-indicator-icon svg {
 	width: 14px;
 	height: 14px;
 }
 
-.cristal-model-indicator-name {
+.crystal-model-indicator-name {
 	font-weight: 500;
 }
 
@@ -1315,7 +1320,7 @@
    Tool Steps (Agent Actions)
    ============================================================================ */
 
-.cristal-tool-steps {
+.crystal-tool-steps {
 	display: flex;
 	flex-direction: column;
 	gap: 4px;
@@ -1324,18 +1329,18 @@
 	align-self: flex-start;
 }
 
-.cristal-tool-step {
+.crystal-tool-step {
 	display: flex;
 	flex-direction: column;
 	background: var(--background-secondary-alt);
 	border-radius: 6px;
 	font-size: 12px;
 	color: var(--text-muted);
-	animation: cristal-fade-in 0.2s ease;
+	animation: crystal-fade-in 0.2s ease;
 	overflow: hidden;
 }
 
-.cristal-tool-step-header {
+.crystal-tool-step-header {
 	display: flex;
 	align-items: center;
 	gap: 8px;
@@ -1344,11 +1349,11 @@
 	transition: background 0.15s ease;
 }
 
-.cristal-tool-step-header:hover {
+.crystal-tool-step-header:hover {
 	background: var(--background-modifier-hover);
 }
 
-@keyframes cristal-fade-in {
+@keyframes crystal-fade-in {
 	from {
 		opacity: 0;
 		transform: translateY(-4px);
@@ -1359,21 +1364,21 @@
 	}
 }
 
-.cristal-tool-step-icon {
+.crystal-tool-step-icon {
 	display: flex;
 	align-items: center;
 	color: var(--text-accent);
 	flex-shrink: 0;
 }
 
-.cristal-tool-step-text {
+.crystal-tool-step-text {
 	flex: 1;
 	overflow: hidden;
 	text-overflow: ellipsis;
 	white-space: nowrap;
 }
 
-.cristal-tool-step-expand {
+.crystal-tool-step-expand {
 	display: flex;
 	align-items: center;
 	margin-left: auto;
@@ -1381,11 +1386,11 @@
 	transition: transform 0.2s ease;
 }
 
-.cristal-tool-step.expanded .cristal-tool-step-expand {
+.crystal-tool-step.expanded .crystal-tool-step-expand {
 	transform: rotate(180deg);
 }
 
-.cristal-tool-step-details {
+.crystal-tool-step-details {
 	padding: 8px 12px 10px 36px;
 	background: var(--background-primary);
 	border-top: 1px solid var(--background-modifier-border);
@@ -1394,15 +1399,15 @@
 	color: var(--text-muted);
 }
 
-.cristal-tool-step-details div {
+.crystal-tool-step-details div {
 	margin-bottom: 4px;
 }
 
-.cristal-tool-step-details div:last-child {
+.crystal-tool-step-details div:last-child {
 	margin-bottom: 0;
 }
 
-.cristal-tool-step-details pre {
+.crystal-tool-step-details pre {
 	margin: 0;
 	padding: 8px;
 	background: var(--background-secondary);
@@ -1414,16 +1419,16 @@
 }
 
 /* No-collapse tool step (e.g., todo_list) */
-.cristal-tool-step-no-collapse .cristal-tool-step-header {
+.crystal-tool-step-no-collapse .crystal-tool-step-header {
 	cursor: default;
 }
 
-.cristal-tool-step-no-collapse .cristal-tool-step-header:hover {
+.crystal-tool-step-no-collapse .crystal-tool-step-header:hover {
 	background: transparent;
 }
 
 /* Todo list items */
-.cristal-todo-item {
+.crystal-todo-item {
 	display: flex;
 	align-items: center;
 	gap: 8px;
@@ -1432,7 +1437,7 @@
 	font-size: 12px;
 }
 
-.cristal-todo-item input[type="checkbox"] {
+.crystal-todo-item input[type="checkbox"] {
 	width: 14px;
 	height: 14px;
 	margin: 0;
@@ -1440,11 +1445,11 @@
 	pointer-events: none;
 }
 
-.cristal-todo-text {
+.crystal-todo-text {
 	color: var(--text-normal);
 }
 
-.cristal-todo-item input[type="checkbox"]:checked + .cristal-todo-text {
+.crystal-todo-item input[type="checkbox"]:checked + .crystal-todo-text {
 	color: var(--text-muted);
 	text-decoration: line-through;
 }
@@ -1453,13 +1458,13 @@
    Thinking Block (Agent Steps)
    ============================================================================ */
 
-.cristal-thinking-block {
+.crystal-thinking-block {
 	margin: 8px 0;
 	max-width: 90%;
 	align-self: flex-start;
 }
 
-.cristal-thinking-header {
+.crystal-thinking-header {
 	display: flex;
 	align-items: center;
 	gap: 8px;
@@ -1470,25 +1475,25 @@
 	border-bottom: none;
 }
 
-.cristal-thinking-icon {
+.crystal-thinking-icon {
 	display: flex;
 	align-items: center;
 	color: var(--text-accent);
-	animation: cristal-pulse 2s ease-in-out infinite;
+	animation: crystal-pulse 2s ease-in-out infinite;
 }
 
-@keyframes cristal-pulse {
+@keyframes crystal-pulse {
 	0%, 100% { opacity: 1; }
 	50% { opacity: 0.5; }
 }
 
-.cristal-thinking-text {
+.crystal-thinking-text {
 	font-size: 13px;
 	font-weight: 500;
 	color: var(--text-muted);
 }
 
-.cristal-thinking-steps {
+.crystal-thinking-steps {
 	display: flex;
 	flex-direction: column;
 	gap: 2px;
@@ -1499,12 +1504,12 @@
 	border-radius: 0 0 8px 8px;
 }
 
-.cristal-thinking-steps:empty {
+.crystal-thinking-steps:empty {
 	display: none;
 }
 
 /* Streaming text inside thinking block */
-.cristal-streaming-text {
+.crystal-streaming-text {
 	padding: 8px 4px;
 	color: var(--text-normal);
 	font-size: 14px;
@@ -1514,33 +1519,33 @@
 }
 
 /* Hide header border-radius when steps exist */
-.cristal-thinking-block:has(.cristal-thinking-steps:not(:empty)) .cristal-thinking-header {
+.crystal-thinking-block:has(.crystal-thinking-steps:not(:empty)) .crystal-thinking-header {
 	border-radius: 8px 8px 0 0;
 }
 
 /* Full border-radius when no steps */
-.cristal-thinking-block:has(.cristal-thinking-steps:empty) .cristal-thinking-header {
+.crystal-thinking-block:has(.crystal-thinking-steps:empty) .crystal-thinking-header {
 	border-radius: 8px;
 	border-bottom: 1px solid var(--background-modifier-border);
 }
 
 /* Stop animation when thinking is done */
-.cristal-thinking-block.cristal-thinking-done .cristal-thinking-icon {
+.crystal-thinking-block.crystal-thinking-done .crystal-thinking-icon {
 	animation: none;
 	opacity: 0.6;
 }
 
-.cristal-thinking-block.cristal-thinking-done .cristal-thinking-text {
+.crystal-thinking-block.crystal-thinking-done .crystal-thinking-text {
 	opacity: 0.6;
 }
 
 /* Hide caret/cursor in thinking blocks */
-.cristal-thinking-block {
+.crystal-thinking-block {
 	caret-color: transparent;
 	user-select: none;
 }
 
-.cristal-thinking-block * {
+.crystal-thinking-block * {
 	caret-color: transparent;
 }
 
@@ -1548,7 +1553,7 @@
    Codex Reasoning Visualization
    ============================================================================ */
 
-.cristal-reasoning-step {
+.crystal-reasoning-step {
 	background: var(--background-secondary);
 	border-left: 3px solid var(--interactive-accent);
 	padding: 10px 14px;
@@ -1556,47 +1561,47 @@
 	border-radius: 0 6px 6px 0;
 }
 
-.cristal-reasoning-header {
+.crystal-reasoning-header {
 	display: flex;
 	align-items: center;
 	gap: 8px;
 	margin-bottom: 8px;
 }
 
-.cristal-reasoning-icon {
+.crystal-reasoning-icon {
 	display: flex;
 	align-items: center;
 	justify-content: center;
 	color: var(--interactive-accent);
 }
 
-.cristal-reasoning-icon svg {
+.crystal-reasoning-icon svg {
 	width: 16px;
 	height: 16px;
 }
 
-.cristal-reasoning-title {
+.crystal-reasoning-title {
 	font-weight: 600;
 	font-size: 13px;
 	color: var(--text-accent);
 }
 
-.cristal-reasoning-summary {
+.crystal-reasoning-summary {
 	margin: 8px 0;
 }
 
-.cristal-reasoning-point {
+.crystal-reasoning-point {
 	font-size: 12px;
 	color: var(--text-muted);
 	line-height: 1.5;
 	padding: 2px 0;
 }
 
-.cristal-reasoning-details {
+.crystal-reasoning-details {
 	margin-top: 8px;
 }
 
-.cristal-reasoning-toggle {
+.crystal-reasoning-toggle {
 	font-size: 11px;
 	color: var(--text-faint);
 	cursor: pointer;
@@ -1604,11 +1609,11 @@
 	user-select: none;
 }
 
-.cristal-reasoning-toggle:hover {
+.crystal-reasoning-toggle:hover {
 	color: var(--text-muted);
 }
 
-.cristal-reasoning-content {
+.crystal-reasoning-content {
 	font-size: 11px;
 	color: var(--text-faint);
 	white-space: pre-wrap;
@@ -1625,7 +1630,7 @@
    Tool Grouping (consecutive same-type commands)
    ============================================================================ */
 
-.cristal-tool-step-counter {
+.crystal-tool-step-counter {
 	font-size: 10px;
 	color: var(--text-accent);
 	background: var(--background-modifier-border);
@@ -1641,7 +1646,7 @@
    Reasoning Group (merged consecutive thinking blocks)
    ============================================================================ */
 
-.cristal-reasoning-group {
+.crystal-reasoning-group {
 	background: var(--background-secondary);
 	border-left: 3px solid var(--interactive-accent);
 	border-radius: 0 8px 8px 0;
@@ -1649,7 +1654,7 @@
 	overflow: hidden;
 }
 
-.cristal-reasoning-group-header {
+.crystal-reasoning-group-header {
 	display: flex;
 	align-items: center;
 	gap: 8px;
@@ -1658,18 +1663,18 @@
 	transition: background 0.15s ease;
 }
 
-.cristal-reasoning-group-header:hover {
+.crystal-reasoning-group-header:hover {
 	background: var(--background-modifier-hover);
 }
 
-.cristal-reasoning-group-title {
+.crystal-reasoning-group-title {
 	font-weight: 600;
 	font-size: 13px;
 	color: var(--text-accent);
 	flex: 1;
 }
 
-.cristal-reasoning-group-counter {
+.crystal-reasoning-group-counter {
 	font-size: 10px;
 	color: var(--interactive-accent);
 	background: var(--background-modifier-border);
@@ -1678,18 +1683,18 @@
 	font-weight: 600;
 }
 
-.cristal-reasoning-group-expand {
+.crystal-reasoning-group-expand {
 	display: flex;
 	align-items: center;
 	color: var(--text-faint);
 	transition: transform 0.2s ease;
 }
 
-.cristal-reasoning-group.expanded .cristal-reasoning-group-expand {
+.crystal-reasoning-group.expanded .crystal-reasoning-group-expand {
 	transform: rotate(180deg);
 }
 
-.cristal-reasoning-group-content {
+.crystal-reasoning-group-content {
 	padding: 10px 14px 14px 14px;
 	background: var(--background-secondary);
 	font-size: 12px;
@@ -1698,21 +1703,21 @@
 }
 
 /* Simple text blocks inside reasoning group */
-.cristal-reasoning-text {
+.crystal-reasoning-text {
 	display: inline;
 }
 
-.cristal-reasoning-text strong {
+.crystal-reasoning-text strong {
 	color: var(--text-normal);
 	font-weight: 600;
 }
 
 /* Tool steps inside collapsible group (unified with reasoning groups) */
-.cristal-tool-steps-content {
+.crystal-tool-steps-content {
 	padding: 8px 14px 12px 14px;
 }
 
-.cristal-tool-step-item {
+.crystal-tool-step-item {
 	display: flex;
 	align-items: center;
 	gap: 8px;
@@ -1721,7 +1726,7 @@
 	color: var(--text-muted);
 }
 
-.cristal-tool-step-item .cristal-tool-step-icon {
+.crystal-tool-step-item .crystal-tool-step-icon {
 	display: flex;
 	align-items: center;
 	justify-content: center;
@@ -1731,18 +1736,18 @@
 	flex-shrink: 0;
 }
 
-.cristal-tool-step-item .cristal-tool-step-icon svg {
+.crystal-tool-step-item .crystal-tool-step-icon svg {
 	width: 14px;
 	height: 14px;
 }
 
-.cristal-tool-step-item .cristal-tool-step-text {
+.crystal-tool-step-item .crystal-tool-step-text {
 	flex: 1;
 	line-height: 1.4;
 }
 
 /* Tool detail lines (simple, no JSON wrapper) */
-.cristal-tool-detail-line {
+.crystal-tool-detail-line {
 	font-size: 11px;
 	color: var(--text-faint);
 	padding: 2px 0;
@@ -1754,7 +1759,7 @@
    File Name Modal
    ============================================================================ */
 
-.cristal-filename-input {
+.crystal-filename-input {
 	width: 100%;
 	padding: 10px 12px;
 	margin: 12px 0;
@@ -1766,7 +1771,7 @@
 	font-family: var(--font-text);
 }
 
-.cristal-filename-input:focus {
+.crystal-filename-input:focus {
 	outline: none;
 	border-color: var(--interactive-accent);
 	box-shadow: 0 0 0 2px var(--interactive-accent-hover);
@@ -1777,11 +1782,12 @@
    ============================================================================ */
 
 /* Attach button */
-.cristal-attach-btn {
+.crystal-attach-btn {
 	display: flex;
 	align-items: center;
 	justify-content: center;
-	width: 32px;
+	gap: 4px;
+	padding: 4px 10px;
 	height: 32px;
 	border-radius: 6px;
 	border: none;
@@ -1789,29 +1795,30 @@
 	color: var(--text-muted);
 	cursor: pointer;
 	transition: background 0.15s ease, color 0.15s ease, transform 0.1s ease;
+	font-size: 13px;
 }
 
-.cristal-attach-btn:hover {
+.crystal-attach-btn:hover {
 	background: var(--interactive-accent);
 	color: var(--text-on-accent);
 	transform: scale(1.05);
 }
 
-.cristal-attach-btn:active {
+.crystal-attach-btn:active {
 	transform: scale(0.95);
 }
 
-.cristal-attach-btn svg {
+.crystal-attach-btn svg {
 	width: 16px !important;
 	height: 16px !important;
 }
 
-.cristal-file-input-hidden {
+.crystal-file-input-hidden {
 	display: none !important;
 }
 
 /* Context chips for attached files */
-.cristal-context-chip {
+.crystal-context-chip {
 	display: inline-flex;
 	align-items: center;
 	gap: 6px;
@@ -1823,7 +1830,7 @@
 	color: var(--text-muted);
 }
 
-.cristal-context-chip .cristal-context-icon {
+.crystal-context-chip .crystal-context-icon {
 	display: flex;
 	align-items: center;
 	width: 14px;
@@ -1831,7 +1838,7 @@
 	color: var(--text-muted);
 }
 
-.cristal-context-chip .cristal-context-name {
+.crystal-context-chip .crystal-context-name {
 	color: var(--text-muted);
 	max-width: 150px;
 	overflow: hidden;
@@ -1839,7 +1846,7 @@
 	white-space: nowrap;
 }
 
-.cristal-context-chip .cristal-context-remove {
+.crystal-context-chip .crystal-context-remove {
 	display: flex;
 	align-items: center;
 	justify-content: center;
@@ -1853,7 +1860,7 @@
 }
 
 /* Message context indicator (active file) */
-.cristal-message-context {
+.crystal-message-context {
 	display: flex;
 	align-items: center;
 	gap: 6px;
@@ -1866,19 +1873,19 @@
 	color: var(--text-accent);
 }
 
-.cristal-message-context .cristal-context-icon {
+.crystal-message-context .crystal-context-icon {
 	display: flex;
 	align-items: center;
 	width: 12px;
 	height: 12px;
 }
 
-.cristal-message-context .cristal-context-label {
+.crystal-message-context .crystal-context-label {
 	font-weight: 500;
 }
 
 /* Message attachments container */
-.cristal-message-attachments {
+.crystal-message-attachments {
 	display: flex;
 	flex-wrap: wrap;
 	gap: 6px;
@@ -1886,7 +1893,7 @@
 }
 
 /* Individual attachment chip */
-.cristal-attachment-chip {
+.crystal-attachment-chip {
 	display: inline-flex;
 	align-items: center;
 	gap: 6px;
@@ -1897,7 +1904,7 @@
 	color: var(--text-muted);
 }
 
-.cristal-attachment-chip .cristal-attachment-icon {
+.crystal-attachment-chip .crystal-attachment-icon {
 	display: flex;
 	align-items: center;
 	width: 12px;
@@ -1905,7 +1912,7 @@
 	color: var(--text-muted);
 }
 
-.cristal-attachment-chip .cristal-attachment-name {
+.crystal-attachment-chip .crystal-attachment-name {
 	max-width: 150px;
 	overflow: hidden;
 	text-overflow: ellipsis;
@@ -1916,37 +1923,37 @@
    Usage Section (Settings)
    ============================================================================ */
 
-.cristal-usage-section {
+.crystal-usage-section {
 	padding: 16px;
 	margin-bottom: 24px;
 	background: var(--background-secondary);
 	border-radius: 8px;
 }
 
-.cristal-usage-section h3 {
+.crystal-usage-section h3 {
 	margin-top: 0;
 	margin-bottom: 12px;
 }
 
-.cristal-usage-loading {
+.crystal-usage-loading {
 	padding: 12px;
 	text-align: center;
 	color: var(--text-muted);
 }
 
-.cristal-usage-error {
+.crystal-usage-error {
 	padding: 12px;
 	color: var(--text-error);
 	background: var(--background-modifier-error);
 	border-radius: 4px;
 }
 
-.cristal-usage-subscription .setting-item-description {
+.crystal-usage-subscription .setting-item-description {
 	font-weight: 600;
 	color: var(--text-accent);
 }
 
-.cristal-usage-period {
+.crystal-usage-period {
 	padding: 8px 0;
 	margin-bottom: 16px;
 	font-size: 0.9em;
@@ -1954,54 +1961,54 @@
 }
 
 /* Usage statistics */
-.cristal-usage-stats {
+.crystal-usage-stats {
 	margin-bottom: 16px;
 }
 
-.cristal-stats-grid {
+.crystal-stats-grid {
 	display: grid;
 	grid-template-columns: repeat(3, 1fr);
 	gap: 12px;
 }
 
-.cristal-stat-item {
+.crystal-stat-item {
 	text-align: center;
 	padding: 12px 8px;
 	background: var(--background-secondary);
 	border-radius: 8px;
 }
 
-.cristal-stat-value {
+.crystal-stat-value {
 	font-size: 1.3em;
 	font-weight: 600;
 	color: var(--text-accent);
 }
 
-.cristal-stat-label {
+.crystal-stat-label {
 	font-size: 0.85em;
 	color: var(--text-muted);
 	margin-top: 4px;
 }
 
 /* Inline Stats (compact) */
-.cristal-stats-inline {
+.crystal-stats-inline {
 	display: flex;
 	gap: 24px;
 	padding: 8px 0;
 }
 
-.cristal-stat-inline {
+.crystal-stat-inline {
 	display: flex;
 	align-items: baseline;
 	gap: 6px;
 }
 
-.cristal-stat-inline-label {
+.crystal-stat-inline-label {
 	font-size: 13px;
 	color: var(--text-muted);
 }
 
-.cristal-stat-inline-value {
+.crystal-stat-inline-value {
 	font-size: 14px;
 	font-weight: 600;
 	color: var(--text-accent);
@@ -2012,7 +2019,7 @@
    Rate Limit Message
    ============================================================================ */
 
-.cristal-message-rate-limit {
+.crystal-message-rate-limit {
 	align-self: center;
 	max-width: 85%;
 	padding: 16px;
@@ -2021,13 +2028,13 @@
 	border-radius: 12px;
 }
 
-.cristal-rate-limit-content {
+.crystal-rate-limit-content {
 	display: flex;
 	align-items: flex-start;
 	gap: 12px;
 }
 
-.cristal-rate-limit-icon {
+.crystal-rate-limit-icon {
 	display: flex;
 	align-items: center;
 	justify-content: center;
@@ -2039,18 +2046,18 @@
 	flex-shrink: 0;
 }
 
-.cristal-rate-limit-text {
+.crystal-rate-limit-text {
 	flex: 1;
 }
 
-.cristal-rate-limit-title {
+.crystal-rate-limit-title {
 	font-size: 15px;
 	font-weight: 600;
 	color: var(--text-error);
 	margin-bottom: 4px;
 }
 
-.cristal-rate-limit-message {
+.crystal-rate-limit-message {
 	font-size: 13px;
 	color: var(--text-muted);
 	line-height: 1.5;
@@ -2061,7 +2068,7 @@
    ============================================================================ */
 
 /* CLI Status Container - fixed structure to prevent layout jumps */
-.cristal-cli-status-container {
+.crystal-cli-status-container {
 	display: flex;
 	flex-direction: column;
 	gap: 12px;
@@ -2069,7 +2076,7 @@
 }
 
 /* Status row: version info + refresh button */
-.cristal-cli-status-row {
+.crystal-cli-status-row {
 	display: flex;
 	align-items: center;
 	justify-content: space-between;
@@ -2079,18 +2086,18 @@
 	min-height: 42px;
 }
 
-.cristal-cli-status-info {
+.crystal-cli-status-info {
 	flex: 1;
 }
 
-.cristal-cli-status-item {
+.crystal-cli-status-item {
 	display: flex;
 	align-items: center;
 	gap: 8px;
 	font-size: 13px;
 }
 
-.cristal-cli-status-icon {
+.crystal-cli-status-icon {
 	display: flex;
 	align-items: center;
 	justify-content: center;
@@ -2098,30 +2105,30 @@
 	height: 18px;
 }
 
-.cristal-cli-status-success {
+.crystal-cli-status-success {
 	color: var(--text-success);
 }
 
-.cristal-cli-status-error {
+.crystal-cli-status-error {
 	color: var(--text-error);
 }
 
-.cristal-cli-status-checking {
+.crystal-cli-status-checking {
 	color: var(--text-muted);
 	font-style: italic;
 }
 
-.cristal-cli-status-checking .cristal-cli-status-icon svg {
-	animation: cristal-spin 1s linear infinite;
+.crystal-cli-status-checking .crystal-cli-status-icon svg {
+	animation: crystal-spin 1s linear infinite;
 }
 
-@keyframes cristal-spin {
+@keyframes crystal-spin {
 	from { transform: rotate(0deg); }
 	to { transform: rotate(360deg); }
 }
 
 /* Refresh button - icon style */
-.cristal-cli-refresh-btn {
+.crystal-cli-refresh-btn {
 	display: flex;
 	align-items: center;
 	justify-content: center;
@@ -2136,25 +2143,25 @@
 	transition: all 0.15s ease;
 }
 
-.cristal-cli-refresh-btn:hover {
+.crystal-cli-refresh-btn:hover {
 	background: var(--background-modifier-hover);
 	color: var(--text-normal);
 }
 
-.cristal-cli-refresh-btn svg {
+.crystal-cli-refresh-btn svg {
 	width: 16px;
 	height: 16px;
 }
 
 /* Content area for terminal/install buttons */
-.cristal-cli-status-content {
+.crystal-cli-status-content {
 	display: flex;
 	flex-direction: column;
 	gap: 8px;
 }
 
 /* Terminal section with description - button on the right */
-.cristal-cli-terminal-section {
+.crystal-cli-terminal-section {
 	display: flex;
 	flex-direction: row;
 	align-items: center;
@@ -2162,18 +2169,18 @@
 	gap: 12px;
 }
 
-.cristal-terminal-desc {
+.crystal-terminal-desc {
 	margin: 0 !important;
 	flex: 1;
 }
 
 /* Install hint section */
-.cristal-install-hint {
+.crystal-install-hint {
 	margin-top: 8px;
 	margin-bottom: 8px;
 }
 
-.cristal-install-command {
+.crystal-install-command {
 	display: block;
 	padding: 8px 12px;
 	margin-top: 4px;
@@ -2188,7 +2195,7 @@
 }
 
 /* Button icon positioning */
-.cristal-btn-icon-left {
+.crystal-btn-icon-left {
 	display: inline-flex;
 	align-items: center;
 	margin-right: 6px;
@@ -2198,7 +2205,7 @@
    Agent Cards (Settings)
    ============================================================================ */
 
-.cristal-agents-header {
+.crystal-agents-header {
 	display: flex;
 	align-items: center;
 	justify-content: space-between;
@@ -2207,12 +2214,12 @@
 	position: relative;
 }
 
-.cristal-agents-header h3 {
+.crystal-agents-header h3 {
 	margin: 0;
 }
 
 /* Text button for adding agents */
-.cristal-add-agent-text-btn {
+.crystal-add-agent-text-btn {
 	background: none;
 	border: 1px solid var(--background-modifier-border);
 	border-radius: 6px;
@@ -2223,13 +2230,13 @@
 	transition: all 0.15s ease;
 }
 
-.cristal-add-agent-text-btn:hover {
+.crystal-add-agent-text-btn:hover {
 	background: var(--interactive-accent);
 	color: var(--text-on-accent);
 	border-color: var(--interactive-accent);
 }
 
-.cristal-add-agent-dropdown {
+.crystal-add-agent-dropdown {
 	position: absolute;
 	top: 100%;
 	right: 0;
@@ -2242,7 +2249,7 @@
 	z-index: 100;
 }
 
-.cristal-add-agent-item {
+.crystal-add-agent-item {
 	display: flex;
 	align-items: center;
 	justify-content: space-between;
@@ -2254,21 +2261,21 @@
 	transition: background 0.1s ease;
 }
 
-.cristal-add-agent-item:hover {
+.crystal-add-agent-item:hover {
 	background: var(--background-modifier-hover);
 }
 
-.cristal-add-agent-item-disabled {
+.crystal-add-agent-item-disabled {
 	opacity: 0.5;
 	cursor: not-allowed;
 }
 
-.cristal-add-agent-item-disabled:hover {
+.crystal-add-agent-item-disabled:hover {
 	background: transparent;
 }
 
-.cristal-coming-soon,
-.cristal-already-added {
+.crystal-coming-soon,
+.crystal-already-added {
 	font-size: 10px;
 	color: var(--text-faint);
 	padding: 2px 6px;
@@ -2277,7 +2284,7 @@
 }
 
 /* Agent Cards Container */
-.cristal-agents-cards {
+.crystal-agents-cards {
 	display: flex;
 	flex-direction: column;
 	gap: 12px;
@@ -2285,7 +2292,7 @@
 }
 
 /* Individual Agent Card */
-.cristal-agent-card {
+.crystal-agent-card {
 	padding: 12px 16px;
 	background: var(--background-secondary);
 	border: 1px solid var(--background-modifier-border);
@@ -2293,21 +2300,21 @@
 	transition: all 0.15s ease;
 }
 
-.cristal-agent-card:hover {
+.crystal-agent-card:hover {
 	border-color: var(--interactive-accent-hover);
 }
 
-.cristal-agent-card-disabled {
+.crystal-agent-card-disabled {
 	opacity: 0.6;
 }
 
-.cristal-agent-card-header {
+.crystal-agent-card-header {
 	display: flex;
 	align-items: center;
 	gap: 8px;
 }
 
-.cristal-agent-card-icon {
+.crystal-agent-card-icon {
 	display: flex;
 	align-items: center;
 	justify-content: center;
@@ -2320,19 +2327,19 @@
 }
 
 /* Name display mode (text + edit button) */
-.cristal-agent-card-name-wrapper {
+.crystal-agent-card-name-wrapper {
 	display: flex;
 	align-items: center;
 	gap: 4px;
 }
 
-.cristal-agent-card-name-text {
+.crystal-agent-card-name-text {
 	font-size: 15px;
 	font-weight: 600;
 	color: var(--text-normal);
 }
 
-.cristal-agent-card-edit-btn {
+.crystal-agent-card-edit-btn {
 	display: flex;
 	align-items: center;
 	justify-content: center;
@@ -2347,17 +2354,17 @@
 	opacity: 0.5;
 }
 
-.cristal-agent-card-edit-btn:hover {
+.crystal-agent-card-edit-btn:hover {
 	color: var(--text-muted);
 	opacity: 1;
 }
 
-.cristal-agent-card-edit-btn svg {
+.crystal-agent-card-edit-btn svg {
 	width: 12px;
 	height: 12px;
 }
 
-.cristal-agent-card-save-btn {
+.crystal-agent-card-save-btn {
 	display: flex;
 	align-items: center;
 	justify-content: center;
@@ -2372,12 +2379,12 @@
 	padding: 0;
 }
 
-.cristal-agent-card-save-btn:hover {
+.crystal-agent-card-save-btn:hover {
 	filter: brightness(1.1);
 }
 
 /* Name edit mode (input + save button) */
-.cristal-agent-card-name-input {
+.crystal-agent-card-name-input {
 	padding: 2px 6px;
 	background: var(--background-primary);
 	border: 1px solid var(--interactive-accent);
@@ -2391,26 +2398,26 @@
 }
 
 /* Right section with toggle and settings button */
-.cristal-agent-card-right {
+.crystal-agent-card-right {
 	margin-left: auto;
 	display: flex;
 	align-items: center;
 	gap: 12px;
 }
 
-.cristal-agent-card-toggle {
+.crystal-agent-card-toggle {
 	display: flex;
 	align-items: center;
 }
 
-.cristal-agent-card-toggle input[type="checkbox"] {
+.crystal-agent-card-toggle input[type="checkbox"] {
 	width: 18px;
 	height: 18px;
 	accent-color: var(--interactive-accent);
 }
 
 /* Text button for settings */
-.cristal-agent-settings-text-btn {
+.crystal-agent-settings-text-btn {
 	background: none;
 	border: none;
 	color: var(--text-accent);
@@ -2421,12 +2428,12 @@
 	transition: all 0.15s ease;
 }
 
-.cristal-agent-settings-text-btn:hover {
+.crystal-agent-settings-text-btn:hover {
 	background: var(--background-modifier-hover);
 }
 
 /* Description below header */
-.cristal-agent-card-desc {
+.crystal-agent-card-desc {
 	font-size: 12px;
 	color: var(--text-muted);
 	margin-top: 6px;
@@ -2434,7 +2441,7 @@
 }
 
 /* Agent Settings Modal */
-.cristal-agent-settings-modal {
+.crystal-agent-settings-modal {
 	width: 500px;
 	max-width: 90vw;
 }
@@ -2443,23 +2450,23 @@
    User Message Actions (Copy, Edit buttons)
    ============================================================================ */
 
-.cristal-message-user .cristal-message-actions {
+.crystal-message-user .crystal-message-actions {
 	justify-content: flex-end;
 	border-top-color: rgba(255, 255, 255, 0.2);
 }
 
-.cristal-message-user .cristal-action-btn-icon {
+.crystal-message-user .crystal-action-btn-icon {
 	background: rgba(255, 255, 255, 0.1);
 	border-color: rgba(255, 255, 255, 0.2);
 	color: var(--text-on-accent);
 }
 
-.cristal-message-user .cristal-action-btn-icon:hover {
+.crystal-message-user .crystal-action-btn-icon:hover {
 	background: rgba(255, 255, 255, 0.2);
 	border-color: rgba(255, 255, 255, 0.4);
 }
 
-.cristal-message-user .cristal-action-btn-icon.cristal-action-btn-success {
+.crystal-message-user .crystal-action-btn-icon.crystal-action-btn-success {
 	color: var(--text-success);
 	border-color: var(--text-success);
 	background: rgba(255, 255, 255, 0.15);
@@ -2469,14 +2476,14 @@
    Prompt Edit Mode
    ============================================================================ */
 
-.cristal-edit-container {
+.crystal-edit-container {
 	display: flex;
 	flex-direction: column;
 	gap: 8px;
 	margin-top: 8px;
 }
 
-.cristal-edit-textarea {
+.crystal-edit-textarea {
 	width: 100%;
 	min-height: 60px;
 	max-height: 300px;
@@ -2492,18 +2499,18 @@
 	overflow-y: auto;
 }
 
-.cristal-edit-textarea:focus {
+.crystal-edit-textarea:focus {
 	outline: none;
 	box-shadow: 0 0 0 3px var(--interactive-accent-hover);
 }
 
-.cristal-edit-actions {
+.crystal-edit-actions {
 	display: flex;
 	justify-content: flex-end;
 	gap: 8px;
 }
 
-.cristal-edit-cancel-btn {
+.crystal-edit-cancel-btn {
 	padding: 6px 14px;
 	background: var(--background-modifier-border);
 	border: none;
@@ -2514,11 +2521,11 @@
 	transition: background 0.15s ease;
 }
 
-.cristal-edit-cancel-btn:hover {
+.crystal-edit-cancel-btn:hover {
 	background: var(--background-modifier-hover);
 }
 
-.cristal-edit-submit-btn {
+.crystal-edit-submit-btn {
 	padding: 6px 14px;
 	background: var(--interactive-accent);
 	border: none;
@@ -2530,123 +2537,12 @@
 	transition: background 0.15s ease;
 }
 
-.cristal-edit-submit-btn:hover {
+.crystal-edit-submit-btn:hover {
 	background: var(--interactive-accent-hover);
 }
 
-/* ============================================================================
-   Terminal Styles
-   ============================================================================ */
-
-.cristal-terminal-container {
-	display: flex;
-	flex-direction: column;
-	height: 100%;
-	background: var(--background-primary);
-	overflow: hidden;
-}
-
-.cristal-terminal-header {
-	display: flex;
-	align-items: center;
-	justify-content: space-between;
-	padding: 8px 12px;
-	border-bottom: 1px solid var(--background-modifier-border);
-	background: var(--background-secondary);
-	flex-shrink: 0;
-}
-
-.cristal-terminal-title {
-	font-weight: 600;
-	font-size: 14px;
-	color: var(--text-normal);
-}
-
-.cristal-terminal-actions {
-	display: flex;
-	gap: 4px;
-}
-
-.cristal-terminal-action {
-	background: transparent;
-	border: none;
-	padding: 4px;
-	cursor: pointer;
-	border-radius: 4px;
-	color: var(--text-muted);
-	display: flex;
-	align-items: center;
-	justify-content: center;
-}
-
-.cristal-terminal-action:hover {
-	background: var(--background-modifier-hover);
-	color: var(--text-normal);
-}
-
-.cristal-terminal-xterm {
-	flex: 1;
-	padding: 8px;
-	overflow: hidden;
-	min-height: 0;
-}
-
-/* xterm.js container sizing */
-.cristal-terminal-xterm .xterm {
-	height: 100%;
-	width: 100%;
-}
-
-.cristal-terminal-xterm .xterm-viewport {
-	background: var(--background-primary) !important;
-	overflow-y: auto !important;
-}
-
-.cristal-terminal-xterm .xterm-screen {
-	height: 100%;
-}
-
-/* Scrollbar styling for terminal */
-.cristal-terminal-xterm .xterm-viewport::-webkit-scrollbar {
-	width: 8px;
-}
-
-.cristal-terminal-xterm .xterm-viewport::-webkit-scrollbar-track {
-	background: transparent;
-}
-
-.cristal-terminal-xterm .xterm-viewport::-webkit-scrollbar-thumb {
-	background: var(--background-modifier-border);
-	border-radius: 4px;
-}
-
-.cristal-terminal-xterm .xterm-viewport::-webkit-scrollbar-thumb:hover {
-	background: var(--background-modifier-border-hover);
-}
-
-/* Terminal cursor */
-.cristal-terminal-xterm .xterm-cursor-layer {
-	z-index: 1;
-}
-
-/* Hide accessibility helper (the square icon with "Terminal input" tooltip) */
-.cristal-terminal-xterm .xterm-helper-textarea,
-.cristal-terminal-xterm .xterm-accessibility-tree {
-	position: absolute !important;
-	left: -9999px !important;
-	width: 0 !important;
-	height: 0 !important;
-	opacity: 0 !important;
-	pointer-events: none !important;
-}
-
-/* Selection styling */
-.cristal-terminal-xterm .xterm-selection div {
-	background: var(--text-selection) !important;
-}
-
 /* Integration button in settings */
-.cristal-integration-btn {
+.crystal-integration-btn {
 	display: inline-flex;
 	align-items: center;
 	gap: 6px;
@@ -2661,16 +2557,16 @@
 	transition: background 0.15s ease;
 }
 
-.cristal-integration-btn:hover {
+.crystal-integration-btn:hover {
 	background: var(--interactive-accent-hover);
 }
 
-.cristal-integration-btn.secondary {
+.crystal-integration-btn.secondary {
 	background: var(--background-modifier-hover);
 	color: var(--text-normal);
 }
 
-.cristal-integration-btn.secondary:hover {
+.crystal-integration-btn.secondary:hover {
 	background: var(--background-modifier-border);
 }
 
@@ -2678,29 +2574,29 @@
    Account Limits Section
    ============================================================================ */
 
-.cristal-account-limits {
+.crystal-account-limits {
 	margin-top: 16px;
 	padding-top: 12px;
 	border-top: 1px solid var(--background-modifier-border);
 }
 
-.cristal-account-limits h4 {
+.crystal-account-limits h4 {
 	margin: 0 0 12px 0;
 	font-size: 13px;
 	font-weight: 600;
 	color: var(--text-normal);
 }
 
-.cristal-limits-data {
+.crystal-limits-data {
 	min-height: 20px;
 }
 
-.cristal-limits-loading {
+.crystal-limits-loading {
 	color: var(--text-muted);
 	font-size: 12px;
 }
 
-.cristal-limits-error {
+.crystal-limits-error {
 	color: var(--text-error);
 	font-size: 12px;
 	padding: 8px;
@@ -2708,16 +2604,16 @@
 	border-radius: 6px;
 }
 
-.cristal-limits-note {
+.crystal-limits-note {
 	color: var(--text-muted);
 	font-size: 11px;
 }
 
-.cristal-limits-btn-container {
+.crystal-limits-btn-container {
 	margin-top: 8px;
 }
 
-.cristal-check-limits-btn {
+.crystal-check-limits-btn {
 	display: inline-flex;
 	align-items: center;
 	gap: 6px;
@@ -2731,11 +2627,11 @@
 	transition: background 0.15s ease;
 }
 
-.cristal-check-limits-btn:hover {
+.crystal-check-limits-btn:hover {
 	background: var(--background-modifier-hover);
 }
 
-.cristal-check-limits-btn .cristal-btn-icon-left {
+.crystal-check-limits-btn .crystal-btn-icon-left {
 	display: flex;
 	align-items: center;
 	width: 14px;
@@ -2743,11 +2639,11 @@
 }
 
 /* Agent limits section */
-.cristal-agent-limits {
+.crystal-agent-limits {
 	margin-bottom: 16px;
 }
 
-.cristal-agent-limits strong {
+.crystal-agent-limits strong {
 	display: block;
 	font-size: 12px;
 	font-weight: 600;
@@ -2755,7 +2651,7 @@
 	margin-bottom: 8px;
 }
 
-.cristal-limits-model {
+.crystal-limits-model {
 	display: block;
 	font-size: 11px;
 	color: var(--text-muted);
@@ -2763,31 +2659,31 @@
 }
 
 /* Progress bar row */
-.cristal-progress-row {
+.crystal-progress-row {
 	display: flex;
 	flex-direction: column;
 	gap: 4px;
 	margin-bottom: 12px;
 }
 
-.cristal-progress-top {
+.crystal-progress-top {
 	display: flex;
 	justify-content: space-between;
 	align-items: center;
 }
 
-.cristal-progress-label {
+.crystal-progress-label {
 	font-size: 12px;
 	color: var(--text-muted);
 }
 
-.cristal-progress-percent {
+.crystal-progress-percent {
 	font-size: 12px;
 	font-weight: 500;
 	color: var(--text-normal);
 }
 
-.cristal-progress-bar {
+.crystal-progress-bar {
 	width: 100%;
 	height: 8px;
 	background: var(--background-modifier-border);
@@ -2795,29 +2691,29 @@
 	overflow: hidden;
 }
 
-.cristal-progress-fill {
+.crystal-progress-fill {
 	height: 100%;
 	background: var(--interactive-accent);
 	border-radius: 4px;
 	transition: width 0.3s ease;
 }
 
-.cristal-progress-fill.cristal-progress-warning {
+.crystal-progress-fill.crystal-progress-warning {
 	background: var(--color-yellow);
 }
 
-.cristal-progress-fill.cristal-progress-danger {
+.crystal-progress-fill.crystal-progress-danger {
 	background: var(--color-red);
 }
 
-.cristal-progress-reset {
+.crystal-progress-reset {
 	font-size: 10px;
 	color: var(--text-muted);
 }
 
 
 /* No agents screen */
-.cristal-no-agents {
+.crystal-no-agents {
 	display: flex;
 	flex-direction: column;
 	align-items: center;
@@ -2827,7 +2723,7 @@
 	min-height: 300px;
 }
 
-.cristal-no-agents-icon {
+.crystal-no-agents-icon {
 	width: 64px;
 	height: 64px;
 	display: flex;
@@ -2837,54 +2733,54 @@
 	opacity: 0.5;
 }
 
-.cristal-no-agents-icon svg {
+.crystal-no-agents-icon svg {
 	width: 48px;
 	height: 48px;
 }
 
-.cristal-no-agents-title {
+.crystal-no-agents-title {
 	margin: 0 0 12px 0;
 	font-size: 20px;
 	font-weight: 600;
 	color: var(--text-normal);
 }
 
-.cristal-no-agents-subtitle {
+.crystal-no-agents-subtitle {
 	margin: 0 0 24px 0;
 	font-size: 14px;
 	color: var(--text-muted);
 	max-width: 300px;
 }
 
-.cristal-no-agents-button {
+.crystal-no-agents-button {
 	padding: 10px 24px;
 	font-size: 14px;
 	border-radius: 6px;
 }
 
 /* Provider locked state */
-.cristal-provider-locked {
+.crystal-provider-locked {
 	opacity: 0.5;
 	cursor: not-allowed !important;
 }
 
-.cristal-provider-locked:hover {
+.crystal-provider-locked:hover {
 	background: transparent !important;
 }
 
 /* Generic disabled button state (for no-agents / unavailable agent) */
-.cristal-btn-disabled {
+.crystal-btn-disabled {
 	opacity: 0.4;
 	cursor: not-allowed !important;
 	pointer-events: none;
 }
 
-.cristal-btn-disabled:hover {
+.crystal-btn-disabled:hover {
 	background: transparent !important;
 }
 
 /* Danger zone in settings */
-.cristal-danger-zone-title {
+.crystal-danger-zone-title {
 	color: var(--color-red);
 	margin-top: 30px;
 	padding-top: 20px;
@@ -2892,33 +2788,33 @@
 }
 
 /* Confirm delete modal */
-.cristal-confirm-delete-modal {
+.crystal-confirm-delete-modal {
 	padding: 20px;
 }
 
-.cristal-confirm-delete-modal h2 {
+.crystal-confirm-delete-modal h2 {
 	margin: 0 0 12px 0;
 	color: var(--color-red);
 }
 
-.cristal-confirm-delete-modal p {
+.crystal-confirm-delete-modal p {
 	margin: 0 0 20px 0;
 	color: var(--text-muted);
 }
 
-.cristal-confirm-buttons {
+.crystal-confirm-buttons {
 	display: flex;
 	gap: 10px;
 	justify-content: flex-end;
 }
 
-.cristal-confirm-buttons button {
+.crystal-confirm-buttons button {
 	padding: 8px 16px;
 	border-radius: 4px;
 }
 
 /* Unavailable agent banner */
-.cristal-unavailable-agent-banner {
+.crystal-unavailable-agent-banner {
 	display: flex;
 	align-items: flex-start;
 	gap: 12px;
@@ -2929,28 +2825,28 @@
 	border-radius: 8px;
 }
 
-.cristal-unavailable-agent-icon {
+.crystal-unavailable-agent-icon {
 	flex-shrink: 0;
 	color: var(--color-red);
 }
 
-.cristal-unavailable-agent-icon svg {
+.crystal-unavailable-agent-icon svg {
 	width: 24px;
 	height: 24px;
 }
 
-.cristal-unavailable-agent-text {
+.crystal-unavailable-agent-text {
 	flex: 1;
 }
 
-.cristal-unavailable-agent-text strong {
+.crystal-unavailable-agent-text strong {
 	display: block;
 	margin-bottom: 4px;
 	color: var(--color-red);
 	font-size: 14px;
 }
 
-.cristal-unavailable-agent-text p {
+.crystal-unavailable-agent-text p {
 	margin: 0;
 	font-size: 13px;
 	color: var(--text-muted);
@@ -2958,7 +2854,7 @@
 }
 
 /* Session agent icon */
-.cristal-session-agent-icon {
+.crystal-session-agent-icon {
 	display: flex;
 	align-items: center;
 	justify-content: center;
@@ -2966,15 +2862,15 @@
 	opacity: 0.7;
 }
 
-.cristal-session-agent-icon svg {
+.crystal-session-agent-icon svg {
 	width: 14px;
 	height: 14px;
 }
 
-.cristal-session-item .cristal-session-agent-icon {
+.crystal-session-item .crystal-session-agent-icon {
 	margin-right: 6px;
 }
 
-.cristal-session-trigger .cristal-session-agent-icon {
+.crystal-session-trigger .crystal-session-agent-icon {
 	margin-right: 6px;
 }

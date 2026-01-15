@@ -35,17 +35,6 @@ export interface SettingsLocale {
 	advanced: string;
 	extendedThinking: string;
 	extendedThinkingDesc: string;
-	// Codex permissions
-	sandboxMode: string;
-	sandboxModeDesc: string;
-	sandboxReadOnly: string;
-	sandboxWorkspaceWrite: string;
-	sandboxFullAccess: string;
-	codexReasoning: string;
-	codexReasoningDesc: string;
-	reasoningOff: string;
-	reasoningMedium: string;
-	reasoningHigh: string;
 	// Skills section
 	skills: string;
 	skillsNote: string;
@@ -132,14 +121,6 @@ export interface SettingsLocale {
 	agentSettingsTitle: string;
 	settingsButton: string;
 
-	// Codex-specific settings
-	codexCliPath: string;
-	codexCliPathDesc: string;
-	codexSystemInstructions: string;
-	codexSystemInstructionsDesc: string;
-	codexDeepReasoning: string;
-	codexDeepReasoningDesc: string;
-
 	// Updated model description (no /model mention)
 	defaultModelDescNoSlash: string;
 
@@ -217,17 +198,6 @@ export const SETTINGS_LOCALES: Record<LanguageCode, SettingsLocale> = {
 		advanced: "Продвинутые",
 		extendedThinking: "Расширенное мышление",
 		extendedThinkingDesc: "Использовать extended thinking для глубокого анализа",
-		// Codex permissions
-		sandboxMode: "Режим песочницы",
-		sandboxModeDesc: "Уровень доступа Codex к файловой системе",
-		sandboxReadOnly: "Только чтение",
-		sandboxWorkspaceWrite: "Запись в рабочую область",
-		sandboxFullAccess: "Полный доступ (опасно)",
-		codexReasoning: "Уровень рассуждений",
-		codexReasoningDesc: "Глубина анализа Codex",
-		reasoningOff: "Выключено",
-		reasoningMedium: "Средний",
-		reasoningHigh: "Высокий",
 		// Skills section
 		skills: "Навыки",
 		skillsNote: "Навыки предоставляют агенту специализированные инструкции для работы с Obsidian",
@@ -305,7 +275,7 @@ export const SETTINGS_LOCALES: Record<LanguageCode, SettingsLocale> = {
 		loadingPlaceholder: "Загрузка...",
 
 		// Agents section
-		agentsSection: "Агенты Cristal",
+		agentsSection: "Агенты Crystal",
 		addAgent: "Добавить агента",
 		comingSoon: "Скоро",
 		agentAlreadyExists: "Уже добавлен",
@@ -314,21 +284,13 @@ export const SETTINGS_LOCALES: Record<LanguageCode, SettingsLocale> = {
 		agentSettingsTitle: "Настройки",
 		settingsButton: "Настройки",
 
-		// Codex-specific settings
-		codexCliPath: "Путь к Codex CLI",
-		codexCliPathDesc: "Путь к исполняемому файлу Codex CLI. Обычно просто 'codex', если установлен глобально.",
-		codexSystemInstructions: "Системные инструкции (AGENTS.md)",
-		codexSystemInstructionsDesc: "Файл в корне хранилища, определяющий поведение Codex. Читается автоматически.",
-		codexDeepReasoning: "Глубокое мышление",
-		codexDeepReasoningDesc: "Включить расширенное мышление (режим Extra High)",
-
 		// Updated model description
 		defaultModelDescNoSlash: "Модель для новых чатов.",
 
 		// Terminal integration
 		startIntegration: "Начать интеграцию",
 		openTerminal: "Открыть терминал",
-		openTerminalDesc: "Запустить CLI во встроенном терминале",
+		openTerminalDesc: "Открыть системный терминал с Claude Code",
 		integrationNote: "Откроет терминал и начнёт установку CLI",
 
 		// Account Limits
@@ -396,17 +358,6 @@ export const SETTINGS_LOCALES: Record<LanguageCode, SettingsLocale> = {
 		advanced: "Advanced",
 		extendedThinking: "Extended Thinking",
 		extendedThinkingDesc: "Use extended thinking for deep analysis",
-		// Codex permissions
-		sandboxMode: "Sandbox Mode",
-		sandboxModeDesc: "Codex's level of file system access",
-		sandboxReadOnly: "Read Only",
-		sandboxWorkspaceWrite: "Workspace Write",
-		sandboxFullAccess: "Full Access (dangerous)",
-		codexReasoning: "Reasoning Level",
-		codexReasoningDesc: "Depth of Codex analysis",
-		reasoningOff: "Off",
-		reasoningMedium: "Medium",
-		reasoningHigh: "High",
 		// Skills section
 		skills: "Skills",
 		skillsNote: "Skills provide specialized instructions for working with Obsidian",
@@ -484,7 +435,7 @@ export const SETTINGS_LOCALES: Record<LanguageCode, SettingsLocale> = {
 		loadingPlaceholder: "Loading...",
 
 		// Agents section
-		agentsSection: "Cristal Agents",
+		agentsSection: "Crystal Agents",
 		addAgent: "Add agent",
 		comingSoon: "Coming soon",
 		agentAlreadyExists: "Already added",
@@ -493,21 +444,13 @@ export const SETTINGS_LOCALES: Record<LanguageCode, SettingsLocale> = {
 		agentSettingsTitle: "Settings",
 		settingsButton: "Settings",
 
-		// Codex-specific settings
-		codexCliPath: "Codex CLI path",
-		codexCliPathDesc: "Path to the Codex CLI executable. Usually just 'codex' if installed globally.",
-		codexSystemInstructions: "System Instructions (AGENTS.md)",
-		codexSystemInstructionsDesc: "A file in your vault root that defines how Codex behaves. Read automatically.",
-		codexDeepReasoning: "Deep thinking",
-		codexDeepReasoningDesc: "Enable extended thinking (Extra High mode)",
-
 		// Updated model description
 		defaultModelDescNoSlash: "Model used for new chats.",
 
 		// Terminal integration
 		startIntegration: "Start Integration",
 		openTerminal: "Open Terminal",
-		openTerminalDesc: "Launch CLI in integrated terminal",
+		openTerminalDesc: "Open system terminal with Claude Code",
 		integrationNote: "Opens terminal and starts CLI installation",
 
 		// Account Limits
@@ -575,17 +518,6 @@ export const SETTINGS_LOCALES: Record<LanguageCode, SettingsLocale> = {
 		advanced: "Avancé",
 		extendedThinking: "Réflexion étendue",
 		extendedThinkingDesc: "Utiliser la réflexion étendue pour une analyse approfondie",
-		// Codex permissions
-		sandboxMode: "Mode sandbox",
-		sandboxModeDesc: "Niveau d'accès de Codex au système de fichiers",
-		sandboxReadOnly: "Lecture seule",
-		sandboxWorkspaceWrite: "Écriture dans l'espace de travail",
-		sandboxFullAccess: "Accès complet (dangereux)",
-		codexReasoning: "Niveau de raisonnement",
-		codexReasoningDesc: "Profondeur d'analyse de Codex",
-		reasoningOff: "Désactivé",
-		reasoningMedium: "Moyen",
-		reasoningHigh: "Élevé",
 		// Skills section
 		skills: "Compétences",
 		skillsNote: "Les compétences fournissent des instructions spécialisées pour travailler avec Obsidian",
@@ -663,7 +595,7 @@ export const SETTINGS_LOCALES: Record<LanguageCode, SettingsLocale> = {
 		loadingPlaceholder: "Chargement...",
 
 		// Agents section
-		agentsSection: "Agents Cristal",
+		agentsSection: "Agents Crystal",
 		addAgent: "Ajouter un agent",
 		comingSoon: "Bientôt",
 		agentAlreadyExists: "Déjà ajouté",
@@ -672,21 +604,13 @@ export const SETTINGS_LOCALES: Record<LanguageCode, SettingsLocale> = {
 		agentSettingsTitle: "Paramètres",
 		settingsButton: "Paramètres",
 
-		// Codex-specific settings
-		codexCliPath: "Chemin du CLI Codex",
-		codexCliPathDesc: "Chemin vers l'exécutable Codex CLI. Généralement juste 'codex' s'il est installé globalement.",
-		codexSystemInstructions: "Instructions système (AGENTS.md)",
-		codexSystemInstructionsDesc: "Un fichier à la racine de votre coffre qui définit le comportement de Codex. Lu automatiquement.",
-		codexDeepReasoning: "Réflexion approfondie",
-		codexDeepReasoningDesc: "Activer la réflexion étendue (mode Extra High)",
-
 		// Updated model description
 		defaultModelDescNoSlash: "Modèle utilisé pour les nouveaux chats.",
 
 		// Terminal integration
 		startIntegration: "Démarrer l'intégration",
 		openTerminal: "Ouvrir le terminal",
-		openTerminalDesc: "Lancer le CLI dans le terminal intégré",
+		openTerminalDesc: "Ouvrir le terminal système avec Claude Code",
 		integrationNote: "Ouvre le terminal et démarre l'installation du CLI",
 
 		// Account Limits
@@ -754,17 +678,6 @@ export const SETTINGS_LOCALES: Record<LanguageCode, SettingsLocale> = {
 		advanced: "Erweitert",
 		extendedThinking: "Erweitertes Denken",
 		extendedThinkingDesc: "Erweitertes Denken für tiefgehende Analyse verwenden",
-		// Codex permissions
-		sandboxMode: "Sandbox-Modus",
-		sandboxModeDesc: "Codex Zugriffsstufe auf das Dateisystem",
-		sandboxReadOnly: "Nur Lesen",
-		sandboxWorkspaceWrite: "Arbeitsbereich schreiben",
-		sandboxFullAccess: "Vollzugriff (gefährlich)",
-		codexReasoning: "Reasoning-Stufe",
-		codexReasoningDesc: "Tiefe der Codex-Analyse",
-		reasoningOff: "Aus",
-		reasoningMedium: "Mittel",
-		reasoningHigh: "Hoch",
 		// Skills section
 		skills: "Fähigkeiten",
 		skillsNote: "Fähigkeiten bieten spezialisierte Anweisungen für die Arbeit mit Obsidian",
@@ -842,7 +755,7 @@ export const SETTINGS_LOCALES: Record<LanguageCode, SettingsLocale> = {
 		loadingPlaceholder: "Laden...",
 
 		// Agents section
-		agentsSection: "Cristal Agenten",
+		agentsSection: "Crystal Agenten",
 		addAgent: "Agent hinzufügen",
 		comingSoon: "Demnächst",
 		agentAlreadyExists: "Bereits hinzugefügt",
@@ -851,21 +764,13 @@ export const SETTINGS_LOCALES: Record<LanguageCode, SettingsLocale> = {
 		agentSettingsTitle: "Einstellungen",
 		settingsButton: "Einstellungen",
 
-		// Codex-specific settings
-		codexCliPath: "Codex CLI Pfad",
-		codexCliPathDesc: "Pfad zur Codex CLI ausführbaren Datei. Normalerweise nur 'codex', wenn global installiert.",
-		codexSystemInstructions: "Systemanweisungen (AGENTS.md)",
-		codexSystemInstructionsDesc: "Eine Datei im Wurzelverzeichnis Ihres Tresors, die das Verhalten von Codex definiert. Wird automatisch gelesen.",
-		codexDeepReasoning: "Tiefes Denken",
-		codexDeepReasoningDesc: "Erweitertes Denken aktivieren (Extra High Modus)",
-
 		// Updated model description
 		defaultModelDescNoSlash: "Modell für neue Chats.",
 
 		// Terminal integration
 		startIntegration: "Integration starten",
 		openTerminal: "Terminal öffnen",
-		openTerminalDesc: "CLI im integrierten Terminal starten",
+		openTerminalDesc: "System-Terminal mit Claude Code öffnen",
 		integrationNote: "Öffnet das Terminal und startet die CLI-Installation",
 
 		// Account Limits
@@ -933,17 +838,6 @@ export const SETTINGS_LOCALES: Record<LanguageCode, SettingsLocale> = {
 		advanced: "Avanzado",
 		extendedThinking: "Pensamiento extendido",
 		extendedThinkingDesc: "Usar pensamiento extendido para análisis profundo",
-		// Codex permissions
-		sandboxMode: "Modo sandbox",
-		sandboxModeDesc: "Nivel de acceso de Codex al sistema de archivos",
-		sandboxReadOnly: "Solo lectura",
-		sandboxWorkspaceWrite: "Escritura en área de trabajo",
-		sandboxFullAccess: "Acceso completo (peligroso)",
-		codexReasoning: "Nivel de razonamiento",
-		codexReasoningDesc: "Profundidad del análisis de Codex",
-		reasoningOff: "Desactivado",
-		reasoningMedium: "Medio",
-		reasoningHigh: "Alto",
 		// Skills section
 		skills: "Habilidades",
 		skillsNote: "Las habilidades proporcionan instrucciones especializadas para trabajar con Obsidian",
@@ -1021,7 +915,7 @@ export const SETTINGS_LOCALES: Record<LanguageCode, SettingsLocale> = {
 		loadingPlaceholder: "Cargando...",
 
 		// Agents section
-		agentsSection: "Agentes de Cristal",
+		agentsSection: "Agentes de Crystal",
 		addAgent: "Agregar agente",
 		comingSoon: "Próximamente",
 		agentAlreadyExists: "Ya agregado",
@@ -1030,21 +924,13 @@ export const SETTINGS_LOCALES: Record<LanguageCode, SettingsLocale> = {
 		agentSettingsTitle: "Configuración",
 		settingsButton: "Configuración",
 
-		// Codex-specific settings
-		codexCliPath: "Ruta del CLI de Codex",
-		codexCliPathDesc: "Ruta al ejecutable de Codex CLI. Normalmente solo 'codex' si está instalado globalmente.",
-		codexSystemInstructions: "Instrucciones del sistema (AGENTS.md)",
-		codexSystemInstructionsDesc: "Un archivo en la raíz de tu bóveda que define cómo se comporta Codex. Se lee automáticamente.",
-		codexDeepReasoning: "Pensamiento profundo",
-		codexDeepReasoningDesc: "Habilitar pensamiento extendido (modo Extra High)",
-
 		// Updated model description
 		defaultModelDescNoSlash: "Modelo usado para nuevos chats.",
 
 		// Terminal integration
 		startIntegration: "Iniciar integración",
 		openTerminal: "Abrir terminal",
-		openTerminalDesc: "Iniciar CLI en terminal integrado",
+		openTerminalDesc: "Abrir terminal del sistema con Claude Code",
 		integrationNote: "Abre el terminal e inicia la instalación del CLI",
 
 		// Account Limits
@@ -1114,17 +1000,6 @@ export const SETTINGS_LOCALES: Record<LanguageCode, SettingsLocale> = {
 		advanced: "उन्नत",
 		extendedThinking: "विस्तारित सोच",
 		extendedThinkingDesc: "गहन विश्लेषण के लिए विस्तारित सोच का उपयोग करें",
-		// Codex permissions
-		sandboxMode: "सैंडबॉक्स मोड",
-		sandboxModeDesc: "फ़ाइल सिस्टम तक Codex की पहुंच स्तर",
-		sandboxReadOnly: "केवल पढ़ें",
-		sandboxWorkspaceWrite: "कार्यक्षेत्र में लिखें",
-		sandboxFullAccess: "पूर्ण पहुंच (खतरनाक)",
-		codexReasoning: "तर्क स्तर",
-		codexReasoningDesc: "Codex विश्लेषण की गहराई",
-		reasoningOff: "बंद",
-		reasoningMedium: "मध्यम",
-		reasoningHigh: "उच्च",
 		// Skills section
 		skills: "कौशल",
 		skillsNote: "कौशल Obsidian के साथ काम करने के लिए विशेष निर्देश प्रदान करते हैं",
@@ -1202,7 +1077,7 @@ export const SETTINGS_LOCALES: Record<LanguageCode, SettingsLocale> = {
 		loadingPlaceholder: "लोड हो रहा है...",
 
 		// Agents section
-		agentsSection: "Cristal एजेंट",
+		agentsSection: "Crystal एजेंट",
 		addAgent: "एजेंट जोड़ें",
 		comingSoon: "जल्द आ रहा है",
 		agentAlreadyExists: "पहले से जोड़ा गया",
@@ -1211,21 +1086,13 @@ export const SETTINGS_LOCALES: Record<LanguageCode, SettingsLocale> = {
 		agentSettingsTitle: "सेटिंग्स",
 		settingsButton: "सेटिंग्स",
 
-		// Codex-specific settings
-		codexCliPath: "Codex CLI पथ",
-		codexCliPathDesc: "Codex CLI निष्पादन योग्य फ़ाइल का पथ। आमतौर पर बस 'codex' अगर विश्व स्तर पर स्थापित है।",
-		codexSystemInstructions: "सिस्टम निर्देश (AGENTS.md)",
-		codexSystemInstructionsDesc: "आपके वॉल्ट रूट में एक फ़ाइल जो Codex के व्यवहार को परिभाषित करती है। स्वचालित रूप से पढ़ा जाता है।",
-		codexDeepReasoning: "गहन सोच",
-		codexDeepReasoningDesc: "विस्तारित सोच सक्षम करें (Extra High मोड)",
-
 		// Updated model description
 		defaultModelDescNoSlash: "नई चैट के लिए मॉडल।",
 
 		// Terminal integration
 		startIntegration: "एकीकरण शुरू करें",
 		openTerminal: "टर्मिनल खोलें",
-		openTerminalDesc: "एकीकृत टर्मिनल में CLI लॉन्च करें",
+		openTerminalDesc: "Claude Code के साथ सिस्टम टर्मिनल खोलें",
 		integrationNote: "टर्मिनल खोलता है और CLI इंस्टॉलेशन शुरू करता है",
 
 		// Account Limits
@@ -1295,17 +1162,6 @@ export const SETTINGS_LOCALES: Record<LanguageCode, SettingsLocale> = {
 		advanced: "高级",
 		extendedThinking: "扩展思考",
 		extendedThinkingDesc: "使用扩展思考进行深度分析",
-		// Codex permissions
-		sandboxMode: "沙盒模式",
-		sandboxModeDesc: "Codex 对文件系统的访问级别",
-		sandboxReadOnly: "只读",
-		sandboxWorkspaceWrite: "工作区写入",
-		sandboxFullAccess: "完全访问（危险）",
-		codexReasoning: "推理级别",
-		codexReasoningDesc: "Codex 分析深度",
-		reasoningOff: "关闭",
-		reasoningMedium: "中等",
-		reasoningHigh: "高",
 		// Skills section
 		skills: "技能",
 		skillsNote: "技能为 Obsidian 工作提供专业指导",
@@ -1383,7 +1239,7 @@ export const SETTINGS_LOCALES: Record<LanguageCode, SettingsLocale> = {
 		loadingPlaceholder: "加载中...",
 
 		// Agents section
-		agentsSection: "Cristal 代理",
+		agentsSection: "Crystal 代理",
 		addAgent: "添加代理",
 		comingSoon: "即将推出",
 		agentAlreadyExists: "已添加",
@@ -1392,21 +1248,13 @@ export const SETTINGS_LOCALES: Record<LanguageCode, SettingsLocale> = {
 		agentSettingsTitle: "设置",
 		settingsButton: "设置",
 
-		// Codex-specific settings
-		codexCliPath: "Codex CLI 路径",
-		codexCliPathDesc: "Codex CLI 可执行文件的路径。如果全局安装，通常只需 'codex'。",
-		codexSystemInstructions: "系统指令 (AGENTS.md)",
-		codexSystemInstructionsDesc: "位于您保险库根目录的文件，定义 Codex 的行为方式。自动读取。",
-		codexDeepReasoning: "深度思考",
-		codexDeepReasoningDesc: "启用扩展思考（Extra High 模式）",
-
 		// Updated model description
 		defaultModelDescNoSlash: "用于新聊天的模型。",
 
 		// Terminal integration
 		startIntegration: "开始集成",
 		openTerminal: "打开终端",
-		openTerminalDesc: "在集成终端中启动 CLI",
+		openTerminalDesc: "使用 Claude Code 打开系统终端",
 		integrationNote: "打开终端并开始 CLI 安装",
 
 		// Account Limits
@@ -1476,17 +1324,6 @@ export const SETTINGS_LOCALES: Record<LanguageCode, SettingsLocale> = {
 		advanced: "詳細設定",
 		extendedThinking: "拡張思考",
 		extendedThinkingDesc: "深い分析のために拡張思考を使用",
-		// Codex permissions
-		sandboxMode: "サンドボックスモード",
-		sandboxModeDesc: "Codex のファイルシステムへのアクセスレベル",
-		sandboxReadOnly: "読み取り専用",
-		sandboxWorkspaceWrite: "ワークスペースへの書き込み",
-		sandboxFullAccess: "フルアクセス（危険）",
-		codexReasoning: "推論レベル",
-		codexReasoningDesc: "Codex 分析の深さ",
-		reasoningOff: "オフ",
-		reasoningMedium: "中",
-		reasoningHigh: "高",
 		// Skills section
 		skills: "スキル",
 		skillsNote: "スキルは Obsidian での作業に特化した指示を提供します",
@@ -1564,7 +1401,7 @@ export const SETTINGS_LOCALES: Record<LanguageCode, SettingsLocale> = {
 		loadingPlaceholder: "読み込み中...",
 
 		// Agents section
-		agentsSection: "Cristal エージェント",
+		agentsSection: "Crystal エージェント",
 		addAgent: "エージェントを追加",
 		comingSoon: "近日公開",
 		agentAlreadyExists: "追加済み",
@@ -1573,21 +1410,13 @@ export const SETTINGS_LOCALES: Record<LanguageCode, SettingsLocale> = {
 		agentSettingsTitle: "設定",
 		settingsButton: "設定",
 
-		// Codex-specific settings
-		codexCliPath: "Codex CLI パス",
-		codexCliPathDesc: "Codex CLI 実行ファイルへのパス。グローバルにインストールされている場合は通常 'codex' のみ。",
-		codexSystemInstructions: "システム指示 (AGENTS.md)",
-		codexSystemInstructionsDesc: "Codex の動作を定義する保管庫ルートのファイル。自動的に読み込まれます。",
-		codexDeepReasoning: "深い思考",
-		codexDeepReasoningDesc: "拡張思考を有効にする（Extra High モード）",
-
 		// Updated model description
 		defaultModelDescNoSlash: "新しいチャットで使用するモデル。",
 
 		// Terminal integration
 		startIntegration: "統合を開始",
 		openTerminal: "ターミナルを開く",
-		openTerminalDesc: "統合ターミナルでCLIを起動",
+		openTerminalDesc: "Claude Codeでシステムターミナルを開く",
 		integrationNote: "ターミナルを開いてCLIのインストールを開始します",
 
 		// Account Limits

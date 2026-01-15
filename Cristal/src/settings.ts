@@ -1,19 +1,18 @@
 import { App, PluginSettingTab, Setting, Modal, TextComponent, setIcon, Notice } from "obsidian";
-import type CristalPlugin from "./main";
-import type { SlashCommand, LanguageCode, ClaudeModel, AgentConfig, CLIType, ClaudePermissions, CodexPermissions } from "./types";
-import { CLAUDE_MODELS, CODEX_MODELS, CLI_INFO, DEFAULT_CLAUDE_PERMISSIONS, DEFAULT_CODEX_PERMISSIONS } from "./types";
+import type CrystalPlugin from "./main";
+import type { SlashCommand, LanguageCode, ClaudeModel, AgentConfig, CLIType } from "./types";
+import { CLAUDE_MODELS, CLI_INFO, DEFAULT_CLAUDE_PERMISSIONS } from "./types";
 import { getBuiltinCommands } from "./commands";
 import { LANGUAGE_NAMES } from "./systemPrompts";
-import { checkCLIInstalled, checkCodexInstalled, detectCLIPath, detectCodexCLIPath } from "./cliDetector";
-import { setCodexReasoningLevel } from "./codexConfig";
+import { checkCLIInstalled, detectCLIPath } from "./cliDetector";
 import { getSettingsLocale, type SettingsLocale } from "./settingsLocales";
 import { CreateSkillModal, ValidateSkillModal } from "./skills";
 
-export class CristalSettingTab extends PluginSettingTab {
-	plugin: CristalPlugin;
+export class CrystalSettingTab extends PluginSettingTab {
+	plugin: CrystalPlugin;
 	private locale!: SettingsLocale;
 
-	constructor(app: App, plugin: CristalPlugin) {
+	constructor(app: App, plugin: CrystalPlugin) {
 		super(app, plugin);
 		this.plugin = plugin;
 	}
@@ -45,27 +44,25 @@ export class CristalSettingTab extends PluginSettingTab {
 					});
 			});
 
-		// 3. Cristal Agents section
-		this.displayAgentsSection(containerEl);
+		// 3. Claude Code Integration settings
+		this.displayClaudeSettings(containerEl);
 
-		// 4. Default Agent selection
-		this.displayDefaultAgentSection(containerEl);
-
-		// 5. Slash Commands section
+		// 4. Slash Commands section
 		this.displaySlashCommandsSection(containerEl);
 
-		// Note: Getting Started section moved to AgentSettingsModal
+		// 5. Getting Started section (at the bottom)
+		this.displayGettingStarted(containerEl);
 	}
 
 	private displayUsageSection(containerEl: HTMLElement): void {
-		const usageSection = containerEl.createDiv({ cls: "cristal-usage-section" });
+		const usageSection = containerEl.createDiv({ cls: "crystal-usage-section" });
 		usageSection.createEl("h3", { text: this.locale.usageStatistics });
 
 		// Calculate stats from plugin sessions
 		const stats = this.calculateUsageStats();
 
 		// Inline compact format
-		const inline = usageSection.createDiv({ cls: "cristal-stats-inline" });
+		const inline = usageSection.createDiv({ cls: "crystal-stats-inline" });
 		this.createStatInline(inline, this.locale.today, this.formatTokens(stats.todayTokens));
 		this.createStatInline(inline, this.locale.week, this.formatTokens(stats.weekTokens));
 		this.createStatInline(inline, this.locale.month, this.formatTokens(stats.monthTokens));
@@ -75,19 +72,19 @@ export class CristalSettingTab extends PluginSettingTab {
 	}
 
 	private displayAccountLimitsSection(containerEl: HTMLElement): void {
-		const limitsSection = containerEl.createDiv({ cls: "cristal-account-limits" });
+		const limitsSection = containerEl.createDiv({ cls: "crystal-account-limits" });
 		limitsSection.createEl("h4", { text: this.locale.accountLimits });
 
 		// Container for limits data
-		const limitsContainer = limitsSection.createDiv({ cls: "cristal-limits-data" });
+		const limitsContainer = limitsSection.createDiv({ cls: "crystal-limits-data" });
 
 		// Check limits button
-		const btnContainer = limitsSection.createDiv({ cls: "cristal-limits-btn-container" });
+		const btnContainer = limitsSection.createDiv({ cls: "crystal-limits-btn-container" });
 		const checkBtn = btnContainer.createEl("button", {
 			text: this.locale.checkLimits,
-			cls: "cristal-check-limits-btn"
+			cls: "crystal-check-limits-btn"
 		});
-		setIcon(checkBtn.createSpan({ cls: "cristal-btn-icon-left" }), "refresh-cw");
+		setIcon(checkBtn.createSpan({ cls: "crystal-btn-icon-left" }), "refresh-cw");
 
 		checkBtn.addEventListener("click", async () => {
 			await this.loadAccountLimits(limitsContainer);
@@ -96,7 +93,7 @@ export class CristalSettingTab extends PluginSettingTab {
 
 	private async loadAccountLimits(container: HTMLElement): Promise<void> {
 		container.empty();
-		container.createEl("span", { cls: "cristal-limits-loading", text: this.locale.loadingLimits });
+		container.createEl("span", { cls: "crystal-limits-loading", text: this.locale.loadingLimits });
 
 		const { UsageLimitsService } = await import("./UsageLimitsService");
 		const service = new UsageLimitsService();
@@ -108,19 +105,9 @@ export class CristalSettingTab extends PluginSettingTab {
 		if (claudeAgent?.enabled) {
 			const claudeLimits = await service.fetchClaudeUsage();
 			this.renderClaudeLimits(container, claudeLimits);
-		}
-
-		// Codex limits (parsed from session files)
-		const codexAgent = this.plugin.getAgentByCliType("codex");
-		if (codexAgent?.enabled) {
-			const codexLimits = await service.fetchCodexUsage();
-			this.renderCodexLimits(container, codexLimits);
-		}
-
-		// If no agents enabled
-		if (!claudeAgent?.enabled && !codexAgent?.enabled) {
+		} else {
 			container.createEl("span", {
-				cls: "cristal-limits-note",
+				cls: "crystal-limits-note",
 				text: "No agents enabled"
 			});
 		}
@@ -130,18 +117,18 @@ export class CristalSettingTab extends PluginSettingTab {
 		container.empty();
 
 		if (limits.error) {
-			const errorEl = container.createDiv({ cls: "cristal-limits-error" });
+			const errorEl = container.createDiv({ cls: "crystal-limits-error" });
 			if (limits.error === "not_authenticated") {
 				errorEl.createEl("span", { text: this.locale.notAuthenticated });
 				errorEl.createEl("br");
-				errorEl.createEl("span", { cls: "cristal-limits-note", text: this.locale.notAuthenticatedDesc });
+				errorEl.createEl("span", { cls: "crystal-limits-note", text: this.locale.notAuthenticatedDesc });
 			} else {
 				errorEl.createEl("span", { text: this.locale.limitsError });
 			}
 			return;
 		}
 
-		const claudeSection = container.createDiv({ cls: "cristal-agent-limits" });
+		const claudeSection = container.createDiv({ cls: "crystal-agent-limits" });
 		claudeSection.createEl("strong", { text: "Claude Code" });
 
 		// 5-hour limit (API returns 0-100 percentage)
@@ -181,39 +168,6 @@ export class CristalSettingTab extends PluginSettingTab {
 		}
 	}
 
-	private renderCodexLimits(container: HTMLElement, limits: import("./UsageLimitsService").CodexUsageLimits): void {
-		if (limits.error) {
-			const errorEl = container.createDiv({ cls: "cristal-limits-error" });
-			if (limits.error === "not_authenticated" || limits.error === "no_sessions") {
-				errorEl.createEl("span", { text: this.locale.notAuthenticated });
-				errorEl.createEl("br");
-				errorEl.createEl("span", { cls: "cristal-limits-note", text: this.locale.notAuthenticatedDesc });
-			} else {
-				errorEl.createEl("span", { text: this.locale.limitsError });
-			}
-			return;
-		}
-
-		const codexSection = container.createDiv({ cls: "cristal-agent-limits" });
-		codexSection.createEl("strong", { text: "Codex" });
-
-		// 5-hour limit
-		this.createProgressBar(
-			codexSection,
-			this.locale.fiveHourLimit,
-			limits.fiveHour.utilization,
-			limits.fiveHour.resetsAt
-		);
-
-		// Weekly limit
-		this.createProgressBar(
-			codexSection,
-			this.locale.weeklyLimit,
-			limits.sevenDay.utilization,
-			limits.sevenDay.resetsAt
-		);
-	}
-
 	private createProgressBar(
 		container: HTMLElement,
 		label: string,
@@ -221,30 +175,30 @@ export class CristalSettingTab extends PluginSettingTab {
 		resetsAt: string | null,
 		showLeft: boolean = false
 	): void {
-		const row = container.createDiv({ cls: "cristal-progress-row" });
+		const row = container.createDiv({ cls: "crystal-progress-row" });
 
 		// Top line: label + percent
-		const topLine = row.createDiv({ cls: "cristal-progress-top" });
-		topLine.createDiv({ cls: "cristal-progress-label", text: label });
+		const topLine = row.createDiv({ cls: "crystal-progress-top" });
+		topLine.createDiv({ cls: "crystal-progress-label", text: label });
 		const percentText = showLeft ? `${Math.round(100 - percent)}% ${this.locale.left}` : `${Math.round(percent)}% ${this.locale.used}`;
-		topLine.createDiv({ cls: "cristal-progress-percent", text: percentText });
+		topLine.createDiv({ cls: "crystal-progress-percent", text: percentText });
 
 		// Progress bar
-		const barContainer = row.createDiv({ cls: "cristal-progress-bar" });
-		const fill = barContainer.createDiv({ cls: "cristal-progress-fill" });
+		const barContainer = row.createDiv({ cls: "crystal-progress-bar" });
+		const fill = barContainer.createDiv({ cls: "crystal-progress-fill" });
 		fill.style.width = `${Math.min(100, Math.max(0, percent))}%`;
 
 		// Color based on usage
 		if (percent >= 90) {
-			fill.addClass("cristal-progress-danger");
+			fill.addClass("crystal-progress-danger");
 		} else if (percent >= 70) {
-			fill.addClass("cristal-progress-warning");
+			fill.addClass("crystal-progress-warning");
 		}
 
 		// Reset time
 		if (resetsAt) {
 			const resetText = this.formatResetTime(resetsAt);
-			row.createDiv({ cls: "cristal-progress-reset", text: resetText });
+			row.createDiv({ cls: "crystal-progress-reset", text: resetText });
 		}
 	}
 
@@ -293,217 +247,500 @@ export class CristalSettingTab extends PluginSettingTab {
 		}
 	}
 
-	private displayAgentsSection(containerEl: HTMLElement): void {
-		// Header with add button
-		const headerEl = containerEl.createDiv({ cls: "cristal-agents-header" });
-		headerEl.createEl("h3", { text: this.locale.agentsSection || "Cristal Agents" });
-
-		// Add agent button (text)
-		const addBtnEl = headerEl.createEl("button", {
-			cls: "cristal-add-agent-text-btn",
-			text: this.locale.addAgent || "Add agent"
-		});
-
-		// Dropdown menu for adding agents
-		const dropdownEl = headerEl.createDiv({ cls: "cristal-add-agent-dropdown" });
-		dropdownEl.style.display = "none";
-
-		for (const [cliType, info] of Object.entries(CLI_INFO)) {
-			const itemEl = dropdownEl.createDiv({ cls: "cristal-add-agent-item" });
-
-			if (!info.available) {
-				itemEl.addClass("cristal-add-agent-item-disabled");
-				itemEl.createSpan({ text: info.name });
-				itemEl.createSpan({ cls: "cristal-coming-soon", text: this.locale.comingSoon || "Coming soon" });
-			} else {
-				// Check if agent of this type already exists
-				const existing = this.plugin.getAgentByCliType(cliType as CLIType);
-				if (existing) {
-					itemEl.addClass("cristal-add-agent-item-disabled");
-					itemEl.createSpan({ text: info.name });
-					itemEl.createSpan({ cls: "cristal-already-added", text: this.locale.agentAlreadyExists || "Already added" });
-				} else {
-					itemEl.createSpan({ text: info.name });
-					itemEl.addEventListener("click", async () => {
-						await this.addAgent(cliType as CLIType);
-						dropdownEl.style.display = "none";
-					});
-				}
-			}
-		}
-
-		addBtnEl.addEventListener("click", (e) => {
-			e.stopPropagation();
-			dropdownEl.style.display = dropdownEl.style.display === "none" ? "block" : "none";
-		});
-
-		document.addEventListener("click", () => {
-			dropdownEl.style.display = "none";
-		});
-
-		// Agent cards
-		const cardsContainer = containerEl.createDiv({ cls: "cristal-agents-cards" });
-
-		for (const agent of this.plugin.settings.agents) {
-			this.renderAgentCard(cardsContainer, agent);
+	/**
+	 * Launch command in system terminal
+	 */
+	private launchCommand(command: string): void {
+		const success = this.plugin.openInSystemTerminal(command);
+		if (!success) {
+			new Notice("Failed to open system terminal");
 		}
 	}
 
-	private renderAgentCard(container: HTMLElement, agent: AgentConfig): void {
-		const cardEl = container.createDiv({ cls: "cristal-agent-card" });
-		if (!agent.enabled) {
-			cardEl.addClass("cristal-agent-card-disabled");
+	private displayClaudeSettings(containerEl: HTMLElement): void {
+		// Get or create Claude agent
+		let agent = this.plugin.getAgentByCliType("claude");
+		if (!agent) {
+			// Auto-create Claude agent if it doesn't exist
+			const info = CLI_INFO.claude;
+			agent = {
+				id: `claude-${Date.now()}`,
+				cliType: "claude",
+				name: info.name,
+				description: info.description,
+				enabled: true,
+				cliPath: "claude",
+				model: "claude-haiku-4-5-20251001",
+				thinkingEnabled: false,
+				permissions: { ...DEFAULT_CLAUDE_PERMISSIONS },
+				enabledSkills: []
+			};
+			this.plugin.settings.agents.push(agent);
+			this.plugin.settings.defaultAgentId = agent.id;
+			this.plugin.saveSettings();
 		}
 
-		// Header: [icon] [name + edit] ... [toggle] [settings]
-		const headerEl = cardEl.createDiv({ cls: "cristal-agent-card-header" });
+		containerEl.createEl("h3", { text: "Claude Code" });
 
-		// Icon based on CLI type
-		const iconEl = headerEl.createSpan({ cls: "cristal-agent-card-icon" });
-		setIcon(iconEl, agent.cliType === "claude" ? "sparkles" : "code");
-
-		// Name wrapper (text + edit button OR input + save button)
-		const nameWrapper = headerEl.createDiv({ cls: "cristal-agent-card-name-wrapper" });
-
-		// Display mode elements
-		const nameTextEl = nameWrapper.createSpan({ cls: "cristal-agent-card-name-text", text: agent.name });
-		const editBtn = nameWrapper.createEl("button", { cls: "cristal-agent-card-edit-btn" });
-		setIcon(editBtn, "pencil");
-
-		// Edit mode elements (hidden by default)
-		const nameInputEl = nameWrapper.createEl("input", {
-			cls: "cristal-agent-card-name-input",
-			attr: { type: "text", value: agent.name }
-		});
-		nameInputEl.style.display = "none";
-
-		const saveBtn = nameWrapper.createEl("button", { cls: "cristal-agent-card-save-btn" });
-		setIcon(saveBtn, "check");
-		saveBtn.style.display = "none";
-
-		// Edit button click - switch to edit mode
-		editBtn.addEventListener("click", () => {
-			nameTextEl.style.display = "none";
-			editBtn.style.display = "none";
-			nameInputEl.style.display = "block";
-			nameInputEl.value = agent.name;
-			saveBtn.style.display = "flex";
-			nameInputEl.focus();
-			nameInputEl.select();
-		});
-
-		// Save button click - save and switch back to display mode
-		const saveName = async () => {
-			const newName = nameInputEl.value.trim() || CLI_INFO[agent.cliType].name;
-			agent.name = newName;
-			await this.plugin.saveSettings();
-			nameTextEl.setText(newName);
-			nameTextEl.style.display = "inline";
-			editBtn.style.display = "flex";
-			nameInputEl.style.display = "none";
-			saveBtn.style.display = "none";
-		};
-
-		saveBtn.addEventListener("click", saveName);
-		nameInputEl.addEventListener("keydown", (e) => {
-			if (e.key === "Enter") {
-				saveName();
-			} else if (e.key === "Escape") {
-				nameTextEl.style.display = "inline";
-				editBtn.style.display = "flex";
-				nameInputEl.style.display = "none";
-				saveBtn.style.display = "none";
-			}
-		});
-
-		// Right section: toggle + settings button
-		const rightSection = headerEl.createDiv({ cls: "cristal-agent-card-right" });
-
-		// Enable toggle
-		const toggleContainer = rightSection.createDiv({ cls: "cristal-agent-card-toggle" });
-		const toggle = toggleContainer.createEl("input", { attr: { type: "checkbox" } });
-		toggle.checked = agent.enabled;
-		toggle.addEventListener("change", async () => {
-			agent.enabled = toggle.checked;
-			await this.plugin.saveSettings();
-			this.display();
-		});
-
-		// Settings button (text)
-		const settingsBtn = rightSection.createEl("button", {
-			cls: "cristal-agent-settings-text-btn",
-			text: this.locale.settingsButton || "Settings"
-		});
-		settingsBtn.addEventListener("click", () => {
-			new AgentSettingsModal(this.app, this.plugin, agent, () => this.display()).open();
-		});
-
-		// Description below header
-		const descEl = cardEl.createDiv({ cls: "cristal-agent-card-desc" });
-		descEl.setText(agent.description);
-	}
-
-	private async addAgent(cliType: CLIType): Promise<void> {
-		const info = CLI_INFO[cliType];
-		const newAgent: AgentConfig = {
-			id: `${cliType}-${Date.now()}`,
-			cliType,
-			name: info.name,
-			description: info.description,
-			enabled: false,
-			cliPath: cliType === "claude" ? "claude" : "codex",
-			model: cliType === "claude" ? "claude-haiku-4-5-20251001" : "gpt-5.2-codex",
-		};
-
-		if (cliType === "claude") {
-			newAgent.thinkingEnabled = false;
-			newAgent.permissions = { ...DEFAULT_CLAUDE_PERMISSIONS };
-			newAgent.enabledSkills = [];
-			// Try to detect CLI path
-			const detected = detectCLIPath();
-			if (detected.found) {
-				newAgent.cliPath = detected.path;
-			}
-		} else if (cliType === "codex") {
-			newAgent.reasoningEnabled = false;
-			newAgent.codexPermissions = { ...DEFAULT_CODEX_PERMISSIONS };
-			newAgent.enabledSkills = [];
-			// Try to detect CLI path
-			const detected = detectCodexCLIPath();
-			if (detected.found) {
-				newAgent.cliPath = detected.path;
-			}
+		// Auto-detect CLI path on settings open
+		const detected = detectCLIPath();
+		if (detected.found && agent.cliPath !== detected.path) {
+			agent.cliPath = detected.path;
+			this.plugin.saveSettings();
 		}
 
-		this.plugin.settings.agents.push(newAgent);
-		await this.plugin.saveSettings();
-		this.display();
-	}
+		// CLI Status indicator (no path input - auto-detected)
+		const cliStatusEl = containerEl.createDiv({ cls: "crystal-cli-status" });
+		this.checkAndDisplayCLIStatus(cliStatusEl, agent);
 
-	private displayDefaultAgentSection(containerEl: HTMLElement): void {
-		const enabledAgents = this.plugin.getEnabledAgents();
+		// Model selection
+		const allModels = CLAUDE_MODELS;
+		const disabledModels = agent.disabledModels || [];
+		const enabledModels = allModels.filter(m => !disabledModels.includes(m.value));
 
 		new Setting(containerEl)
-			.setName(this.locale.defaultAgent || "Default agent")
-			.setDesc(this.locale.defaultAgentDesc || "Which agent to use by default for new chats")
+			.setName(this.locale.defaultModel)
+			.setDesc(this.locale.defaultModelDescNoSlash)
 			.addDropdown(dropdown => {
-				for (const agent of enabledAgents) {
-					dropdown.addOption(agent.id, agent.name);
+				for (const model of enabledModels) {
+					dropdown.addOption(model.value, model.label);
+				}
+				// If current model is disabled, select first enabled
+				const currentModelEnabled = enabledModels.some(m => m.value === agent!.model);
+				if (!currentModelEnabled && enabledModels.length > 0) {
+					const firstEnabled = enabledModels[0];
+					if (firstEnabled) {
+						agent!.model = firstEnabled.value;
+						this.plugin.saveSettings();
+					}
 				}
 				dropdown
-					.setValue(this.plugin.settings.defaultAgentId || "")
+					.setValue(agent!.model)
 					.onChange(async (value) => {
-						this.plugin.settings.defaultAgentId = value;
+						agent!.model = value as ClaudeModel | string;
 						await this.plugin.saveSettings();
 					});
 			});
+
+		// Available Models section (toggles to disable models)
+		containerEl.createEl("h4", { text: this.locale.availableModels || "Available Models" });
+		containerEl.createEl("p", {
+			cls: "crystal-settings-note",
+			text: this.locale.availableModelsDesc || "Disable models you don't want to use"
+		});
+
+		for (const model of allModels) {
+			const isEnabled = !disabledModels.includes(model.value);
+			new Setting(containerEl)
+				.setName(model.label)
+				.addToggle(toggle => toggle
+					.setValue(isEnabled)
+					.onChange(async (value) => {
+						if (!agent!.disabledModels) {
+							agent!.disabledModels = [];
+						}
+						if (value) {
+							agent!.disabledModels = agent!.disabledModels.filter(m => m !== model.value);
+						} else {
+							if (!agent!.disabledModels.includes(model.value)) {
+								agent!.disabledModels.push(model.value);
+							}
+							if (agent!.model === model.value) {
+								const remaining = allModels.filter(m => !agent!.disabledModels!.includes(m.value));
+								const firstRemaining = remaining[0];
+								if (firstRemaining) {
+									agent!.model = firstRemaining.value;
+								}
+							}
+						}
+						await this.plugin.saveSettings();
+					}));
+		}
+
+		// Agent permissions
+		const permissions = agent.permissions || { ...DEFAULT_CLAUDE_PERMISSIONS };
+
+		// Extended Thinking
+		new Setting(containerEl)
+			.setName(this.locale.extendedThinking || "Extended Thinking")
+			.setDesc(this.locale.extendedThinkingDesc || "Enable deeper analysis mode for complex tasks")
+			.addToggle(toggle => toggle
+				.setValue(permissions.extendedThinking)
+				.onChange(async (value) => {
+					if (!agent!.permissions) {
+						agent!.permissions = { ...DEFAULT_CLAUDE_PERMISSIONS };
+					}
+					agent!.permissions.extendedThinking = value;
+					agent!.thinkingEnabled = value;
+					await this.plugin.saveSettings();
+				}));
+
+		// Permissions section
+		containerEl.createEl("h4", { text: this.locale.agentPermissions });
+		containerEl.createEl("p", {
+			cls: "crystal-settings-note",
+			text: this.locale.permissionsNote
+		});
+
+		// File Operations
+		containerEl.createEl("h5", { text: this.locale.fileOperations || "File Operations" });
+
+		new Setting(containerEl)
+			.setName(this.locale.fileRead || "Read files")
+			.setDesc(this.locale.fileReadDesc || "Allow reading files in vault")
+			.addToggle(toggle => toggle
+				.setValue(permissions.fileRead)
+				.onChange(async (value) => {
+					if (!agent!.permissions) {
+						agent!.permissions = { ...DEFAULT_CLAUDE_PERMISSIONS };
+					}
+					agent!.permissions.fileRead = value;
+					await this.plugin.saveSettings();
+				}));
+
+		new Setting(containerEl)
+			.setName(this.locale.fileWrite || "Write files")
+			.setDesc(this.locale.fileWriteDesc || "Allow creating new files")
+			.addToggle(toggle => toggle
+				.setValue(permissions.fileWrite)
+				.onChange(async (value) => {
+					if (!agent!.permissions) {
+						agent!.permissions = { ...DEFAULT_CLAUDE_PERMISSIONS };
+					}
+					agent!.permissions.fileWrite = value;
+					await this.plugin.saveSettings();
+				}));
+
+		new Setting(containerEl)
+			.setName(this.locale.fileEdit || "Edit files")
+			.setDesc(this.locale.fileEditDesc || "Allow editing existing files")
+			.addToggle(toggle => toggle
+				.setValue(permissions.fileEdit)
+				.onChange(async (value) => {
+					if (!agent!.permissions) {
+						agent!.permissions = { ...DEFAULT_CLAUDE_PERMISSIONS };
+					}
+					agent!.permissions.fileEdit = value;
+					await this.plugin.saveSettings();
+				}));
+
+		// Web Operations
+		containerEl.createEl("h5", { text: this.locale.webOperations || "Web Operations" });
+
+		new Setting(containerEl)
+			.setName(this.locale.webSearch)
+			.setDesc(this.locale.webSearchDesc)
+			.addToggle(toggle => toggle
+				.setValue(permissions.webSearch)
+				.onChange(async (value) => {
+					if (!agent!.permissions) {
+						agent!.permissions = { ...DEFAULT_CLAUDE_PERMISSIONS };
+					}
+					agent!.permissions.webSearch = value;
+					await this.plugin.saveSettings();
+				}));
+
+		new Setting(containerEl)
+			.setName(this.locale.webFetch)
+			.setDesc(this.locale.webFetchDesc)
+			.addToggle(toggle => toggle
+				.setValue(permissions.webFetch)
+				.onChange(async (value) => {
+					if (!agent!.permissions) {
+						agent!.permissions = { ...DEFAULT_CLAUDE_PERMISSIONS };
+					}
+					agent!.permissions.webFetch = value;
+					await this.plugin.saveSettings();
+				}));
+
+		// Advanced
+		containerEl.createEl("h5", { text: this.locale.advanced || "Advanced" });
+
+		new Setting(containerEl)
+			.setName(this.locale.subAgents)
+			.setDesc(this.locale.subAgentsDesc)
+			.addToggle(toggle => toggle
+				.setValue(permissions.task)
+				.onChange(async (value) => {
+					if (!agent!.permissions) {
+						agent!.permissions = { ...DEFAULT_CLAUDE_PERMISSIONS };
+					}
+					agent!.permissions.task = value;
+					await this.plugin.saveSettings();
+				}));
+
+		// Skills section
+		this.displaySkillsSection(containerEl, agent);
+	}
+
+	private async checkAndDisplayCLIStatus(container: HTMLElement, agent: AgentConfig): Promise<void> {
+		container.empty();
+		container.addClass("crystal-cli-status-container");
+
+		// Fixed structure: status row (always present) + content area
+		const statusRow = container.createDiv({ cls: "crystal-cli-status-row" });
+		const statusInfo = statusRow.createDiv({ cls: "crystal-cli-status-info" });
+
+		// Refresh button (always in same position)
+		const refreshBtn = statusRow.createEl("button", {
+			cls: "crystal-cli-refresh-btn clickable-icon",
+			attr: { "aria-label": this.locale.refreshButton }
+		});
+		setIcon(refreshBtn, "refresh-cw");
+		refreshBtn.addEventListener("click", () => {
+			this.checkAndDisplayCLIStatus(container, agent);
+		});
+
+		// Content area for buttons/hints
+		const contentArea = container.createDiv({ cls: "crystal-cli-status-content" });
+
+		// Show loading state
+		const loadingEl = statusInfo.createDiv({ cls: "crystal-cli-status-item crystal-cli-status-checking" });
+		const loadingIcon = loadingEl.createSpan({ cls: "crystal-cli-status-icon" });
+		setIcon(loadingIcon, "loader");
+		loadingEl.createSpan({ text: this.locale.checkingCli });
+
+		// Check CLI status
+		const status = await checkCLIInstalled(agent.cliPath);
+
+		// Update status info (keep structure, just update content)
+		statusInfo.empty();
+
+		if (status.installed) {
+			const foundEl = statusInfo.createDiv({ cls: "crystal-cli-status-item crystal-cli-status-success" });
+			const iconSpan = foundEl.createSpan({ cls: "crystal-cli-status-icon" });
+			setIcon(iconSpan, "check-circle");
+			foundEl.createSpan({ text: this.locale.cliFound.replace("{version}", status.version || "?") });
+
+			// Terminal button with description (right-aligned)
+			const terminalSection = contentArea.createDiv({ cls: "crystal-cli-terminal-section" });
+
+			terminalSection.createEl("p", {
+				cls: "crystal-settings-note crystal-terminal-desc",
+				text: this.locale.openTerminalDesc || "Open system terminal with Claude Code"
+			});
+
+			const terminalBtn = terminalSection.createEl("button", {
+				cls: "mod-cta"
+			});
+			const terminalIcon = terminalBtn.createSpan({ cls: "crystal-btn-icon-left" });
+			setIcon(terminalIcon, "terminal");
+			terminalBtn.createSpan({ text: this.locale.openTerminal || "Open Terminal" });
+
+			terminalBtn.addEventListener("click", () => {
+				this.launchCommand("claude");
+			});
+		} else {
+			const errorEl = statusInfo.createDiv({ cls: "crystal-cli-status-item crystal-cli-status-error" });
+			const iconSpan = errorEl.createSpan({ cls: "crystal-cli-status-icon" });
+			setIcon(iconSpan, "x-circle");
+			errorEl.createSpan({ text: this.locale.cliNotFound });
+
+			// Installation hint
+			const installCmd = "npm i -g @anthropic-ai/claude-code";
+
+			const installHint = contentArea.createDiv({ cls: "crystal-install-hint" });
+			installHint.createEl("p", {
+				cls: "crystal-settings-note",
+				text: this.locale.installWith + ":"
+			});
+			installHint.createEl("code", {
+				cls: "crystal-install-command",
+				text: installCmd
+			});
+
+			// Install button
+			const installBtn = contentArea.createEl("button", {
+				cls: "mod-cta"
+			});
+			const downloadIcon = installBtn.createSpan({ cls: "crystal-btn-icon-left" });
+			setIcon(downloadIcon, "download");
+			installBtn.createSpan({ text: this.locale.startIntegration || "Open terminal and install CLI" });
+
+			installBtn.addEventListener("click", () => {
+				this.launchCommand(installCmd);
+			});
+		}
+	}
+
+	private displaySkillsSection(container: HTMLElement, agent: AgentConfig): void {
+		// Skills section header with Create button
+		const headerEl = container.createDiv({ cls: "crystal-skills-header" });
+		headerEl.createEl("h4", { text: this.locale.skills || "Skills" });
+
+		// Create new skill button
+		const createBtn = headerEl.createEl("button", {
+			text: this.locale.createNewSkill || "Create new",
+			cls: "crystal-create-skill-btn"
+		});
+		createBtn.addEventListener("click", () => {
+			new CreateSkillModal(
+				this.app,
+				this.plugin.skillLoader,
+				async (skillId: string) => {
+					await this.plugin.skillLoader.refresh();
+					new Notice(`Skill "${skillId}" created successfully`);
+					this.display();
+				}
+			).open();
+		});
+
+		container.createEl("p", {
+			cls: "crystal-settings-note",
+			text: this.locale.skillsNote || "Skills provide specialized knowledge for Obsidian workflows"
+		});
+
+		// Get skills from plugin (with localized descriptions)
+		const skillRefs = this.plugin.skillLoader?.getSkillReferences(this.plugin.settings.language) || [];
+		const enabledSkills = agent.enabledSkills || [];
+
+		if (skillRefs.length === 0) {
+			container.createEl("p", {
+				cls: "crystal-settings-note",
+				text: this.locale.noSkillsAvailable || "No skills available. Skills will load when the plugin initializes."
+			});
+			return;
+		}
+
+		// Separate builtin and custom skills
+		const builtinSkills = skillRefs.filter(s => s.isBuiltin);
+		const customSkills = skillRefs.filter(s => !s.isBuiltin);
+
+		// Built-in skills section
+		if (builtinSkills.length > 0) {
+			container.createEl("h5", { text: this.locale.builtinSkills || "Built-in Skills" });
+			for (const skill of builtinSkills) {
+				this.renderSkillToggle(container, skill, enabledSkills, false, agent);
+			}
+		}
+
+		// Custom skills section
+		if (customSkills.length > 0) {
+			container.createEl("h5", { text: this.locale.customSkills || "Custom Skills" });
+			for (const skill of customSkills) {
+				this.renderSkillToggle(container, skill, enabledSkills, true, agent);
+			}
+		}
+	}
+
+	private renderSkillToggle(
+		container: HTMLElement,
+		skill: { id: string; name: string; description: string; isBuiltin: boolean },
+		enabledSkills: string[],
+		showValidate: boolean,
+		agent: AgentConfig
+	): void {
+		const isEnabled = enabledSkills.includes(skill.id);
+
+		const setting = new Setting(container)
+			.setName(skill.name)
+			.setDesc(skill.description)
+			.addToggle(toggle => toggle
+				.setValue(isEnabled)
+				.onChange(async (value) => {
+					if (!agent.enabledSkills) {
+						agent.enabledSkills = [];
+					}
+					if (value) {
+						if (!agent.enabledSkills.includes(skill.id)) {
+							agent.enabledSkills.push(skill.id);
+						}
+					} else {
+						agent.enabledSkills = agent.enabledSkills.filter(
+							id => id !== skill.id
+						);
+					}
+					await this.plugin.saveSettings();
+
+					// Sync skills to CLI directory
+					await this.plugin.skillLoader?.syncSkillsForAgent(
+						agent.cliType,
+						agent.enabledSkills || []
+					);
+				}));
+
+		// Add validate button for custom skills
+		if (showValidate) {
+			setting.addButton(btn => btn
+				.setIcon("check-circle")
+				.setTooltip(this.locale.validateSkill || "Validate skill")
+				.onClick(() => {
+					new ValidateSkillModal(this.app, this.plugin.skillLoader, skill.id).open();
+				}));
+		}
+	}
+
+	private displayGettingStarted(containerEl: HTMLElement): void {
+		// Collapsible header
+		const headerEl = containerEl.createDiv({ cls: "crystal-getting-started-header" });
+		const chevronEl = headerEl.createSpan({ cls: "crystal-getting-started-chevron" });
+		setIcon(chevronEl, "chevron-right");
+		headerEl.createEl("h3", { text: this.locale.gettingStarted });
+
+		// Content container (collapsed by default)
+		const contentEl = containerEl.createDiv({ cls: "crystal-getting-started-content" });
+		contentEl.style.display = "none";
+
+		// Toggle on header click
+		headerEl.addEventListener("click", () => {
+			const isHidden = contentEl.style.display === "none";
+			contentEl.style.display = isHidden ? "block" : "none";
+			chevronEl.empty();
+			setIcon(chevronEl, isHidden ? "chevron-down" : "chevron-right");
+		});
+
+		const infoEl = contentEl.createDiv({ cls: "crystal-settings-info" });
+		const steps = infoEl.createEl("ol");
+
+		// Claude installation steps
+		const step1 = steps.createEl("li");
+		step1.createEl("strong", { text: this.locale.step1Title });
+		step1.createEl("br");
+		step1.createEl("span", { cls: "crystal-settings-note", text: this.locale.step1MacOS });
+		step1.createEl("br");
+		step1.createEl("span", { cls: "crystal-settings-note", text: this.locale.step1Windows });
+
+		const step2 = steps.createEl("li");
+		step2.createEl("strong", { text: this.locale.step2Title });
+		step2.createEl("br");
+		step2.createEl("code", { text: "npm i -g @anthropic-ai/claude-code" });
+
+		const step3 = steps.createEl("li");
+		step3.createEl("strong", { text: this.locale.step3Title });
+		step3.createEl("br");
+		step3.createEl("code", { text: "claude" });
+
+		const step4 = steps.createEl("li");
+		step4.createEl("strong", { text: this.locale.step4Title });
+		step4.createEl("br");
+		step4.createEl("span", { cls: "crystal-settings-note", text: this.locale.step4Note });
+
+		const step5 = steps.createEl("li");
+		step5.createEl("strong", { text: this.locale.step5Title });
+		step5.createEl("br");
+		step5.createEl("span", { cls: "crystal-settings-note", text: this.locale.step5Note });
+
+		const step6 = steps.createEl("li");
+		step6.createEl("strong", { text: this.locale.step6Title });
+		step6.createEl("br");
+		step6.createEl("span", { cls: "crystal-settings-note", text: this.locale.step6Note });
+
+		const step7 = steps.createEl("li");
+		step7.createEl("strong", { text: this.locale.step7Title });
+		step7.createEl("br");
+		step7.createEl("span", { cls: "crystal-settings-note", text: this.locale.step7Note });
+
+		const step8 = steps.createEl("li");
+		step8.createEl("strong", { text: this.locale.step8Title });
+
+		infoEl.createEl("p", { cls: "crystal-settings-note", text: this.locale.subscriptionNote });
 	}
 
 	private displaySlashCommandsSection(containerEl: HTMLElement): void {
 		containerEl.createEl("h3", { text: this.locale.slashCommands });
 
 		containerEl.createEl("p", {
-			cls: "cristal-settings-note",
+			cls: "crystal-settings-note",
 			text: this.locale.slashCommandsNote
 		});
 
@@ -610,9 +847,9 @@ export class CristalSettingTab extends PluginSettingTab {
 	}
 
 	private createStatInline(container: HTMLElement, label: string, value: string): void {
-		const item = container.createDiv({ cls: "cristal-stat-inline" });
-		item.createSpan({ cls: "cristal-stat-inline-label", text: label });
-		item.createSpan({ cls: "cristal-stat-inline-value", text: value });
+		const item = container.createDiv({ cls: "crystal-stat-inline" });
+		item.createSpan({ cls: "crystal-stat-inline-label", text: label });
+		item.createSpan({ cls: "crystal-stat-inline-value", text: value });
 	}
 
 	private formatTokens(tokens: number): string {
@@ -623,730 +860,10 @@ export class CristalSettingTab extends PluginSettingTab {
 }
 
 /**
- * Modal for agent settings (CLI path, model, permissions, etc.)
- */
-class AgentSettingsModal extends Modal {
-	private plugin: CristalPlugin;
-	private agent: AgentConfig;
-	private onSave: () => void;
-
-	private get locale(): SettingsLocale {
-		return getSettingsLocale(this.plugin.settings.language);
-	}
-
-	constructor(app: App, plugin: CristalPlugin, agent: AgentConfig, onSave: () => void) {
-		super(app);
-		this.plugin = plugin;
-		this.agent = agent;
-		this.onSave = onSave;
-	}
-
-	async onOpen(): Promise<void> {
-		const { contentEl } = this;
-		contentEl.empty();
-		contentEl.addClass("cristal-agent-settings-modal");
-
-		contentEl.createEl("h2", { text: `${this.agent.name} ${this.locale.agentSettingsTitle || "Settings"}` });
-
-		// CLI Path (different labels for Claude vs Codex)
-		const cliPathSetting = new Setting(contentEl)
-			.setName(this.agent.cliType === "codex" ? this.locale.codexCliPath : this.locale.cliPath)
-			.setDesc(this.agent.cliType === "codex" ? this.locale.codexCliPathDesc : this.locale.cliPathDesc)
-			.addText(text => text
-				.setPlaceholder(this.agent.cliType === "claude" ? "claude" : "codex")
-				.setValue(this.agent.cliPath)
-				.onChange(async (value) => {
-					this.agent.cliPath = value || (this.agent.cliType === "claude" ? "claude" : "codex");
-					await this.plugin.saveSettings();
-					this.checkAndDisplayCLIStatus(cliStatusEl);
-				}))
-			.addButton(button => button
-				.setButtonText("Detect")
-				.onClick(async () => {
-					const detected = this.agent.cliType === "claude" ? detectCLIPath() : detectCodexCLIPath();
-					if (detected.found) {
-						this.agent.cliPath = detected.path;
-						await this.plugin.saveSettings();
-						// Refresh modal
-						this.onOpen();
-					}
-				}));
-
-		// CLI Status indicator
-		const cliStatusEl = contentEl.createDiv({ cls: "cristal-cli-status" });
-		this.checkAndDisplayCLIStatus(cliStatusEl);
-
-		// Model selection (no /model mention - feature removed)
-		const allModels = this.agent.cliType === "claude" ? CLAUDE_MODELS : CODEX_MODELS;
-		const disabledModels = this.agent.disabledModels || [];
-		const enabledModels = allModels.filter(m => !disabledModels.includes(m.value));
-
-		new Setting(contentEl)
-			.setName(this.locale.defaultModel)
-			.setDesc(this.locale.defaultModelDescNoSlash)
-			.addDropdown(dropdown => {
-				for (const model of enabledModels) {
-					dropdown.addOption(model.value, model.label);
-				}
-				// If current model is disabled, select first enabled
-				const currentModelEnabled = enabledModels.some(m => m.value === this.agent.model);
-				if (!currentModelEnabled && enabledModels.length > 0) {
-					const firstEnabled = enabledModels[0];
-					if (firstEnabled) {
-						this.agent.model = firstEnabled.value;
-						this.plugin.saveSettings();
-					}
-				}
-				dropdown
-					.setValue(this.agent.model)
-					.onChange(async (value) => {
-						this.agent.model = value as ClaudeModel | string;
-						await this.plugin.saveSettings();
-					});
-			});
-
-		// Available Models section (toggles to disable models)
-		contentEl.createEl("h3", { text: this.locale.availableModels || "Available Models" });
-		contentEl.createEl("p", {
-			cls: "cristal-settings-note",
-			text: this.locale.availableModelsDesc || "Disable models you don't want to use"
-		});
-
-		for (const model of allModels) {
-			const isEnabled = !disabledModels.includes(model.value);
-			new Setting(contentEl)
-				.setName(model.label)
-				.addToggle(toggle => toggle
-					.setValue(isEnabled)
-					.onChange(async (value) => {
-						if (!this.agent.disabledModels) {
-							this.agent.disabledModels = [];
-						}
-						if (value) {
-							// Enable model - remove from disabled list
-							this.agent.disabledModels = this.agent.disabledModels.filter(m => m !== model.value);
-						} else {
-							// Disable model - add to disabled list
-							if (!this.agent.disabledModels.includes(model.value)) {
-								this.agent.disabledModels.push(model.value);
-							}
-							// If this was the current model, switch to first enabled
-							if (this.agent.model === model.value) {
-								const remaining = allModels.filter(m => !this.agent.disabledModels!.includes(m.value));
-								const firstRemaining = remaining[0];
-								if (firstRemaining) {
-									this.agent.model = firstRemaining.value;
-								}
-							}
-						}
-						await this.plugin.saveSettings();
-					}));
-		}
-
-		// Claude-specific settings
-		if (this.agent.cliType === "claude") {
-			const permissions = this.agent.permissions || { ...DEFAULT_CLAUDE_PERMISSIONS };
-
-			// Extended Thinking (moved from permissions, placed right after model selection)
-			new Setting(contentEl)
-				.setName(this.locale.extendedThinking || "Extended Thinking")
-				.setDesc(this.locale.extendedThinkingDesc || "Enable deeper analysis mode for complex tasks")
-				.addToggle(toggle => toggle
-					.setValue(permissions.extendedThinking)
-					.onChange(async (value) => {
-						if (!this.agent.permissions) {
-							this.agent.permissions = { ...DEFAULT_CLAUDE_PERMISSIONS };
-						}
-						this.agent.permissions.extendedThinking = value;
-						// Also sync to legacy field for backwards compatibility
-						this.agent.thinkingEnabled = value;
-						await this.plugin.saveSettings();
-					}));
-
-			// Permissions section
-			contentEl.createEl("h3", { text: this.locale.agentPermissions });
-
-			contentEl.createEl("p", {
-				cls: "cristal-settings-note",
-				text: this.locale.permissionsNote
-			});
-
-			// File Operations
-			contentEl.createEl("h4", { text: this.locale.fileOperations || "File Operations" });
-
-			new Setting(contentEl)
-				.setName(this.locale.fileRead || "Read files")
-				.setDesc(this.locale.fileReadDesc || "Allow reading files in vault")
-				.addToggle(toggle => toggle
-					.setValue(permissions.fileRead)
-					.onChange(async (value) => {
-						if (!this.agent.permissions) {
-							this.agent.permissions = { ...DEFAULT_CLAUDE_PERMISSIONS };
-						}
-						this.agent.permissions.fileRead = value;
-						await this.plugin.saveSettings();
-					}));
-
-			new Setting(contentEl)
-				.setName(this.locale.fileWrite || "Write files")
-				.setDesc(this.locale.fileWriteDesc || "Allow creating new files")
-				.addToggle(toggle => toggle
-					.setValue(permissions.fileWrite)
-					.onChange(async (value) => {
-						if (!this.agent.permissions) {
-							this.agent.permissions = { ...DEFAULT_CLAUDE_PERMISSIONS };
-						}
-						this.agent.permissions.fileWrite = value;
-						await this.plugin.saveSettings();
-					}));
-
-			new Setting(contentEl)
-				.setName(this.locale.fileEdit || "Edit files")
-				.setDesc(this.locale.fileEditDesc || "Allow editing existing files")
-				.addToggle(toggle => toggle
-					.setValue(permissions.fileEdit)
-					.onChange(async (value) => {
-						if (!this.agent.permissions) {
-							this.agent.permissions = { ...DEFAULT_CLAUDE_PERMISSIONS };
-						}
-						this.agent.permissions.fileEdit = value;
-						await this.plugin.saveSettings();
-					}));
-
-			// Web Operations
-			contentEl.createEl("h4", { text: this.locale.webOperations || "Web Operations" });
-
-			new Setting(contentEl)
-				.setName(this.locale.webSearch)
-				.setDesc(this.locale.webSearchDesc)
-				.addToggle(toggle => toggle
-					.setValue(permissions.webSearch)
-					.onChange(async (value) => {
-						if (!this.agent.permissions) {
-							this.agent.permissions = { ...DEFAULT_CLAUDE_PERMISSIONS };
-						}
-						this.agent.permissions.webSearch = value;
-						await this.plugin.saveSettings();
-					}));
-
-			new Setting(contentEl)
-				.setName(this.locale.webFetch)
-				.setDesc(this.locale.webFetchDesc)
-				.addToggle(toggle => toggle
-					.setValue(permissions.webFetch)
-					.onChange(async (value) => {
-						if (!this.agent.permissions) {
-							this.agent.permissions = { ...DEFAULT_CLAUDE_PERMISSIONS };
-						}
-						this.agent.permissions.webFetch = value;
-						await this.plugin.saveSettings();
-					}));
-
-			// Advanced
-			contentEl.createEl("h4", { text: this.locale.advanced || "Advanced" });
-
-			new Setting(contentEl)
-				.setName(this.locale.subAgents)
-				.setDesc(this.locale.subAgentsDesc)
-				.addToggle(toggle => toggle
-					.setValue(permissions.task)
-					.onChange(async (value) => {
-						if (!this.agent.permissions) {
-							this.agent.permissions = { ...DEFAULT_CLAUDE_PERMISSIONS };
-						}
-						this.agent.permissions.task = value;
-						await this.plugin.saveSettings();
-					}));
-		}
-
-		// Codex-specific settings
-		if (this.agent.cliType === "codex") {
-			// Permissions section
-			contentEl.createEl("h3", { text: this.locale.agentPermissions });
-
-			const codexPerms = this.agent.codexPermissions || { ...DEFAULT_CODEX_PERMISSIONS };
-
-			// Sandbox Mode
-			new Setting(contentEl)
-				.setName(this.locale.sandboxMode || "Sandbox Mode")
-				.setDesc(this.locale.sandboxModeDesc || "Control file system access level")
-				.addDropdown(dropdown => {
-					dropdown
-						.addOption("read-only", this.locale.sandboxReadOnly || "Read Only")
-						.addOption("workspace-write", this.locale.sandboxWorkspaceWrite || "Workspace Write")
-						.addOption("danger-full-access", this.locale.sandboxFullAccess || "Full Access (Dangerous)")
-						.setValue(codexPerms.sandboxMode)
-						.onChange(async (value) => {
-							if (!this.agent.codexPermissions) {
-								this.agent.codexPermissions = { ...DEFAULT_CODEX_PERMISSIONS };
-							}
-							this.agent.codexPermissions.sandboxMode = value as "read-only" | "workspace-write" | "danger-full-access";
-							await this.plugin.saveSettings();
-						});
-				});
-
-			// Extended Thinking (toggle between minimal and high)
-			new Setting(contentEl)
-				.setName(this.locale.extendedThinking || "Extended Thinking")
-				.setDesc(this.locale.extendedThinkingDesc || "Enable deeper analysis mode for complex tasks")
-				.addToggle(toggle => toggle
-					.setValue(codexPerms.reasoning === "high")
-					.onChange(async (value) => {
-						if (!this.agent.codexPermissions) {
-							this.agent.codexPermissions = { ...DEFAULT_CODEX_PERMISSIONS };
-						}
-						const level = value ? "high" : "none";
-						this.agent.codexPermissions.reasoning = level;
-						this.agent.reasoningEnabled = value;
-						await this.plugin.saveSettings();
-						// Write to ~/.codex/config.toml
-						setCodexReasoningLevel(level);
-					}));
-
-		}
-
-		// Skills section (for both Claude and Codex)
-		this.displaySkillsSection(contentEl);
-
-		// Getting Started section (collapsible)
-		this.displayGettingStarted(contentEl);
-
-		// Danger Zone - Delete Integration
-		contentEl.createEl("h3", {
-			text: this.locale.dangerZone || "Danger Zone",
-			cls: "cristal-danger-zone-title"
-		});
-
-		new Setting(contentEl)
-			.setName(this.locale.deleteIntegration || "Delete this integration")
-			.setDesc(this.locale.deleteIntegrationDesc || "This will remove the agent from your settings. This action cannot be undone.")
-			.addButton(button => button
-				.setButtonText(this.locale.deleteButton || "Delete")
-				.setWarning()
-				.onClick(async () => {
-					// Confirmation dialog
-					const confirmed = await this.confirmDelete();
-					if (!confirmed) return;
-
-					// Remove agent
-					this.plugin.settings.agents = this.plugin.settings.agents.filter(
-						a => a.id !== this.agent.id
-					);
-
-					// Reset default agent if needed
-					if (this.plugin.settings.defaultAgentId === this.agent.id) {
-						const remaining = this.plugin.settings.agents.find(a => a.enabled);
-						this.plugin.settings.defaultAgentId = remaining?.id || null;
-					}
-
-					await this.plugin.saveSettings();
-					this.close();
-
-					// Refresh settings tab
-					const settingsTab = (this.app as any).setting.activeTab;
-					if (settingsTab?.display) {
-						settingsTab.display();
-					}
-				}));
-
-		}
-
-	private async checkAndDisplayCLIStatus(container: HTMLElement): Promise<void> {
-		container.empty();
-		container.addClass("cristal-cli-status-container");
-
-		// Fixed structure: status row (always present) + content area
-		const statusRow = container.createDiv({ cls: "cristal-cli-status-row" });
-		const statusInfo = statusRow.createDiv({ cls: "cristal-cli-status-info" });
-
-		// Refresh button (always in same position)
-		const refreshBtn = statusRow.createEl("button", {
-			cls: "cristal-cli-refresh-btn clickable-icon",
-			attr: { "aria-label": this.locale.refreshButton }
-		});
-		setIcon(refreshBtn, "refresh-cw");
-		refreshBtn.addEventListener("click", () => {
-			this.checkAndDisplayCLIStatus(container);
-		});
-
-		// Content area for buttons/hints
-		const contentArea = container.createDiv({ cls: "cristal-cli-status-content" });
-
-		// Show loading state
-		const loadingEl = statusInfo.createDiv({ cls: "cristal-cli-status-item cristal-cli-status-checking" });
-		const loadingIcon = loadingEl.createSpan({ cls: "cristal-cli-status-icon" });
-		setIcon(loadingIcon, "loader");
-		loadingEl.createSpan({ text: this.locale.checkingCli });
-
-		// Check CLI status
-		const status = this.agent.cliType === "claude"
-			? await checkCLIInstalled(this.agent.cliPath)
-			: await checkCodexInstalled(this.agent.cliPath);
-
-		// Update status info (keep structure, just update content)
-		statusInfo.empty();
-
-		if (status.installed) {
-			const foundEl = statusInfo.createDiv({ cls: "cristal-cli-status-item cristal-cli-status-success" });
-			const iconSpan = foundEl.createSpan({ cls: "cristal-cli-status-icon" });
-			setIcon(iconSpan, "check-circle");
-			foundEl.createSpan({ text: this.locale.cliFound.replace("{version}", status.version || "?") });
-
-			// Terminal button with description (right-aligned)
-			const terminalSection = contentArea.createDiv({ cls: "cristal-cli-terminal-section" });
-
-			terminalSection.createEl("p", {
-				cls: "cristal-settings-note cristal-terminal-desc",
-				text: this.locale.openTerminalDesc || "Launch CLI in integrated terminal"
-			});
-
-			const terminalBtn = terminalSection.createEl("button", {
-				cls: "mod-cta"
-			});
-			const terminalIcon = terminalBtn.createSpan({ cls: "cristal-btn-icon-left" });
-			setIcon(terminalIcon, "terminal");
-			terminalBtn.createSpan({ text: this.locale.openTerminal || "Open Terminal" });
-
-			terminalBtn.addEventListener("click", async () => {
-				this.close();
-				const cliCmd = this.agent.cliType === "claude" ? "claude" : "codex";
-				await this.plugin.openTerminalWithCommand(cliCmd);
-			});
-		} else {
-			const errorEl = statusInfo.createDiv({ cls: "cristal-cli-status-item cristal-cli-status-error" });
-			const iconSpan = errorEl.createSpan({ cls: "cristal-cli-status-icon" });
-			setIcon(iconSpan, "x-circle");
-			errorEl.createSpan({ text: this.locale.cliNotFound });
-
-			// Installation hint
-			const installCmd = this.agent.cliType === "claude"
-				? "npm i -g @anthropic-ai/claude-code"
-				: "npm i -g @openai/codex";
-
-			const installHint = contentArea.createDiv({ cls: "cristal-install-hint" });
-			installHint.createEl("p", {
-				cls: "cristal-settings-note",
-				text: this.locale.installWith + ":"
-			});
-			installHint.createEl("code", {
-				cls: "cristal-install-command",
-				text: installCmd
-			});
-
-			// Install button
-			const installBtn = contentArea.createEl("button", {
-				cls: "mod-cta"
-			});
-			const downloadIcon = installBtn.createSpan({ cls: "cristal-btn-icon-left" });
-			setIcon(downloadIcon, "download");
-			installBtn.createSpan({ text: this.locale.startIntegration || "Open terminal and install CLI" });
-
-			installBtn.addEventListener("click", async () => {
-				this.close();
-				await this.plugin.openTerminalWithCommand(installCmd);
-			});
-		}
-	}
-
-	private displaySkillsSection(container: HTMLElement): void {
-		// Skills section header with Create button
-		const headerEl = container.createDiv({ cls: "cristal-skills-header" });
-		headerEl.createEl("h3", { text: this.locale.skills || "Skills" });
-
-		// Create new skill button
-		const createBtn = headerEl.createEl("button", {
-			text: this.locale.createNewSkill || "Create new",
-			cls: "cristal-create-skill-btn"
-		});
-		createBtn.addEventListener("click", () => {
-			new CreateSkillModal(
-				this.app,
-				this.plugin.skillLoader,
-				async (skillId: string) => {
-					await this.plugin.skillLoader.refresh();
-					new Notice(`Skill "${skillId}" created successfully`);
-					// Refresh the modal
-					this.onOpen();
-				}
-			).open();
-		});
-
-		container.createEl("p", {
-			cls: "cristal-settings-note",
-			text: this.locale.skillsNote || "Skills provide specialized knowledge for Obsidian workflows"
-		});
-
-		// Get skills from plugin
-		const skillRefs = this.plugin.skillLoader?.getSkillReferences() || [];
-		const enabledSkills = this.agent.enabledSkills || [];
-
-		if (skillRefs.length === 0) {
-			container.createEl("p", {
-				cls: "cristal-settings-note",
-				text: this.locale.noSkillsAvailable || "No skills available. Skills will load when the plugin initializes."
-			});
-			return;
-		}
-
-		// Separate builtin and custom skills
-		const builtinSkills = skillRefs.filter(s => s.isBuiltin);
-		const customSkills = skillRefs.filter(s => !s.isBuiltin);
-
-		// Built-in skills section
-		if (builtinSkills.length > 0) {
-			container.createEl("h4", { text: this.locale.builtinSkills || "Built-in Skills" });
-			for (const skill of builtinSkills) {
-				this.renderSkillToggle(container, skill, enabledSkills, false);
-			}
-		}
-
-		// Custom skills section
-		if (customSkills.length > 0) {
-			container.createEl("h4", { text: this.locale.customSkills || "Custom Skills" });
-			for (const skill of customSkills) {
-				this.renderSkillToggle(container, skill, enabledSkills, true);
-			}
-		}
-	}
-
-	private renderSkillToggle(
-		container: HTMLElement,
-		skill: { id: string; name: string; description: string; isBuiltin: boolean },
-		enabledSkills: string[],
-		showValidate: boolean
-	): void {
-		const isEnabled = enabledSkills.includes(skill.id);
-
-		const setting = new Setting(container)
-			.setName(skill.name)
-			.setDesc(skill.description)
-			.addToggle(toggle => toggle
-				.setValue(isEnabled)
-				.onChange(async (value) => {
-					if (!this.agent.enabledSkills) {
-						this.agent.enabledSkills = [];
-					}
-					if (value) {
-						if (!this.agent.enabledSkills.includes(skill.id)) {
-							this.agent.enabledSkills.push(skill.id);
-						}
-					} else {
-						this.agent.enabledSkills = this.agent.enabledSkills.filter(
-							id => id !== skill.id
-						);
-					}
-					await this.plugin.saveSettings();
-
-					// Sync skills to CLI directory
-					if (this.agent.cliType === "claude" || this.agent.cliType === "codex") {
-						await this.plugin.skillLoader?.syncSkillsForAgent(
-							this.agent.cliType,
-							this.agent.enabledSkills || []
-						);
-					}
-				}));
-
-		// Add validate button for custom skills
-		if (showValidate) {
-			setting.addButton(btn => btn
-				.setIcon("check-circle")
-				.setTooltip(this.locale.validateSkill || "Validate skill")
-				.onClick(() => {
-					new ValidateSkillModal(this.app, this.plugin.skillLoader, skill.id).open();
-				}));
-		}
-	}
-
-	private displayGettingStarted(container: HTMLElement): void {
-		// Collapsible header
-		const headerEl = container.createDiv({ cls: "cristal-getting-started-header" });
-		const chevronEl = headerEl.createSpan({ cls: "cristal-getting-started-chevron" });
-		setIcon(chevronEl, "chevron-right");
-		headerEl.createEl("h3", { text: this.locale.gettingStarted });
-
-		// Content container (collapsed by default in modal)
-		const contentEl = container.createDiv({ cls: "cristal-getting-started-content" });
-		contentEl.style.display = "none";
-
-		// Toggle on header click
-		headerEl.addEventListener("click", () => {
-			const isHidden = contentEl.style.display === "none";
-			contentEl.style.display = isHidden ? "block" : "none";
-			chevronEl.empty();
-			setIcon(chevronEl, isHidden ? "chevron-down" : "chevron-right");
-		});
-
-		const infoEl = contentEl.createDiv({ cls: "cristal-settings-info" });
-		const steps = infoEl.createEl("ol");
-
-		if (this.agent.cliType === "claude") {
-			// Claude installation steps
-			const step1 = steps.createEl("li");
-			step1.createEl("strong", { text: this.locale.step1Title });
-			step1.createEl("br");
-			step1.createEl("span", { cls: "cristal-settings-note", text: this.locale.step1MacOS });
-			step1.createEl("br");
-			step1.createEl("span", { cls: "cristal-settings-note", text: this.locale.step1Windows });
-
-			const step2 = steps.createEl("li");
-			step2.createEl("strong", { text: this.locale.step2Title });
-			step2.createEl("br");
-			step2.createEl("code", { text: "npm i -g @anthropic-ai/claude-code" });
-
-			const step3 = steps.createEl("li");
-			step3.createEl("strong", { text: this.locale.step3Title });
-			step3.createEl("br");
-			step3.createEl("code", { text: "claude" });
-
-			const step4 = steps.createEl("li");
-			step4.createEl("strong", { text: this.locale.step4Title });
-			step4.createEl("br");
-			step4.createEl("span", { cls: "cristal-settings-note", text: this.locale.step4Note });
-
-			const step5 = steps.createEl("li");
-			step5.createEl("strong", { text: this.locale.step5Title });
-			step5.createEl("br");
-			step5.createEl("span", { cls: "cristal-settings-note", text: this.locale.step5Note });
-
-			const step6 = steps.createEl("li");
-			step6.createEl("strong", { text: this.locale.step6Title });
-			step6.createEl("br");
-			step6.createEl("span", { cls: "cristal-settings-note", text: this.locale.step6Note });
-
-			const step7 = steps.createEl("li");
-			step7.createEl("strong", { text: this.locale.step7Title });
-			step7.createEl("br");
-			step7.createEl("span", { cls: "cristal-settings-note", text: this.locale.step7Note });
-
-			const step8 = steps.createEl("li");
-			step8.createEl("strong", { text: this.locale.step8Title });
-
-			infoEl.createEl("p", { cls: "cristal-settings-note", text: this.locale.subscriptionNote });
-		} else if (this.agent.cliType === "codex") {
-			// Codex installation steps (similar structure, different commands)
-			const step1 = steps.createEl("li");
-			step1.createEl("strong", { text: this.locale.step1Title });
-			step1.createEl("br");
-			step1.createEl("span", { cls: "cristal-settings-note", text: this.locale.step1MacOS });
-			step1.createEl("br");
-			step1.createEl("span", { cls: "cristal-settings-note", text: this.locale.step1Windows });
-
-			const step2 = steps.createEl("li");
-			step2.createEl("strong", { text: this.locale.step2Title });
-			step2.createEl("br");
-			step2.createEl("code", { text: "npm i -g @openai/codex" });
-
-			const step3 = steps.createEl("li");
-			step3.createEl("strong", { text: this.locale.step3Title });
-			step3.createEl("br");
-			step3.createEl("code", { text: "codex" });
-
-			const step4 = steps.createEl("li");
-			step4.createEl("strong", { text: this.locale.step4Title });
-			step4.createEl("br");
-			step4.createEl("span", { cls: "cristal-settings-note", text: this.locale.step4Note });
-
-			const step5 = steps.createEl("li");
-			step5.createEl("strong", { text: this.locale.step5Title });
-			step5.createEl("br");
-			step5.createEl("span", { cls: "cristal-settings-note", text: this.locale.step5Note });
-
-			const step6 = steps.createEl("li");
-			step6.createEl("strong", { text: this.locale.step6Title });
-			step6.createEl("br");
-			step6.createEl("span", { cls: "cristal-settings-note", text: this.locale.step6Note });
-
-			const step7 = steps.createEl("li");
-			step7.createEl("strong", { text: this.locale.step7Title });
-			step7.createEl("br");
-			step7.createEl("span", { cls: "cristal-settings-note", text: this.locale.step7Note });
-
-			const step8 = steps.createEl("li");
-			step8.createEl("strong", { text: this.locale.step8Title });
-
-			infoEl.createEl("p", { cls: "cristal-settings-note", text: this.locale.subscriptionNote });
-		}
-	}
-
-	private async confirmDelete(): Promise<boolean> {
-		return new Promise(resolve => {
-			const modal = new ConfirmDeleteModal(
-				this.app,
-				this.locale.confirmDeleteTitle || "Delete Integration?",
-				`${this.locale.confirmDeleteMessage || "Are you sure you want to delete"} "${this.agent.name}"?`,
-				() => resolve(true),
-				() => resolve(false)
-			);
-			modal.open();
-		});
-	}
-
-	onClose(): void {
-		const { contentEl } = this;
-		contentEl.empty();
-		this.onSave();
-	}
-}
-
-/**
- * Confirmation modal for deleting an integration
- */
-class ConfirmDeleteModal extends Modal {
-	private title: string;
-	private message: string;
-	private onConfirm: () => void;
-	private onCancel: () => void;
-
-	constructor(
-		app: App,
-		title: string,
-		message: string,
-		onConfirm: () => void,
-		onCancel: () => void
-	) {
-		super(app);
-		this.title = title;
-		this.message = message;
-		this.onConfirm = onConfirm;
-		this.onCancel = onCancel;
-	}
-
-	onOpen(): void {
-		const { contentEl } = this;
-		contentEl.addClass("cristal-confirm-delete-modal");
-
-		contentEl.createEl("h2", { text: this.title });
-		contentEl.createEl("p", { text: this.message });
-
-		const buttonContainer = contentEl.createDiv({ cls: "cristal-confirm-buttons" });
-
-		const cancelBtn = buttonContainer.createEl("button", { text: "Cancel" });
-		cancelBtn.addEventListener("click", () => {
-			this.onCancel();
-			this.close();
-		});
-
-		const confirmBtn = buttonContainer.createEl("button", {
-			text: "Delete",
-			cls: "mod-warning"
-		});
-		confirmBtn.addEventListener("click", () => {
-			this.onConfirm();
-			this.close();
-		});
-	}
-
-	onClose(): void {
-		const { contentEl } = this;
-		contentEl.empty();
-	}
-}
-
-/**
  * Modal for creating/editing custom slash commands
  */
 class CommandModal extends Modal {
-	private plugin: CristalPlugin;
+	private plugin: CrystalPlugin;
 	private command: SlashCommand | null;
 	private onSave: () => void;
 
@@ -1358,7 +875,7 @@ class CommandModal extends Modal {
 		return getSettingsLocale(this.plugin.settings.language);
 	}
 
-	constructor(app: App, plugin: CristalPlugin, command: SlashCommand | null, onSave: () => void) {
+	constructor(app: App, plugin: CrystalPlugin, command: SlashCommand | null, onSave: () => void) {
 		super(app);
 		this.plugin = plugin;
 		this.command = command;
@@ -1408,15 +925,15 @@ class CommandModal extends Modal {
 			.setName(this.locale.promptField)
 			.setDesc(this.locale.promptFieldDesc);
 
-		const promptContainer = contentEl.createDiv({ cls: "cristal-prompt-container" });
+		const promptContainer = contentEl.createDiv({ cls: "crystal-prompt-container" });
 		const promptTextarea = promptContainer.createEl("textarea", {
-			cls: "cristal-prompt-textarea",
+			cls: "crystal-prompt-textarea",
 			attr: { rows: "4", placeholder: this.locale.promptPlaceholder }
 		});
 		promptTextarea.value = this.command?.prompt ?? "";
 
 		// Buttons
-		const buttonContainer = contentEl.createDiv({ cls: "cristal-modal-buttons" });
+		const buttonContainer = contentEl.createDiv({ cls: "crystal-modal-buttons" });
 
 		const cancelBtn = buttonContainer.createEl("button", { text: this.locale.cancelButton });
 		cancelBtn.addEventListener("click", () => this.close());
@@ -1483,49 +1000,46 @@ class CommandModal extends Modal {
 }
 
 /**
- * Modal for editing agent system instructions (CLAUDE.md or AGENTS.md)
+ * Modal for editing agent system instructions (CLAUDE.md)
  */
 class AgentMdModal extends Modal {
-	private plugin: CristalPlugin;
-	private agentType: "claude" | "codex";
+	private plugin: CrystalPlugin;
 	private textarea!: HTMLTextAreaElement;
 
 	private get locale(): SettingsLocale {
 		return getSettingsLocale(this.plugin.settings.language);
 	}
 
-	constructor(app: App, plugin: CristalPlugin, agentType: "claude" | "codex") {
+	constructor(app: App, plugin: CrystalPlugin) {
 		super(app);
 		this.plugin = plugin;
-		this.agentType = agentType;
 	}
 
 	async onOpen(): Promise<void> {
 		const { contentEl } = this;
 		contentEl.empty();
-		contentEl.addClass("cristal-claudemd-modal");
+		contentEl.addClass("crystal-claudemd-modal");
 
-		const filename = this.agentType === "claude" ? "CLAUDE.md" : "AGENTS.md";
-		contentEl.createEl("h2", { text: `${filename} ${this.locale.systemInstructionsTitle || "Instructions"}` });
+		contentEl.createEl("h2", { text: `CLAUDE.md ${this.locale.systemInstructionsTitle || "Instructions"}` });
 
 		contentEl.createEl("p", {
-			cls: "cristal-settings-note",
+			cls: "crystal-settings-note",
 			text: this.locale.systemInstructionsModalDesc
 		});
 
 		// Textarea container
-		const container = contentEl.createDiv({ cls: "cristal-claudemd-container" });
+		const container = contentEl.createDiv({ cls: "crystal-claudemd-container" });
 		this.textarea = container.createEl("textarea", {
-			cls: "cristal-claudemd-textarea",
+			cls: "crystal-claudemd-textarea",
 			attr: { rows: "16", placeholder: this.locale.loadingPlaceholder }
 		});
 
 		// Load current content
-		const content = await this.plugin.readAgentMd(this.agentType);
+		const content = await this.plugin.readAgentMd();
 		this.textarea.value = content || this.plugin.getDefaultAgentMdContent();
 
 		// Buttons
-		const buttonContainer = contentEl.createDiv({ cls: "cristal-modal-buttons" });
+		const buttonContainer = contentEl.createDiv({ cls: "crystal-modal-buttons" });
 
 		const resetBtn = buttonContainer.createEl("button", { text: this.locale.resetToDefaultButton });
 		resetBtn.addEventListener("click", async () => {
@@ -1538,7 +1052,7 @@ class AgentMdModal extends Modal {
 			cls: "mod-cta"
 		});
 		saveBtn.addEventListener("click", async () => {
-			await this.plugin.writeAgentMd(this.agentType, this.textarea.value);
+			await this.plugin.writeAgentMd(this.textarea.value);
 			this.close();
 		});
 	}

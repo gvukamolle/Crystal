@@ -1,18 +1,17 @@
 import { ItemView, WorkspaceLeaf, MarkdownRenderer, setIcon, TFile, Modal, TextComponent, FileSystemAdapter } from "obsidian";
-import type CristalPlugin from "./main";
-import type { ChatMessage, SlashCommand, StreamingEvent, CompleteEvent, ResultEvent, ErrorEvent, AssistantEvent, ClaudeModel, SessionTokenStats, ContextUsage, CompactEvent, ResultMessage, ToolUseEvent, ToolUseBlock, SelectionContext, AIProvider } from "./types";
-import { CLAUDE_MODELS, CODEX_MODELS } from "./types";
+import type CrystalPlugin from "./main";
+import type { ChatMessage, SlashCommand, StreamingEvent, CompleteEvent, ResultEvent, ErrorEvent, AssistantEvent, ClaudeModel, SessionTokenStats, ContextUsage, CompactEvent, ResultMessage, ToolUseEvent, ToolUseBlock, SelectionContext } from "./types";
+import { CLAUDE_MODELS } from "./types";
 import { getAvailableCommands, filterCommands, parseCommand, buildCommandPrompt } from "./commands";
 import { getButtonLocale, type ButtonLocale } from "./buttonLocales";
-import { setCodexReasoningLevel } from "./codexConfig";
 import { wrapHiddenInstructions } from "./systemPrompts";
 import * as fs from "fs";
 import * as path from "path";
 
-export const CRISTAL_VIEW_TYPE = "cristal-cli-llm-chat-view";
+export const CRYSTAL_VIEW_TYPE = "crystal-cli-llm-chat-view";
 
-export class CristalChatView extends ItemView {
-	private plugin: CristalPlugin;
+export class CrystalChatView extends ItemView {
+	private plugin: CrystalPlugin;
 	private messagesContainer: HTMLElement;
 	private inputEl: HTMLTextAreaElement;
 	private sendButton: HTMLButtonElement;
@@ -26,14 +25,11 @@ export class CristalChatView extends ItemView {
 	private contextDisabled: boolean = false;  // User manually removed context
 	private modelIndicatorEl: HTMLElement;
 	private currentModel: ClaudeModel | string;
-	private currentProvider: AIProvider;
-	private providerIndicatorEl: HTMLElement;
 	private sessionStarted: boolean = false;  // Track if first message was sent
 	private agentUnavailable: boolean = false;  // Track if session's agent is unavailable
 	private noAgentsConfigured: boolean = false;  // Track if no agents are configured/enabled
 	private modelAutocompleteVisible: boolean = false;
 	private thinkingEnabled: boolean = false;  // Extended thinking mode for Claude
-	private codexReasoningEnabled: boolean = false;  // Deep reasoning for Codex (medium/xhigh)
 	private difficultyAutocompleteVisible: boolean = false;
 	private editingMessageId: string | null = null;
 
@@ -64,24 +60,24 @@ export class CristalChatView extends ItemView {
 	// Thinking toggle button
 	private thinkingToggleBtn: HTMLButtonElement;
 
+	// File input for attachments (for /attach command)
+	private fileInputEl: HTMLInputElement;
+
 	// Race condition protection for file context updates
 	private contextUpdateVersion: number = 0;
 
 	// Context tracking (per session)
-	// Dynamic limits based on provider:
-	// - Claude: 200k context, 180k effective limit (90%)
-	// - Codex: 272k input context, 245k effective limit (90%)
+	// Claude: 200k context, 180k effective limit (90%)
 	private static readonly AUTO_COMPACT_THRESHOLD = 0.90;  // 90% triggers auto-compact
 	private tokenStats: SessionTokenStats = this.initialTokenStats();
 
 	private getContextLimit(): number {
 		// Claude: 200k * 90% = 180k
-		// Codex: 272k * 90% = 245k
-		return this.currentProvider === "codex" ? 245000 : 180000;
+		return 180000;
 	}
 
 	private getNominalContextWindow(): number {
-		return this.currentProvider === "codex" ? 272000 : 200000;
+		return 200000;
 	}
 	private pendingAutoCompact: boolean = false;
 
@@ -134,38 +130,38 @@ export class CristalChatView extends ItemView {
 		};
 	}
 
-	constructor(leaf: WorkspaceLeaf, plugin: CristalPlugin) {
+	constructor(leaf: WorkspaceLeaf, plugin: CrystalPlugin) {
 		super(leaf);
 		this.plugin = plugin;
 	}
 
 	getViewType(): string {
-		return CRISTAL_VIEW_TYPE;
+		return CRYSTAL_VIEW_TYPE;
 	}
 
 	getDisplayText(): string {
-		return "Cristal";
+		return "Crystal";
 	}
 
 	getIcon(): string {
-		return "message-square";
+		return "gem";
 	}
 
 	async onOpen(): Promise<void> {
 		const container = this.containerEl.children[1] as HTMLElement;
 		container.empty();
-		container.addClass("cristal-container");
+		container.addClass("crystal-container");
 
 		// Header with session dropdown and actions
-		const header = container.createDiv({ cls: "cristal-header" });
+		const header = container.createDiv({ cls: "crystal-header" });
 
 		// Custom session dropdown
-		this.sessionDropdownContainer = header.createDiv({ cls: "cristal-session-dropdown-custom" });
+		this.sessionDropdownContainer = header.createDiv({ cls: "crystal-session-dropdown-custom" });
 
-		this.sessionTriggerEl = this.sessionDropdownContainer.createDiv({ cls: "cristal-session-trigger" });
+		this.sessionTriggerEl = this.sessionDropdownContainer.createDiv({ cls: "crystal-session-trigger" });
 		this.sessionTriggerEl.addEventListener("click", () => this.toggleSessionDropdown());
 
-		this.sessionListEl = this.sessionDropdownContainer.createDiv({ cls: "cristal-session-list" });
+		this.sessionListEl = this.sessionDropdownContainer.createDiv({ cls: "crystal-session-list" });
 
 		// Close dropdown when clicking outside
 		document.addEventListener("click", (e) => {
@@ -174,32 +170,32 @@ export class CristalChatView extends ItemView {
 			}
 		});
 
-		const actions = header.createDiv({ cls: "cristal-actions" });
+		const actions = header.createDiv({ cls: "crystal-actions" });
 		const newChatBtn = actions.createEl("button", {
-			cls: "cristal-action-btn",
+			cls: "crystal-action-btn",
 			attr: { "aria-label": "New chat" }
 		});
 		setIcon(newChatBtn, "plus");
 		newChatBtn.addEventListener("click", () => this.startNewChat());
 
 		// Messages area
-		this.messagesContainer = container.createDiv({ cls: "cristal-messages" });
+		this.messagesContainer = container.createDiv({ cls: "crystal-messages" });
 
 		// Status bar
-		this.statusEl = container.createDiv({ cls: "cristal-status" });
+		this.statusEl = container.createDiv({ cls: "crystal-status" });
 
 		// Input area
-		const inputArea = container.createDiv({ cls: "cristal-input-area" });
+		const inputArea = container.createDiv({ cls: "crystal-input-area" });
 
 		// Context indicator (shows attached file)
-		this.contextIndicatorEl = inputArea.createDiv({ cls: "cristal-context-indicator" });
+		this.contextIndicatorEl = inputArea.createDiv({ cls: "crystal-context-indicator" });
 
 		// Input wrapper for positioning autocomplete
-		const inputWrapper = inputArea.createDiv({ cls: "cristal-input-wrapper" });
+		const inputWrapper = inputArea.createDiv({ cls: "crystal-input-wrapper" });
 
 		const btnLocale = getButtonLocale(this.plugin.settings.language);
 		this.inputEl = inputWrapper.createEl("textarea", {
-			cls: "cristal-input",
+			cls: "crystal-input",
 			attr: {
 				placeholder: btnLocale.inputPlaceholder,
 				rows: "1"
@@ -207,34 +203,26 @@ export class CristalChatView extends ItemView {
 		});
 
 		// Autocomplete popup for slash commands
-		this.autocompleteEl = inputWrapper.createDiv({ cls: "cristal-autocomplete" });
+		this.autocompleteEl = inputWrapper.createDiv({ cls: "crystal-autocomplete" });
 
 		// Autocomplete popup for @ mentions
-		this.mentionAutocompleteEl = inputWrapper.createDiv({ cls: "cristal-mention-autocomplete" });
+		this.mentionAutocompleteEl = inputWrapper.createDiv({ cls: "crystal-mention-autocomplete" });
 
-		const buttonContainer = inputArea.createDiv({ cls: "cristal-button-container" });
+		const buttonContainer = inputArea.createDiv({ cls: "crystal-button-container" });
 
-		// Left group: provider + model + context indicator
-		const leftGroup = buttonContainer.createDiv({ cls: "cristal-button-group" });
+		// Left group: model + context indicator
+		const leftGroup = buttonContainer.createDiv({ cls: "crystal-button-group" });
 
 		// Get default agent for initial state
 		const defaultAgent = this.plugin.getDefaultAgent();
 
-		// Provider indicator
-		this.currentProvider = defaultAgent?.cliType === "codex" ? "codex" : "claude";
-		this.providerIndicatorEl = leftGroup.createDiv({ cls: "cristal-provider-indicator" });
-		this.updateProviderIndicator();
-		this.providerIndicatorEl.addEventListener("click", () => {
-			this.toggleProvider();
-		});
-
-		// Model indicator (replaces dropdown)
+		// Model indicator
 		this.currentModel = defaultAgent?.model || "claude-haiku-4-5-20251001";
-		this.modelIndicatorEl = leftGroup.createDiv({ cls: "cristal-model-indicator" });
-		const modelIcon = this.modelIndicatorEl.createSpan({ cls: "cristal-model-indicator-icon" });
+		this.modelIndicatorEl = leftGroup.createDiv({ cls: "crystal-model-indicator" });
+		const modelIcon = this.modelIndicatorEl.createSpan({ cls: "crystal-model-indicator-icon" });
 		setIcon(modelIcon, "cpu");
 		this.modelIndicatorEl.createSpan({
-			cls: "cristal-model-indicator-name",
+			cls: "crystal-model-indicator-name",
 			text: this.getModelLabel(this.currentModel)
 		});
 		this.modelIndicatorEl.addEventListener("click", () => {
@@ -243,15 +231,14 @@ export class CristalChatView extends ItemView {
 
 		// Initialize thinking mode from agent settings
 		this.thinkingEnabled = defaultAgent?.thinkingEnabled || false;
-		// Initialize Codex reasoning mode from agent settings
-		this.codexReasoningEnabled = defaultAgent?.reasoningEnabled || false;
 
-		// Thinking/Reasoning toggle button (works for both Claude and Codex)
+		// Thinking toggle button
 		this.thinkingToggleBtn = leftGroup.createEl("button", {
-			cls: "cristal-thinking-toggle-btn",
-			attr: { "aria-label": "Extended thinking" }
+			cls: "crystal-thinking-toggle-btn",
+			attr: { "aria-label": btnLocale.thinkButton }
 		});
 		setIcon(this.thinkingToggleBtn, "brain");
+		this.thinkingToggleBtn.createSpan({ text: btnLocale.thinkButton });
 		this.updateThinkingButton();
 		this.thinkingToggleBtn.addEventListener("click", () => this.toggleThinkingMode());
 
@@ -266,26 +253,27 @@ export class CristalChatView extends ItemView {
 		});
 
 		// Right group: attach + send
-		const rightGroup = buttonContainer.createDiv({ cls: "cristal-button-group" });
+		const rightGroup = buttonContainer.createDiv({ cls: "crystal-button-group" });
 
 		// Add file attachment button (left of send button)
 		const attachBtn = rightGroup.createEl("button", {
-			cls: "cristal-attach-btn",
-			attr: { "aria-label": "Attach file" }
+			cls: "crystal-attach-btn",
+			attr: { "aria-label": btnLocale.fileButton }
 		});
-		setIcon(attachBtn, "plus");
+		setIcon(attachBtn, "paperclip");
+		attachBtn.createSpan({ text: btnLocale.fileButton });
 
-		const fileInput = rightGroup.createEl("input", {
+		this.fileInputEl = rightGroup.createEl("input", {
 			type: "file",
-			cls: "cristal-file-input-hidden",
+			cls: "crystal-file-input-hidden",
 			attr: {
 				accept: ".md,.txt,.json,.yaml,.yml,.js,.ts,.tsx,.jsx,.py,.java,.cpp,.c,.h,.go,.rs,.rb,.php,.html,.css,.xml,.csv,.pdf,.png,.jpg,.jpeg,.gif,.webp,.xlsx,.docx"
 			}
 		});
-		fileInput.style.display = "none";
+		this.fileInputEl.style.display = "none";
 
-		attachBtn.addEventListener("click", () => fileInput.click());
-		fileInput.addEventListener("change", async (e: Event) => {
+		attachBtn.addEventListener("click", () => this.fileInputEl.click());
+		this.fileInputEl.addEventListener("change", async (e: Event) => {
 			const target = e.target as HTMLInputElement;
 			if (target.files && target.files.length > 0 && target.files[0]) {
 				await this.handleFileAttachment(target.files[0]);
@@ -294,7 +282,7 @@ export class CristalChatView extends ItemView {
 		});
 
 		this.sendButton = rightGroup.createEl("button", {
-			cls: "cristal-send-btn",
+			cls: "crystal-send-btn",
 			attr: { "aria-label": "Send message" }
 		});
 		setIcon(this.sendButton, "arrow-up");
@@ -410,16 +398,14 @@ export class CristalChatView extends ItemView {
 	async onClose(): Promise<void> {
 		// Cleanup both services
 		this.plugin.claudeService.removeAllListeners();
-		this.plugin.codexService.removeAllListeners();
 	}
 
 	private setupServiceListeners(): void {
-		// Subscribe to both services - they emit the same events
-		this.attachServiceListeners(this.plugin.claudeService, "claude");
-		this.attachServiceListeners(this.plugin.codexService, "codex");
+		// Subscribe to Claude service events
+		this.attachServiceListeners(this.plugin.claudeService);
 	}
 
-	private attachServiceListeners(service: import("./ClaudeService").ClaudeService | import("./CodexService").CodexService, provider: AIProvider): void {
+	private attachServiceListeners(service: import("./ClaudeService").ClaudeService): void {
 		// Streaming updates - real-time text as it comes in (UI only for active session)
 		service.on("streaming", (event: StreamingEvent) => {
 			if (event.sessionId !== this.activeSessionId) return;
@@ -442,38 +428,32 @@ export class CristalChatView extends ItemView {
 		service.on("result", (event: ResultEvent) => {
 			const isActiveSession = event.sessionId === this.activeSessionId;
 
-			// Save result to the correct session (even if background)
-			const session = this.plugin.sessions.find(s => s.id === event.sessionId);
-			if (session) {
-				// Use the correct service based on session provider
-				const sessionService = this.plugin.getActiveService(session.provider);
-				const pending = sessionService.getPendingMessage(event.sessionId);
-				if (pending && pending.text) {
-					const assistantMessage: ChatMessage = {
-						id: crypto.randomUUID(),
-						role: "assistant",
-						content: pending.text,
-						timestamp: Date.now(),
-						thinkingSteps: pending.tools.length > 0 ? pending.tools : undefined,
-						selectionContext: this.lastSelectionContext || undefined
-					};
-					session.messages.push(assistantMessage);
+			// Save result to session only for background sessions
+			// For active session, saving happens in finalizeAssistantMessage() to avoid duplication
+			if (!isActiveSession) {
+				const session = this.plugin.sessions.find(s => s.id === event.sessionId);
+				if (session) {
+					const pending = this.plugin.claudeService.getPendingMessage(event.sessionId);
+					if (pending && pending.text) {
+						const assistantMessage: ChatMessage = {
+							id: crypto.randomUUID(),
+							role: "assistant",
+							content: pending.text,
+							timestamp: Date.now(),
+							thinkingSteps: pending.tools.length > 0 ? pending.tools : undefined,
+							selectionContext: this.lastSelectionContext || undefined
+						};
+						session.messages.push(assistantMessage);
 
-					// Update cliSessionId (for Claude) or threadId (for Codex)
-					if (provider === "claude") {
+						// Update cliSessionId
 						const cliSessionId = this.plugin.claudeService.getCliSessionId(event.sessionId);
 						if (cliSessionId) {
 							session.cliSessionId = cliSessionId;
 						}
-					} else {
-						const threadId = this.plugin.codexService.getThreadId(event.sessionId);
-						if (threadId) {
-							session.cliSessionId = threadId;
-						}
-					}
 
-					this.plugin.saveSettings();
-					sessionService.clearPendingMessage(event.sessionId);
+						this.plugin.saveSettings();
+						this.plugin.claudeService.clearPendingMessage(event.sessionId);
+					}
 				}
 			}
 
@@ -496,6 +476,8 @@ export class CristalChatView extends ItemView {
 			this.finalizeAssistantMessage();
 			this.setStatus("error", event.error);
 			this.addErrorMessage(event.error);
+			// Update dropdown to refresh indicators
+			this.updateSessionDropdown();
 		});
 
 		service.on("complete", (event: CompleteEvent) => {
@@ -509,8 +491,8 @@ export class CristalChatView extends ItemView {
 				// Cleanup temporary files after response is complete
 				this.cleanupTempFiles();
 
-				// Execute pending auto-compact after response is complete (Claude only)
-				if (this.pendingAutoCompact && this.currentProvider === "claude") {
+				// Execute pending auto-compact after response is complete
+				if (this.pendingAutoCompact) {
 					this.pendingAutoCompact = false;
 					this.runCompact();
 				}
@@ -551,7 +533,7 @@ export class CristalChatView extends ItemView {
 
 					// Check if we need to trigger auto-compact (both providers)
 					const usage = this.calculateContextUsage(this.tokenStats);
-					if (usage.percentage >= CristalChatView.AUTO_COMPACT_THRESHOLD * 100 && !this.pendingAutoCompact) {
+					if (usage.percentage >= CrystalChatView.AUTO_COMPACT_THRESHOLD * 100 && !this.pendingAutoCompact) {
 						this.pendingAutoCompact = true;
 					}
 				}
@@ -584,131 +566,53 @@ export class CristalChatView extends ItemView {
 			this.addToolStep(event.tool);
 		});
 
-		// Rate limit error handling (Claude only has this event)
-		if (provider === "claude") {
-			(service as import("./ClaudeService").ClaudeService).on("rateLimitError", (event: { sessionId: string; resetTime: string | null; message: string }) => {
-				if (event.sessionId !== this.activeSessionId) return;
-				this.handleRateLimitError(event.resetTime, event.message);
-			});
-		}
+		// Rate limit error handling
+		(service as import("./ClaudeService").ClaudeService).on("rateLimitError", (event: { sessionId: string; resetTime: string | null; message: string }) => {
+			if (event.sessionId !== this.activeSessionId) return;
+			this.handleRateLimitError(event.resetTime, event.message);
+		});
 	}
 
 	// Thinking toggle methods
 	private toggleThinkingMode(): void {
-		if (this.currentProvider === "claude") {
-			this.thinkingEnabled = !this.thinkingEnabled;
-		} else if (this.currentProvider === "codex") {
-			// Toggle between "none" and "high"
-			const currentReasoning = this.getCodexReasoningLevel();
-			const newLevel = currentReasoning === "none" ? "high" : "none";
-			this.setCodexReasoningLevel(newLevel);
-		}
+		this.thinkingEnabled = !this.thinkingEnabled;
 		this.updateThinkingButton();
 	}
 
 	private updateThinkingButton(): void {
-		const isClaude = this.currentProvider === "claude";
-		let isActive: boolean;
-
-		if (isClaude) {
-			isActive = this.thinkingEnabled;
-		} else {
-			// Codex: active when reasoning === "high"
-			isActive = this.getCodexReasoningLevel() === "high";
-		}
-
 		// Update state
-		this.thinkingToggleBtn.toggleClass("cristal-thinking-toggle-active", isActive);
+		this.thinkingToggleBtn.toggleClass("crystal-thinking-toggle-active", this.thinkingEnabled);
 
 		// Tooltip
 		const locale = getButtonLocale(this.plugin.settings.language);
-		this.thinkingToggleBtn.setAttribute("aria-label",
-			isClaude ? (locale.thinkingDeeper || "Think deeper") : (locale.deepReasoning || "Deep reasoning")
-		);
-	}
-
-	private getCodexReasoningLevel(): "none" | "high" {
-		const agent = this.plugin.settings.agents.find(
-			a => a.cliType === "codex" && a.enabled
-		);
-		return agent?.codexPermissions?.reasoning || "none";
-	}
-
-	private setCodexReasoningLevel(level: "none" | "high"): void {
-		const agent = this.plugin.settings.agents.find(
-			a => a.cliType === "codex" && a.enabled
-		);
-		if (agent?.codexPermissions) {
-			agent.codexPermissions.reasoning = level;
-			agent.reasoningEnabled = level === "high";
-			this.plugin.saveSettings();
-			// Write to ~/.codex/config.toml
-			setCodexReasoningLevel(level);
-		}
-	}
-
-	// Provider indicator methods
-	private updateProviderIndicator(): void {
-		this.providerIndicatorEl.empty();
-
-		// Check if switching is possible
-		const canSwitch = this.getEnabledAgentsCount() > 1 && !this.sessionStarted;
-		this.providerIndicatorEl.toggleClass("cristal-provider-locked", !canSwitch);
-
-		const icon = this.providerIndicatorEl.createSpan({ cls: "cristal-provider-indicator-icon" });
-		setIcon(icon, this.currentProvider === "claude" ? "sparkles" : "bot");
-		this.providerIndicatorEl.createSpan({
-			cls: "cristal-provider-indicator-name",
-			text: this.currentProvider === "claude" ? "Claude" : "Codex"
-		});
-	}
-
-	private toggleProvider(): void {
-		// Can't switch provider after session started
-		if (this.sessionStarted) return;
-
-		// Can't switch if only one agent is enabled
-		const enabledAgents = this.plugin.settings.agents.filter(a => a.enabled);
-		if (enabledAgents.length <= 1) return;
-
-		// Find next enabled agent
-		const currentIndex = enabledAgents.findIndex(a => a.cliType === this.currentProvider);
-		const nextIndex = (currentIndex + 1) % enabledAgents.length;
-		const nextAgent = enabledAgents[nextIndex];
-		if (!nextAgent) return;
-
-		this.currentProvider = nextAgent.cliType as AIProvider;
-		this.currentModel = nextAgent.model;
-		this.thinkingEnabled = nextAgent.thinkingEnabled || false;
-		this.codexReasoningEnabled = nextAgent.reasoningEnabled || false;
-
-		this.updateProviderIndicator();
-		this.updateModelIndicatorState();
-		this.updateThinkingButton();
-
-		// Update placeholder text
-		this.inputEl.placeholder = this.currentProvider === "claude"
-			? "Ask Claude... (type / for commands)"
-			: "Ask Codex... (type / for commands)";
+		this.thinkingToggleBtn.setAttribute("aria-label", locale.thinkingDeeper || "Think deeper");
 	}
 
 	// Model indicator methods
 	private getModelLabel(model: ClaudeModel | string): string {
-		// Check Claude models first
 		const claudeFound = CLAUDE_MODELS.find(m => m.value === model);
 		if (claudeFound) return claudeFound.label;
-
-		// Check Codex models
-		const codexFound = CODEX_MODELS.find(m => m.value === model);
-		if (codexFound) return codexFound.label;
 
 		return String(model);
 	}
 
 	private updateModelIndicatorState(): void {
-		const nameEl = this.modelIndicatorEl.querySelector(".cristal-model-indicator-name");
+		const nameEl = this.modelIndicatorEl.querySelector(".crystal-model-indicator-name");
 		if (nameEl) {
 			nameEl.textContent = this.getModelLabel(this.currentModel);
+		}
+
+		// Проверяем количество доступных моделей для блокировки кнопки
+		const currentAgent = this.plugin.settings.agents.find(
+			a => a.cliType === "claude" && a.enabled
+		);
+		const disabledModels = currentAgent?.disabledModels || [];
+		const availableModels = CLAUDE_MODELS.filter(m => !disabledModels.includes(m.value));
+
+		if (availableModels.length <= 1) {
+			this.modelIndicatorEl.addClass("crystal-model-indicator-locked");
+		} else {
+			this.modelIndicatorEl.removeClass("crystal-model-indicator-locked");
 		}
 	}
 
@@ -726,118 +630,49 @@ export class CristalChatView extends ItemView {
 		// Show model selection in the autocomplete popup
 		if (!this.autocompleteEl) return;
 
+		// Select models, filtering out disabled ones
+		const currentAgent = this.plugin.settings.agents.find(
+			a => a.cliType === "claude" && a.enabled
+		);
+		const disabledModels = currentAgent?.disabledModels || [];
+		const models = CLAUDE_MODELS.filter(m => !disabledModels.includes(m.value));
+
+		// Если доступна только одна модель - не показываем меню
+		if (models.length <= 1) {
+			return;
+		}
+
 		this.autocompleteEl.empty();
 		this.modelAutocompleteVisible = true;
 
-		// Model metadata: icons and descriptions for both providers
+		// Model metadata: icons and descriptions
 		const modelMeta: Record<string, { icon: string; desc: string }> = {
-			// Claude models
 			"claude-haiku-4-5-20251001": { icon: "zap", desc: "Самая быстрая на диком западе" },
 			"claude-sonnet-4-5-20250929": { icon: "sun", desc: "Для баланса сил во вселенной" },
-			"claude-opus-4-5-20251101": { icon: "crown", desc: "Чтобы забивать кувалдой гвозди" },
-			// Codex models
-			"gpt-5.2-codex": { icon: "crown", desc: "Latest frontier agentic coding" },
-			"gpt-5.1-codex-max": { icon: "sparkles", desc: "Deep and fast reasoning" },
-			"gpt-5.1-codex-mini": { icon: "zap", desc: "Cheaper, faster" },
-			"gpt-5.2": { icon: "cpu", desc: "Knowledge, reasoning, coding" }
+			"claude-opus-4-5-20251101": { icon: "crown", desc: "Чтобы забивать кувалдой гвозди" }
 		};
-
-		// Select models based on current provider, filtering out disabled ones
-		const allModels = this.currentProvider === "claude" ? CLAUDE_MODELS : CODEX_MODELS;
-		const currentAgent = this.plugin.settings.agents.find(
-			a => a.cliType === this.currentProvider && a.enabled
-		);
-		const disabledModels = currentAgent?.disabledModels || [];
-		const models = allModels.filter(m => !disabledModels.includes(m.value));
 
 		for (const model of models) {
 			const itemEl = this.autocompleteEl.createDiv({
-				cls: `cristal-autocomplete-item${model.value === this.currentModel ? " cristal-autocomplete-item-selected" : ""}`
+				cls: `crystal-autocomplete-item${model.value === this.currentModel ? " crystal-autocomplete-item-selected" : ""}`
 			});
 
 			const meta = modelMeta[model.value] || { icon: "cpu", desc: model.value };
-			const iconEl = itemEl.createDiv({ cls: "cristal-autocomplete-icon" });
+			const iconEl = itemEl.createDiv({ cls: "crystal-autocomplete-icon" });
 			setIcon(iconEl, meta.icon);
 
-			const textEl = itemEl.createDiv({ cls: "cristal-autocomplete-text" });
-			textEl.createDiv({ cls: "cristal-autocomplete-name", text: model.label });
-			textEl.createDiv({ cls: "cristal-autocomplete-desc", text: meta.desc });
+			const textEl = itemEl.createDiv({ cls: "crystal-autocomplete-text" });
+			textEl.createDiv({ cls: "crystal-autocomplete-name", text: model.label });
+			textEl.createDiv({ cls: "crystal-autocomplete-desc", text: meta.desc });
 
 			itemEl.addEventListener("click", () => {
 				this.selectModel(model.value);
 			});
 		}
 
-		// Separator and thinking toggle only for Claude
-		if (this.currentProvider === "claude") {
-			this.autocompleteEl.createDiv({ cls: "cristal-autocomplete-separator" });
-
-			// Thinking toggle item
-			const locale = getButtonLocale(this.plugin.settings.language);
-			const thinkingItemEl = this.autocompleteEl.createDiv({
-				cls: "cristal-autocomplete-item cristal-thinking-item"
-			});
-
-			const thinkingIconEl = thinkingItemEl.createDiv({ cls: "cristal-autocomplete-icon" });
-			setIcon(thinkingIconEl, "brain");
-
-			const thinkingTextEl = thinkingItemEl.createDiv({ cls: "cristal-autocomplete-text" });
-			thinkingTextEl.createDiv({ cls: "cristal-autocomplete-name", text: locale.thinkingDeeper || "Think deeper" });
-			thinkingTextEl.createDiv({ cls: "cristal-autocomplete-desc", text: "Extended thinking mode" });
-
-			// Toggle switch
-			const toggleEl = thinkingItemEl.createDiv({ cls: "cristal-thinking-switch" });
-			const toggleTrack = toggleEl.createDiv({ cls: "cristal-thinking-switch-track" });
-			toggleTrack.createDiv({ cls: "cristal-thinking-switch-thumb" });
-			if (this.thinkingEnabled) {
-				toggleTrack.addClass("cristal-thinking-switch-on");
-			}
-
-			thinkingItemEl.addEventListener("click", (e) => {
-				e.stopPropagation();
-				this.thinkingEnabled = !this.thinkingEnabled;
-				toggleTrack.toggleClass("cristal-thinking-switch-on", this.thinkingEnabled);
-				this.updateThinkingButton();
-			});
-		}
-
-		// Separator and deep reasoning toggle for Codex
-		if (this.currentProvider === "codex") {
-			this.autocompleteEl.createDiv({ cls: "cristal-autocomplete-separator" });
-
-			// Deep reasoning toggle item
-			const locale = getButtonLocale(this.plugin.settings.language);
-			const reasoningItemEl = this.autocompleteEl.createDiv({
-				cls: "cristal-autocomplete-item cristal-thinking-item"
-			});
-
-			const reasoningIconEl = reasoningItemEl.createDiv({ cls: "cristal-autocomplete-icon" });
-			setIcon(reasoningIconEl, "brain-cog");
-
-			const reasoningTextEl = reasoningItemEl.createDiv({ cls: "cristal-autocomplete-text" });
-			reasoningTextEl.createDiv({ cls: "cristal-autocomplete-name", text: locale.deepReasoning || "Deep reasoning" });
-			reasoningTextEl.createDiv({ cls: "cristal-autocomplete-desc", text: "Extra High reasoning mode" });
-
-			// Toggle switch
-			const toggleEl = reasoningItemEl.createDiv({ cls: "cristal-thinking-switch" });
-			const toggleTrack = toggleEl.createDiv({ cls: "cristal-thinking-switch-track" });
-			toggleTrack.createDiv({ cls: "cristal-thinking-switch-thumb" });
-			if (this.getCodexReasoningLevel() === "high") {
-				toggleTrack.addClass("cristal-thinking-switch-on");
-			}
-
-			reasoningItemEl.addEventListener("click", (e) => {
-				e.stopPropagation();
-				// Toggle between "none" and "high"
-				const currentLevel = this.getCodexReasoningLevel();
-				const newLevel = currentLevel === "none" ? "high" : "none";
-				this.setCodexReasoningLevel(newLevel);
-				toggleTrack.toggleClass("cristal-thinking-switch-on", newLevel === "high");
-				this.updateThinkingButton();
-			});
-		}
-
-		this.autocompleteEl.addClass("cristal-autocomplete-visible");
+		// Добавляем класс для меньшей высоты меню моделей
+		this.autocompleteEl.addClass("crystal-model-autocomplete");
+		this.autocompleteEl.addClass("crystal-autocomplete-visible");
 	}
 
 	private selectModel(model: ClaudeModel | string): void {
@@ -851,7 +686,8 @@ export class CristalChatView extends ItemView {
 	private hideModelAutocomplete(): void {
 		this.modelAutocompleteVisible = false;
 		if (this.autocompleteEl) {
-			this.autocompleteEl.removeClass("cristal-autocomplete-visible");
+			this.autocompleteEl.removeClass("crystal-autocomplete-visible");
+			this.autocompleteEl.removeClass("crystal-model-autocomplete");
 			this.autocompleteEl.empty();
 		}
 	}
@@ -894,22 +730,22 @@ export class CristalChatView extends ItemView {
 
 		for (const level of difficultyLevels) {
 			const itemEl = this.autocompleteEl.createDiv({
-				cls: "cristal-autocomplete-item"
+				cls: "crystal-autocomplete-item"
 			});
 
-			const iconEl = itemEl.createDiv({ cls: "cristal-autocomplete-icon" });
+			const iconEl = itemEl.createDiv({ cls: "crystal-autocomplete-icon" });
 			setIcon(iconEl, level.icon);
 
-			const textEl = itemEl.createDiv({ cls: "cristal-autocomplete-text" });
-			textEl.createDiv({ cls: "cristal-autocomplete-name", text: level.name });
-			textEl.createDiv({ cls: "cristal-autocomplete-desc", text: level.desc });
+			const textEl = itemEl.createDiv({ cls: "crystal-autocomplete-text" });
+			textEl.createDiv({ cls: "crystal-autocomplete-name", text: level.name });
+			textEl.createDiv({ cls: "crystal-autocomplete-desc", text: level.desc });
 
 			itemEl.addEventListener("click", () => {
 				this.selectDifficulty(level.id);
 			});
 		}
 
-		this.autocompleteEl.addClass("cristal-autocomplete-visible");
+		this.autocompleteEl.addClass("crystal-autocomplete-visible");
 	}
 
 	private selectDifficulty(level: string): void {
@@ -961,7 +797,7 @@ export class CristalChatView extends ItemView {
 	private hideDifficultyAutocomplete(): void {
 		this.difficultyAutocompleteVisible = false;
 		if (this.autocompleteEl) {
-			this.autocompleteEl.removeClass("cristal-autocomplete-visible");
+			this.autocompleteEl.removeClass("crystal-autocomplete-visible");
 			this.autocompleteEl.empty();
 		}
 	}
@@ -1120,12 +956,12 @@ Provide only the summary, no additional commentary.`;
 		const locale = getButtonLocale(this.plugin.settings.language);
 
 		this.compactOverlayEl = this.messagesContainer.createDiv({
-			cls: "cristal-compact-overlay"
+			cls: "crystal-compact-overlay"
 		});
 
-		this.compactOverlayEl.createDiv({ cls: "cristal-compact-spinner" });
+		this.compactOverlayEl.createDiv({ cls: "crystal-compact-spinner" });
 		this.compactOverlayEl.createDiv({
-			cls: "cristal-compact-text",
+			cls: "crystal-compact-text",
 			text: locale.creatingSummary
 		});
 
@@ -1143,19 +979,18 @@ Provide only the summary, no additional commentary.`;
 
 	private addSystemMessage(text: string): void {
 		const msgEl = this.messagesContainer.createDiv({
-			cls: "cristal-message cristal-message-system"
+			cls: "crystal-message crystal-message-system"
 		});
-		msgEl.createDiv({ cls: "cristal-message-content", text });
+		msgEl.createDiv({ cls: "crystal-message-content", text });
 		this.scrollToBottom();
 	}
 
 	private handleSendButtonClick(): void {
 		if (this.isGenerating) {
-			// Stop generation for current session on the active service
+			// Stop generation for current session
 			const currentSession = this.plugin.getCurrentSession();
 			if (currentSession) {
-				const service = this.plugin.getActiveService(this.currentProvider);
-				service.abort(currentSession.id);
+				this.plugin.claudeService.abort(currentSession.id);
 			}
 		} else {
 			this.sendMessage();
@@ -1241,36 +1076,36 @@ Provide only the summary, no additional commentary.`;
 		activeFileContext?: { name: string }
 	): void {
 		const msgEl = this.messagesContainer.createDiv({
-			cls: "cristal-message cristal-message-user"
+			cls: "crystal-message crystal-message-user"
 		});
 		msgEl.dataset.id = id;
 
-		const contentEl = msgEl.createDiv({ cls: "cristal-message-content" });
+		const contentEl = msgEl.createDiv({ cls: "crystal-message-content" });
 		contentEl.setText(content);
 
 		// Show active file context if included
 		if (activeFileContext) {
-			const contextEl = msgEl.createDiv({ cls: "cristal-message-context" });
-			const icon = contextEl.createSpan({ cls: "cristal-context-icon" });
+			const contextEl = msgEl.createDiv({ cls: "crystal-message-context" });
+			const icon = contextEl.createSpan({ cls: "crystal-context-icon" });
 			setIcon(icon, "file-text");
 			contextEl.createSpan({
-				cls: "cristal-context-label",
+				cls: "crystal-context-label",
 				text: `Context: ${activeFileContext.name}`
 			});
 		}
 
 		// Show attached files
 		if (attachedFiles && attachedFiles.length > 0) {
-			const attachmentsEl = msgEl.createDiv({ cls: "cristal-message-attachments" });
+			const attachmentsEl = msgEl.createDiv({ cls: "crystal-message-attachments" });
 			for (const file of attachedFiles) {
-				const fileChip = attachmentsEl.createDiv({ cls: "cristal-attachment-chip" });
+				const fileChip = attachmentsEl.createDiv({ cls: "crystal-attachment-chip" });
 				// Icon based on file type
 				const iconName = this.getFileIcon(file.type);
-				const icon = fileChip.createSpan({ cls: "cristal-attachment-icon" });
+				const icon = fileChip.createSpan({ cls: "crystal-attachment-icon" });
 				setIcon(icon, iconName);
 				// File name
 				fileChip.createSpan({
-					cls: "cristal-attachment-name",
+					cls: "crystal-attachment-name",
 					text: file.name
 				});
 			}
@@ -1283,11 +1118,16 @@ Provide only the summary, no additional commentary.`;
 			this.renderThinkingBlock(thinkingSteps);
 		}
 
+		// Don't create empty message elements (fixes phantom messages after reload)
+		if (!content.trim()) {
+			return;
+		}
+
 		const msgEl = this.messagesContainer.createDiv({
-			cls: "cristal-message cristal-message-assistant"
+			cls: "crystal-message crystal-message-assistant"
 		});
 		msgEl.dataset.id = id;
-		const contentEl = msgEl.createDiv({ cls: "cristal-message-content" });
+		const contentEl = msgEl.createDiv({ cls: "crystal-message-content" });
 		MarkdownRenderer.render(this.app, content, contentEl, "", this);
 		this.removeEditableAttributes(contentEl);
 		this.addCopyButton(msgEl, content, selectionContext);
@@ -1297,39 +1137,28 @@ Provide only the summary, no additional commentary.`;
 		const locale = getButtonLocale(this.plugin.settings.language);
 
 		const thinkingBlock = this.messagesContainer.createDiv({
-			cls: "cristal-thinking-block cristal-thinking-done"
+			cls: "crystal-thinking-block crystal-thinking-done"
 		});
 
-		const header = thinkingBlock.createDiv({ cls: "cristal-thinking-header" });
-		const iconEl = header.createSpan({ cls: "cristal-thinking-icon" });
+		const header = thinkingBlock.createDiv({ cls: "crystal-thinking-header" });
+		const iconEl = header.createSpan({ cls: "crystal-thinking-icon" });
 		setIcon(iconEl, "brain");
-		header.createSpan({ cls: "cristal-thinking-text", text: locale.thinking });
+		header.createSpan({ cls: "crystal-thinking-text", text: locale.thinking });
 
-		const stepsContainer = thinkingBlock.createDiv({ cls: "cristal-thinking-steps" });
+		const stepsContainer = thinkingBlock.createDiv({ cls: "crystal-thinking-steps" });
 
 		// Separate thinking steps from tool steps
 		const thinkingSteps = steps.filter(t => t.name === "thinking");
 		const toolSteps = steps.filter(t => t.name !== "thinking");
 
-		// Determine if this was a Codex session (has reasoning blocks)
-		const isCodexSession = thinkingSteps.length > 0;
-
-		// Render Codex reasoning steps in collapsible group
+		// Render reasoning steps in collapsible group
 		if (thinkingSteps.length > 0) {
 			this.renderHistoricReasoningGroup(stepsContainer, thinkingSteps, locale);
 		}
 
-		// Render tool steps:
-		// - Codex: simple list (original behavior)
-		// - Claude: collapsible group
+		// Render tool steps in collapsible group
 		if (toolSteps.length > 0) {
-			if (isCodexSession) {
-				// Codex: simple tool steps list
-				this.renderHistoricToolStepsSimple(stepsContainer, toolSteps, locale);
-			} else {
-				// Claude: collapsible group
-				this.renderHistoricToolStepsGroup(stepsContainer, toolSteps, locale);
-			}
+			this.renderHistoricToolStepsGroup(stepsContainer, toolSteps, locale);
 		}
 	}
 
@@ -1337,25 +1166,25 @@ Provide only the summary, no additional commentary.`;
 	 * Renders a collapsible reasoning group for historic messages
 	 */
 	private renderHistoricReasoningGroup(container: HTMLElement, steps: ToolUseBlock[], locale: ButtonLocale): void {
-		const groupEl = container.createDiv({ cls: "cristal-reasoning-group" });
+		const groupEl = container.createDiv({ cls: "crystal-reasoning-group" });
 
 		// Header
-		const headerEl = groupEl.createDiv({ cls: "cristal-reasoning-group-header" });
-		const iconEl = headerEl.createSpan({ cls: "cristal-reasoning-icon" });
+		const headerEl = groupEl.createDiv({ cls: "crystal-reasoning-group-header" });
+		const iconEl = headerEl.createSpan({ cls: "crystal-reasoning-icon" });
 		setIcon(iconEl, "brain");
 
-		const titleEl = headerEl.createSpan({ cls: "cristal-reasoning-group-title" });
+		const titleEl = headerEl.createSpan({ cls: "crystal-reasoning-group-title" });
 		titleEl.setText(locale.thinking || "Думает...");
 
 		if (steps.length > 1) {
-			const counterEl = headerEl.createSpan({ cls: "cristal-reasoning-group-counter" });
+			const counterEl = headerEl.createSpan({ cls: "crystal-reasoning-group-counter" });
 			counterEl.setText(`(${steps.length})`);
 		}
 
-		const expandEl = headerEl.createSpan({ cls: "cristal-reasoning-group-expand" });
+		const expandEl = headerEl.createSpan({ cls: "crystal-reasoning-group-expand" });
 
 		// Content
-		const contentEl = groupEl.createDiv({ cls: "cristal-reasoning-group-content" });
+		const contentEl = groupEl.createDiv({ cls: "crystal-reasoning-group-content" });
 
 		for (let i = 0; i < steps.length; i++) {
 			const step = steps[i];
@@ -1394,31 +1223,31 @@ Provide only the summary, no additional commentary.`;
 	 * Renders a collapsible tool steps group for historic messages
 	 */
 	private renderHistoricToolStepsGroup(container: HTMLElement, steps: ToolUseBlock[], locale: ButtonLocale): void {
-		const groupEl = container.createDiv({ cls: "cristal-reasoning-group cristal-tool-steps-group" });
+		const groupEl = container.createDiv({ cls: "crystal-reasoning-group crystal-tool-steps-group" });
 
 		// Header
-		const headerEl = groupEl.createDiv({ cls: "cristal-reasoning-group-header" });
-		const iconEl = headerEl.createSpan({ cls: "cristal-reasoning-icon" });
+		const headerEl = groupEl.createDiv({ cls: "crystal-reasoning-group-header" });
+		const iconEl = headerEl.createSpan({ cls: "crystal-reasoning-icon" });
 		setIcon(iconEl, "brain");
 
-		const titleEl = headerEl.createSpan({ cls: "cristal-reasoning-group-title" });
+		const titleEl = headerEl.createSpan({ cls: "crystal-reasoning-group-title" });
 		titleEl.setText(locale.thinking || "Думает...");
 
 		if (steps.length > 1) {
-			const counterEl = headerEl.createSpan({ cls: "cristal-reasoning-group-counter" });
+			const counterEl = headerEl.createSpan({ cls: "crystal-reasoning-group-counter" });
 			counterEl.setText(`(${steps.length})`);
 		}
 
-		const expandEl = headerEl.createSpan({ cls: "cristal-reasoning-group-expand" });
+		const expandEl = headerEl.createSpan({ cls: "crystal-reasoning-group-expand" });
 
 		// Content
-		const contentEl = groupEl.createDiv({ cls: "cristal-reasoning-group-content cristal-tool-steps-content" });
+		const contentEl = groupEl.createDiv({ cls: "crystal-reasoning-group-content crystal-tool-steps-content" });
 
 		for (const tool of steps) {
-			const stepEl = contentEl.createDiv({ cls: "cristal-tool-step-item" });
-			const stepIconEl = stepEl.createSpan({ cls: "cristal-tool-step-icon" });
+			const stepEl = contentEl.createDiv({ cls: "crystal-tool-step-item" });
+			const stepIconEl = stepEl.createSpan({ cls: "crystal-tool-step-icon" });
 			setIcon(stepIconEl, this.getToolIcon(tool.name));
-			const textEl = stepEl.createSpan({ cls: "cristal-tool-step-text" });
+			const textEl = stepEl.createSpan({ cls: "crystal-tool-step-text" });
 			textEl.setText(this.formatToolStep(tool, locale));
 		}
 
@@ -1442,19 +1271,6 @@ Provide only the summary, no additional commentary.`;
 		} else {
 			contentEl.style.display = "none";
 			setIcon(expandEl, "chevron-down");
-		}
-	}
-
-	/**
-	 * Renders tool steps as simple list for Codex (original behavior)
-	 */
-	private renderHistoricToolStepsSimple(container: HTMLElement, steps: ToolUseBlock[], locale: ButtonLocale): void {
-		for (const tool of steps) {
-			const stepEl = container.createDiv({ cls: "cristal-tool-step" });
-			const stepIconEl = stepEl.createSpan({ cls: "cristal-tool-step-icon" });
-			setIcon(stepIconEl, this.getToolIcon(tool.name));
-			const textEl = stepEl.createSpan({ cls: "cristal-tool-step-text" });
-			textEl.setText(this.formatToolStep(tool, locale));
 		}
 	}
 
@@ -1502,7 +1318,7 @@ Provide only the summary, no additional commentary.`;
 	}
 
 	/**
-	 * Renders a Codex reasoning step - simple text with **bold** support
+	 * Renders a reasoning step - simple text with **bold** support
 	 */
 	private renderReasoningStep(container: HTMLElement, tool: ToolUseBlock, _locale: ButtonLocale): void {
 		const input = tool.input as { text?: unknown; summary?: string[]; content?: string[] };
@@ -1511,7 +1327,7 @@ Provide only the summary, no additional commentary.`;
 		const rawText = this.parseReasoningText(input.text);
 
 		// Create text block (no separate header/body, just text)
-		const textEl = container.createDiv({ cls: "cristal-reasoning-text" });
+		const textEl = container.createDiv({ cls: "crystal-reasoning-text" });
 
 		// Render text with **bold** support
 		this.renderMarkdownBold(textEl, rawText);
@@ -1553,13 +1369,11 @@ Provide only the summary, no additional commentary.`;
 		const currentSession = sessions.find(s => s.id === currentId);
 		this.sessionTriggerEl.empty();
 
-		// Show spinner if current session is running (check both services)
-		const isCurrentRunning = currentSession && (
-			this.plugin.claudeService.isRunning(currentSession.id) ||
-			this.plugin.codexService.isRunning(currentSession.id)
-		);
+		// Show spinner if current session is running
+		const isCurrentRunning = currentSession &&
+			this.plugin.claudeService.isRunning(currentSession.id);
 		if (isCurrentRunning) {
-			const spinnerEl = this.sessionTriggerEl.createSpan({ cls: "cristal-session-spinner" });
+			const spinnerEl = this.sessionTriggerEl.createSpan({ cls: "crystal-session-spinner" });
 			setIcon(spinnerEl, "loader-2");
 		}
 
@@ -1567,45 +1381,44 @@ Provide only the summary, no additional commentary.`;
 		if (currentSession) {
 			const agentIcon = this.getAgentIcon(currentSession);
 			if (agentIcon) {
-				const iconEl = this.sessionTriggerEl.createSpan({ cls: "cristal-session-agent-icon" });
+				const iconEl = this.sessionTriggerEl.createSpan({ cls: "crystal-session-agent-icon" });
 				setIcon(iconEl, agentIcon);
 			}
 		}
 
-		const triggerText = this.sessionTriggerEl.createSpan({ cls: "cristal-session-trigger-text" });
+		const triggerText = this.sessionTriggerEl.createSpan({ cls: "crystal-session-trigger-text" });
 		triggerText.setText(currentSession ? this.getSessionLabel(currentSession) : "Select chat");
-		const triggerIcon = this.sessionTriggerEl.createSpan({ cls: "cristal-session-trigger-icon" });
+		const triggerIcon = this.sessionTriggerEl.createSpan({ cls: "crystal-session-trigger-icon" });
 		setIcon(triggerIcon, "chevron-down");
 
 		// Update list
 		this.sessionListEl.empty();
 		for (const session of sessions) {
-			// Check both services for running state
-			const isRunning = this.plugin.claudeService.isRunning(session.id) ||
-				this.plugin.codexService.isRunning(session.id);
+			// Check service for running state
+			const isRunning = this.plugin.claudeService.isRunning(session.id);
 			const item = this.sessionListEl.createDiv({
-				cls: `cristal-session-item ${session.id === currentId ? "cristal-session-item-active" : ""} ${isRunning ? "cristal-session-item-running" : ""}`
+				cls: `crystal-session-item ${session.id === currentId ? "crystal-session-item-active" : ""} ${isRunning ? "crystal-session-item-running" : ""}`
 			});
 			item.dataset.id = session.id;
 
 			// Show spinner for running sessions
 			if (isRunning) {
-				const spinnerEl = item.createSpan({ cls: "cristal-session-spinner" });
+				const spinnerEl = item.createSpan({ cls: "crystal-session-spinner" });
 				setIcon(spinnerEl, "loader-2");
 			}
 
 			// Show agent icon
 			const agentIcon = this.getAgentIcon(session);
 			if (agentIcon) {
-				const iconEl = item.createSpan({ cls: "cristal-session-agent-icon" });
+				const iconEl = item.createSpan({ cls: "crystal-session-agent-icon" });
 				setIcon(iconEl, agentIcon);
 			}
 
-			const titleEl = item.createSpan({ cls: "cristal-session-title" });
+			const titleEl = item.createSpan({ cls: "crystal-session-title" });
 			titleEl.setText(this.getSessionLabel(session));
 
 			const deleteBtn = item.createEl("button", {
-				cls: "cristal-session-delete",
+				cls: "crystal-session-delete",
 				attr: { "aria-label": "Delete session" }
 			});
 			setIcon(deleteBtn, "x");
@@ -1640,21 +1453,17 @@ Provide only the summary, no additional commentary.`;
 		if (session.agentId) {
 			const agent = this.plugin.settings.agents.find(a => a.id === session.agentId);
 			if (agent) {
-				return agent.cliType === "claude" ? "sparkles" : "code";
+				return "sparkles";
 			}
 		}
-		// Fallback to provider field (legacy)
-		if (session.provider) {
-			return session.provider === "claude" ? "sparkles" : "code";
-		}
-		return null;
+		return "sparkles";
 	}
 
 	private toggleSessionDropdown(): void {
 		this.isSessionDropdownOpen = !this.isSessionDropdownOpen;
 		if (this.isSessionDropdownOpen) {
-			this.sessionListEl.addClass("cristal-session-list-open");
-			this.sessionTriggerEl.addClass("cristal-session-trigger-open");
+			this.sessionListEl.addClass("crystal-session-list-open");
+			this.sessionTriggerEl.addClass("crystal-session-trigger-open");
 		} else {
 			this.closeSessionDropdown();
 		}
@@ -1662,8 +1471,8 @@ Provide only the summary, no additional commentary.`;
 
 	private closeSessionDropdown(): void {
 		this.isSessionDropdownOpen = false;
-		this.sessionListEl.removeClass("cristal-session-list-open");
-		this.sessionTriggerEl.removeClass("cristal-session-trigger-open");
+		this.sessionListEl.removeClass("crystal-session-list-open");
+		this.sessionTriggerEl.removeClass("crystal-session-trigger-open");
 	}
 
 	private selectSession(sessionId: string): void {
@@ -1676,8 +1485,13 @@ Provide only the summary, no additional commentary.`;
 	}
 
 	private deleteSessionWithConfirm(sessionId: string): void {
-		// If only one session, don't delete
+		// If only one session, create a new one first then delete old
 		if (this.plugin.sessions.length <= 1) {
+			const newSession = this.plugin.createNewSession();
+			this.plugin.deleteSession(sessionId);
+			this.updateSessionDropdown();
+			this.tokenStats = this.initialTokenStats();
+			this.loadSession(newSession);
 			return;
 		}
 
@@ -1780,22 +1594,22 @@ Provide only the summary, no additional commentary.`;
 
 		// Show/hide container
 		if (hasContent) {
-			this.contextIndicatorEl.addClass("cristal-context-active");
+			this.contextIndicatorEl.addClass("crystal-context-active");
 		} else {
-			this.contextIndicatorEl.removeClass("cristal-context-active");
+			this.contextIndicatorEl.removeClass("crystal-context-active");
 		}
 	}
 
 	private addContextChip(icon: string, label: string, onRemove: () => void): void {
-		const chip = this.contextIndicatorEl.createDiv({ cls: "cristal-context-chip" });
+		const chip = this.contextIndicatorEl.createDiv({ cls: "crystal-context-chip" });
 
-		const iconEl = chip.createSpan({ cls: "cristal-context-icon" });
+		const iconEl = chip.createSpan({ cls: "crystal-context-icon" });
 		setIcon(iconEl, icon);
 
-		chip.createSpan({ cls: "cristal-context-name", text: label });
+		chip.createSpan({ cls: "crystal-context-name", text: label });
 
 		const removeBtn = chip.createEl("button", {
-			cls: "cristal-context-remove",
+			cls: "crystal-context-remove",
 			attr: { "aria-label": "Remove" }
 		});
 		setIcon(removeBtn, "x");
@@ -1939,33 +1753,33 @@ Provide only the summary, no additional commentary.`;
 		const locale = getButtonLocale(this.plugin.settings.language);
 		this.messagesContainer.empty();
 
-		const noAgents = this.messagesContainer.createDiv({ cls: "cristal-no-agents" });
+		const noAgents = this.messagesContainer.createDiv({ cls: "crystal-no-agents" });
 
 		// Icon
-		const iconEl = noAgents.createDiv({ cls: "cristal-no-agents-icon" });
+		const iconEl = noAgents.createDiv({ cls: "crystal-no-agents-icon" });
 		setIcon(iconEl, "bot");
 
 		// Title
 		noAgents.createEl("h2", {
-			cls: "cristal-no-agents-title",
+			cls: "crystal-no-agents-title",
 			text: locale.noAgentsTitle
 		});
 
 		// Subtitle
 		noAgents.createEl("p", {
-			cls: "cristal-no-agents-subtitle",
+			cls: "crystal-no-agents-subtitle",
 			text: locale.noAgentsSubtitle
 		});
 
 		// Open Settings button
 		const btn = noAgents.createEl("button", {
-			cls: "cristal-no-agents-button mod-cta",
+			cls: "crystal-no-agents-button mod-cta",
 			text: locale.openSettings
 		});
 		btn.addEventListener("click", () => {
 			// Open plugin settings
 			(this.app as any).setting.open();
-			(this.app as any).setting.openTabById("cristal");
+			(this.app as any).setting.openTabById("crystal");
 		});
 
 		// Set flag and disable all input controls
@@ -1981,14 +1795,14 @@ Provide only the summary, no additional commentary.`;
 		const locale = getButtonLocale(this.plugin.settings.language);
 
 		// Create warning banner at the top (not replacing messages)
-		const banner = this.messagesContainer.createDiv({ cls: "cristal-unavailable-agent-banner" });
+		const banner = this.messagesContainer.createDiv({ cls: "crystal-unavailable-agent-banner" });
 
 		// Icon
-		const iconEl = banner.createDiv({ cls: "cristal-unavailable-agent-icon" });
+		const iconEl = banner.createDiv({ cls: "crystal-unavailable-agent-icon" });
 		setIcon(iconEl, "alert-triangle");
 
 		// Text content
-		const textEl = banner.createDiv({ cls: "cristal-unavailable-agent-text" });
+		const textEl = banner.createDiv({ cls: "crystal-unavailable-agent-text" });
 		textEl.createEl("strong", { text: locale.unavailableAgentTitle });
 		textEl.createEl("p", { text: locale.unavailableAgentSubtitle });
 
@@ -2008,16 +1822,13 @@ Provide only the summary, no additional commentary.`;
 
 		// Disable send button
 		this.sendButton.disabled = true;
-		this.sendButton.addClass("cristal-btn-disabled");
-
-		// Disable provider indicator
-		this.providerIndicatorEl.addClass("cristal-btn-disabled");
+		this.sendButton.addClass("crystal-btn-disabled");
 
 		// Disable model indicator
-		this.modelIndicatorEl.addClass("cristal-btn-disabled");
+		this.modelIndicatorEl.addClass("crystal-btn-disabled");
 
 		// Disable thinking toggle
-		this.thinkingToggleBtn.addClass("cristal-btn-disabled");
+		this.thinkingToggleBtn.addClass("crystal-btn-disabled");
 	}
 
 	/**
@@ -2032,16 +1843,13 @@ Provide only the summary, no additional commentary.`;
 
 		// Enable send button
 		this.sendButton.disabled = false;
-		this.sendButton.removeClass("cristal-btn-disabled");
-
-		// Enable provider indicator
-		this.providerIndicatorEl.removeClass("cristal-btn-disabled");
+		this.sendButton.removeClass("crystal-btn-disabled");
 
 		// Enable model indicator
-		this.modelIndicatorEl.removeClass("cristal-btn-disabled");
+		this.modelIndicatorEl.removeClass("crystal-btn-disabled");
 
 		// Enable thinking toggle
-		this.thinkingToggleBtn.removeClass("cristal-btn-disabled");
+		this.thinkingToggleBtn.removeClass("crystal-btn-disabled");
 	}
 
 	/**
@@ -2060,16 +1868,16 @@ Provide only the summary, no additional commentary.`;
 	private showWelcome(): void {
 		if (this.messages.length === 0) {
 			const locale = getButtonLocale(this.plugin.settings.language);
-			const welcome = this.messagesContainer.createDiv({ cls: "cristal-welcome" });
+			const welcome = this.messagesContainer.createDiv({ cls: "crystal-welcome" });
 
 			// Title
-			welcome.createEl("h2", { cls: "cristal-welcome-title", text: locale.welcomeTitle });
+			welcome.createEl("h2", { cls: "crystal-welcome-title", text: locale.welcomeTitle });
 
 			// Subtitle
-			welcome.createEl("p", { cls: "cristal-welcome-subtitle", text: locale.welcomeSubtitle });
+			welcome.createEl("p", { cls: "crystal-welcome-subtitle", text: locale.welcomeSubtitle });
 
 			// Features list
-			const features = welcome.createDiv({ cls: "cristal-welcome-features" });
+			const features = welcome.createDiv({ cls: "crystal-welcome-features" });
 			const featureData = [
 				{ icon: "message-circle", text: locale.welcomeFeature1 },
 				{ icon: "paperclip", text: locale.welcomeFeature2 },
@@ -2078,22 +1886,22 @@ Provide only the summary, no additional commentary.`;
 			];
 
 			for (const feature of featureData) {
-				const item = features.createDiv({ cls: "cristal-welcome-feature" });
-				const icon = item.createSpan({ cls: "cristal-welcome-feature-icon" });
+				const item = features.createDiv({ cls: "crystal-welcome-feature" });
+				const icon = item.createSpan({ cls: "crystal-welcome-feature-icon" });
 				setIcon(icon, feature.icon);
 				item.createSpan({ text: feature.text });
 			}
 
 			// Tip
-			welcome.createEl("p", { cls: "cristal-welcome-hint", text: locale.welcomeTip });
+			welcome.createEl("p", { cls: "crystal-welcome-hint", text: locale.welcomeTip });
 
 			// Joke
-			welcome.createEl("p", { cls: "cristal-welcome-joke", text: locale.welcomeJoke });
+			welcome.createEl("p", { cls: "crystal-welcome-joke", text: locale.welcomeJoke });
 		}
 	}
 
 	private clearWelcome(): void {
-		const welcome = this.messagesContainer.querySelector(".cristal-welcome");
+		const welcome = this.messagesContainer.querySelector(".crystal-welcome");
 		if (welcome) {
 			welcome.remove();
 		}
@@ -2102,12 +1910,10 @@ Provide only the summary, no additional commentary.`;
 	private async sendMessage(): Promise<void> {
 		const userInput = this.inputEl.value.trim();
 		const currentSession = this.plugin.getCurrentSession();
-		// Check if either service is running for this session
-		const isAnyServiceRunning = currentSession && (
-			this.plugin.claudeService.isRunning(currentSession.id) ||
-			this.plugin.codexService.isRunning(currentSession.id)
-		);
-		if (!userInput || !currentSession || isAnyServiceRunning) {
+		// Check if service is running for this session
+		const isServiceRunning = currentSession &&
+			this.plugin.claudeService.isRunning(currentSession.id);
+		if (!userInput || !currentSession || isServiceRunning) {
 			return;
 		}
 
@@ -2129,6 +1935,18 @@ Provide only the summary, no additional commentary.`;
 				// Handle special /compact command
 				if (commandPrompt === "__COMPACT__") {
 					await this.runCompact();
+					return;
+				}
+				// Handle special /attach command
+				if (commandPrompt === "__ATTACH__") {
+					this.triggerFileAttach();
+					return;
+				}
+				// Handle special /mention command
+				if (commandPrompt === "__MENTION__") {
+					this.inputEl.value = "@";
+					this.inputEl.focus();
+					this.handleInputChange();
 					return;
 				}
 				userPrompt = commandPrompt;
@@ -2215,8 +2033,7 @@ Provide only the summary, no additional commentary.`;
 
 		// Add hidden system instructions for first message in new session
 		if (isFirstMessage) {
-			const agentType = this.currentProvider === "claude" ? "claude" : "codex";
-			const agentInstructions = await this.plugin.readAgentMd(agentType);
+			const agentInstructions = await this.plugin.readAgentMd();
 			if (agentInstructions) {
 				fullPrompt = `${wrapHiddenInstructions(agentInstructions)}\n\n${fullPrompt}`;
 			}
@@ -2228,43 +2045,35 @@ Provide only the summary, no additional commentary.`;
 			this.compactSummary = null; // Clear after use
 		}
 
-		// Get the active service based on current provider
-		const service = this.plugin.getActiveService(this.currentProvider);
-
 		// Get CLI session ID - either from service (current) or from saved session
-		let cliSessionId: string | undefined;
-		if (this.currentProvider === "claude") {
-			cliSessionId = this.plugin.claudeService.getCliSessionId(currentSession.id)
-				?? currentSession.cliSessionId
-				?? undefined;
-		} else {
-			cliSessionId = this.plugin.codexService.getThreadId(currentSession.id)
-				?? currentSession.cliSessionId
-				?? undefined;
-		}
+		const cliSessionId = this.plugin.claudeService.getCliSessionId(currentSession.id)
+			?? currentSession.cliSessionId
+			?? undefined;
 
-		// Lock model and provider after first message
+		// Lock model after first message
 		if (!this.sessionStarted) {
 			this.sessionStarted = true;
 			this.updateModelIndicatorState();
-			// Save model and provider to session
+			// Save model to session
 			currentSession.model = this.currentModel;
-			currentSession.provider = this.currentProvider;
 			this.plugin.saveSettings();
 		}
 
-		// Add ultrathink prefix if thinking mode is enabled (Claude only)
-		if (this.thinkingEnabled && this.currentProvider === "claude") {
+		// Add ultrathink prefix if thinking mode is enabled
+		if (this.thinkingEnabled) {
 			fullPrompt = `ultrathink: ${fullPrompt}`;
 		}
 
-		// Send to the active service with model and session ID
-		await service.sendMessage(
+		// Send to Claude service with model and session ID
+		await this.plugin.claudeService.sendMessage(
 			fullPrompt,
 			currentSession.id,
 			cliSessionId,
 			this.currentModel
 		);
+
+		// Update dropdown to show spinner while running
+		this.updateSessionDropdown();
 	}
 
 	private addUserMessage(
@@ -2285,42 +2094,42 @@ Provide only the summary, no additional commentary.`;
 		this.messages.push(message);
 
 		const msgEl = this.messagesContainer.createDiv({
-			cls: "cristal-message cristal-message-user"
+			cls: "crystal-message crystal-message-user"
 		});
 		msgEl.dataset.id = msgId;
 
-		const contentEl = msgEl.createDiv({ cls: "cristal-message-content" });
+		const contentEl = msgEl.createDiv({ cls: "crystal-message-content" });
 		contentEl.setText(content);
 
 		// Show expanded prompt for slash commands
 		if (expandedPrompt && content.startsWith("/")) {
-			const expandedEl = msgEl.createDiv({ cls: "cristal-expanded-prompt" });
+			const expandedEl = msgEl.createDiv({ cls: "crystal-expanded-prompt" });
 			expandedEl.setText(expandedPrompt);
 		}
 
 		// Show active file context if included
 		if (activeFileContext) {
-			const contextEl = msgEl.createDiv({ cls: "cristal-message-context" });
-			const icon = contextEl.createSpan({ cls: "cristal-context-icon" });
+			const contextEl = msgEl.createDiv({ cls: "crystal-message-context" });
+			const icon = contextEl.createSpan({ cls: "crystal-context-icon" });
 			setIcon(icon, "file-text");
 			contextEl.createSpan({
-				cls: "cristal-context-label",
+				cls: "crystal-context-label",
 				text: `Context: ${activeFileContext.name}`
 			});
 		}
 
 		// Show attached files
 		if (attachedFiles && attachedFiles.length > 0) {
-			const attachmentsEl = msgEl.createDiv({ cls: "cristal-message-attachments" });
+			const attachmentsEl = msgEl.createDiv({ cls: "crystal-message-attachments" });
 			for (const file of attachedFiles) {
-				const fileChip = attachmentsEl.createDiv({ cls: "cristal-attachment-chip" });
+				const fileChip = attachmentsEl.createDiv({ cls: "crystal-attachment-chip" });
 				// Icon based on file type
 				const iconName = this.getFileIcon(file.type);
-				const icon = fileChip.createSpan({ cls: "cristal-attachment-icon" });
+				const icon = fileChip.createSpan({ cls: "crystal-attachment-icon" });
 				setIcon(icon, iconName);
 				// File name
 				fileChip.createSpan({
-					cls: "cristal-attachment-name",
+					cls: "crystal-attachment-name",
 					text: file.name
 				});
 			}
@@ -2351,17 +2160,17 @@ Provide only the summary, no additional commentary.`;
 
 		// Create thinking block container
 		this.currentThinkingBlock = this.messagesContainer.createDiv({
-			cls: "cristal-thinking-block"
+			cls: "crystal-thinking-block"
 		});
 
 		// Header with "Thinking..." text
-		const header = this.currentThinkingBlock.createDiv({ cls: "cristal-thinking-header" });
-		const iconEl = header.createSpan({ cls: "cristal-thinking-icon" });
+		const header = this.currentThinkingBlock.createDiv({ cls: "crystal-thinking-header" });
+		const iconEl = header.createSpan({ cls: "crystal-thinking-icon" });
 		setIcon(iconEl, "brain");
-		header.createSpan({ cls: "cristal-thinking-text", text: locale.thinking });
+		header.createSpan({ cls: "crystal-thinking-text", text: locale.thinking });
 
 		// Steps container
-		this.currentThinkingSteps = this.currentThinkingBlock.createDiv({ cls: "cristal-thinking-steps" });
+		this.currentThinkingSteps = this.currentThinkingBlock.createDiv({ cls: "crystal-thinking-steps" });
 	}
 
 	private updateAssistantMessage(fullText: string): void {
@@ -2417,11 +2226,11 @@ Provide only the summary, no additional commentary.`;
 		// Create final message block
 		const msgId = crypto.randomUUID();
 		const msgEl = this.messagesContainer.createDiv({
-			cls: "cristal-message cristal-message-assistant"
+			cls: "crystal-message crystal-message-assistant"
 		});
 		msgEl.dataset.id = msgId;
 
-		const contentEl = msgEl.createDiv({ cls: "cristal-message-content" });
+		const contentEl = msgEl.createDiv({ cls: "crystal-message-content" });
 		MarkdownRenderer.render(
 			this.app,
 			this.currentAssistantContent,
@@ -2451,9 +2260,9 @@ Provide only the summary, no additional commentary.`;
 		this.markThinkingDone();
 
 		// Create streaming text element directly without "Response" header
-		// This makes output consistent between Claude Code and Codex
+		// This makes output consistent
 		this.currentAssistantMessage = this.messagesContainer.createDiv({
-			cls: "cristal-streaming-text"
+			cls: "crystal-streaming-text"
 		});
 	}
 
@@ -2470,7 +2279,7 @@ Provide only the summary, no additional commentary.`;
 
 	private markThinkingDone(): void {
 		if (this.currentThinkingBlock) {
-			this.currentThinkingBlock.addClass("cristal-thinking-done");
+			this.currentThinkingBlock.addClass("crystal-thinking-done");
 		}
 	}
 
@@ -2503,11 +2312,11 @@ Provide only the summary, no additional commentary.`;
 			// Create message block only if there's text content
 			if (hasContent) {
 				const msgEl = this.messagesContainer.createDiv({
-					cls: "cristal-message cristal-message-assistant"
+					cls: "crystal-message crystal-message-assistant"
 				});
 				msgEl.dataset.id = msgId;
 
-				const contentEl = msgEl.createDiv({ cls: "cristal-message-content" });
+				const contentEl = msgEl.createDiv({ cls: "crystal-message-content" });
 				MarkdownRenderer.render(
 					this.app,
 					this.currentAssistantContent,
@@ -2545,11 +2354,11 @@ Provide only the summary, no additional commentary.`;
 
 	private addCopyButton(messageEl: HTMLElement, content: string, selectionContext?: SelectionContext): void {
 		const locale = getButtonLocale(this.plugin.settings.language);
-		const actionsEl = messageEl.createDiv({ cls: "cristal-message-actions" });
+		const actionsEl = messageEl.createDiv({ cls: "crystal-message-actions" });
 
 		// Copy button (icon-only)
 		const copyBtn = actionsEl.createEl("button", {
-			cls: "cristal-action-btn-icon",
+			cls: "crystal-action-btn-icon",
 			attr: { "aria-label": locale.copy, "title": locale.copy }
 		});
 		setIcon(copyBtn, "copy");
@@ -2561,14 +2370,14 @@ Provide only the summary, no additional commentary.`;
 				copyBtn.empty();
 				setIcon(copyBtn, "check");
 				copyBtn.setAttribute("title", locale.copySuccess);
-				copyBtn.addClass("cristal-action-btn-success");
+				copyBtn.addClass("crystal-action-btn-success");
 
 				// Reset after 2 seconds
 				setTimeout(() => {
 					copyBtn.empty();
 					setIcon(copyBtn, "copy");
 					copyBtn.setAttribute("title", locale.copy);
-					copyBtn.removeClass("cristal-action-btn-success");
+					copyBtn.removeClass("crystal-action-btn-success");
 				}, 2000);
 			} catch (err) {
 				console.error("Failed to copy:", err);
@@ -2577,7 +2386,7 @@ Provide only the summary, no additional commentary.`;
 
 		// Replace button (icon-only)
 		const replaceBtn = actionsEl.createEl("button", {
-			cls: "cristal-action-btn-icon cristal-note-action",
+			cls: "crystal-action-btn-icon crystal-note-action",
 			attr: { "aria-label": locale.replace, "title": locale.replace }
 		});
 		setIcon(replaceBtn, "replace");
@@ -2588,7 +2397,7 @@ Provide only the summary, no additional commentary.`;
 
 		// Append button (icon-only)
 		const appendBtn = actionsEl.createEl("button", {
-			cls: "cristal-action-btn-icon cristal-note-action",
+			cls: "crystal-action-btn-icon crystal-note-action",
 			attr: { "aria-label": locale.append, "title": locale.append }
 		});
 		setIcon(appendBtn, "file-plus");
@@ -2599,7 +2408,7 @@ Provide only the summary, no additional commentary.`;
 
 		// New Page button (icon-only)
 		const newPageBtn = actionsEl.createEl("button", {
-			cls: "cristal-action-btn-icon",
+			cls: "crystal-action-btn-icon",
 			attr: { "aria-label": locale.newPage, "title": locale.newPage }
 		});
 		setIcon(newPageBtn, "file-plus-2");
@@ -2614,7 +2423,7 @@ Provide only the summary, no additional commentary.`;
 
 	private updateNoteActionButtons(actionsEl: HTMLElement): void {
 		const activeFile = this.app.workspace.getActiveFile();
-		const noteButtons = actionsEl.querySelectorAll(".cristal-note-action");
+		const noteButtons = actionsEl.querySelectorAll(".crystal-note-action");
 
 		noteButtons.forEach(btn => {
 			if (activeFile && activeFile.extension === "md") {
@@ -2626,7 +2435,7 @@ Provide only the summary, no additional commentary.`;
 	}
 
 	private updateAllNoteActionButtons(): void {
-		const allActions = this.messagesContainer.querySelectorAll(".cristal-message-actions");
+		const allActions = this.messagesContainer.querySelectorAll(".crystal-message-actions");
 		allActions.forEach(actionsEl => {
 			this.updateNoteActionButtons(actionsEl as HTMLElement);
 		});
@@ -2724,13 +2533,13 @@ Provide only the summary, no additional commentary.`;
 		btn.empty();
 		setIcon(btn, successIcon);
 		btn.setAttribute("title", successTitle);
-		btn.addClass("cristal-action-btn-success");
+		btn.addClass("crystal-action-btn-success");
 
 		setTimeout(() => {
 			btn.empty();
 			setIcon(btn, defaultIcon);
 			btn.setAttribute("title", defaultTitle);
-			btn.removeClass("cristal-action-btn-success");
+			btn.removeClass("crystal-action-btn-success");
 		}, 2000);
 	}
 
@@ -2804,23 +2613,8 @@ Provide only the summary, no additional commentary.`;
 			this.currentReasoningGroup = null;
 		}
 
-		// Different display for Claude vs Codex:
-		// - Claude: tool steps in collapsible group (like Codex reasoning)
-		// - Codex: tool steps as simple list (original behavior)
-		if (this.currentProvider === "claude") {
-			// Claude: unified collapsible group for tool steps
-			this.addToolToStepsGroup(tool, locale);
-		} else {
-			// Codex: original behavior - grouped by tool type
-			if (this.currentToolGroup && this.currentToolGroup.type === toolType && this.currentToolGroup.element) {
-				this.currentToolGroup.tools.push(tool);
-				this.updateToolGroupUI(this.currentToolGroup, locale);
-			} else {
-				this.currentToolGroup = { type: toolType, tools: [tool], element: null };
-				const stepEl = this.createToolStepElement(tool, locale);
-				this.currentToolGroup.element = stepEl;
-			}
-		}
+		// Display tool steps in collapsible group
+		this.addToolToStepsGroup(tool, locale);
 
 		// Accumulate step for saving to message history
 		this.currentMessageThinkingSteps.push(tool);
@@ -2829,7 +2623,7 @@ Provide only the summary, no additional commentary.`;
 	}
 
 	/**
-	 * Adds a tool step to the unified collapsible group (unified with Codex reasoning style)
+	 * Adds a tool step to the unified collapsible group
 	 */
 	private addToolToStepsGroup(tool: ToolUseBlock, locale: ButtonLocale): void {
 		if (!this.currentThinkingSteps) return;
@@ -2837,23 +2631,23 @@ Provide only the summary, no additional commentary.`;
 		// Create new group if needed
 		if (!this.currentToolStepsGroup) {
 			// Create the group container (same style as reasoning groups)
-			const groupEl = this.currentThinkingSteps.createDiv({ cls: "cristal-reasoning-group cristal-tool-steps-group" });
+			const groupEl = this.currentThinkingSteps.createDiv({ cls: "crystal-reasoning-group crystal-tool-steps-group" });
 
 			// Group header (clickable to expand/collapse)
-			const headerEl = groupEl.createDiv({ cls: "cristal-reasoning-group-header" });
-			const iconEl = headerEl.createSpan({ cls: "cristal-reasoning-icon" });
+			const headerEl = groupEl.createDiv({ cls: "crystal-reasoning-group-header" });
+			const iconEl = headerEl.createSpan({ cls: "crystal-reasoning-icon" });
 			setIcon(iconEl, "brain");
 
-			const titleEl = headerEl.createSpan({ cls: "cristal-reasoning-group-title" });
+			const titleEl = headerEl.createSpan({ cls: "crystal-reasoning-group-title" });
 			titleEl.setText(locale.thinking || "Думает...");
 
-			const counterEl = headerEl.createSpan({ cls: "cristal-reasoning-group-counter" });
+			const counterEl = headerEl.createSpan({ cls: "crystal-reasoning-group-counter" });
 			counterEl.style.display = "none";
 
-			const expandEl = headerEl.createSpan({ cls: "cristal-reasoning-group-expand" });
+			const expandEl = headerEl.createSpan({ cls: "crystal-reasoning-group-expand" });
 
 			// Content area for tool steps
-			const contentEl = groupEl.createDiv({ cls: "cristal-reasoning-group-content cristal-tool-steps-content" });
+			const contentEl = groupEl.createDiv({ cls: "crystal-reasoning-group-content crystal-tool-steps-content" });
 
 			// Click header to expand/collapse (synced across all groups)
 			headerEl.addEventListener("click", () => {
@@ -2892,7 +2686,7 @@ Provide only the summary, no additional commentary.`;
 		const count = this.currentToolStepsGroup.tools.length;
 
 		// Update counter
-		const counterEl = this.currentToolStepsGroup.element?.querySelector(".cristal-reasoning-group-counter") as HTMLElement;
+		const counterEl = this.currentToolStepsGroup.element?.querySelector(".crystal-reasoning-group-counter") as HTMLElement;
 		if (counterEl && count > 1) {
 			counterEl.style.display = "inline";
 			counterEl.setText(`(${count})`);
@@ -2908,12 +2702,12 @@ Provide only the summary, no additional commentary.`;
 	 * Adds a single tool step item inside the collapsible content area
 	 */
 	private addToolStepToContent(container: HTMLElement, tool: ToolUseBlock, locale: ButtonLocale): void {
-		const stepEl = container.createDiv({ cls: "cristal-tool-step-item" });
+		const stepEl = container.createDiv({ cls: "crystal-tool-step-item" });
 
-		const iconEl = stepEl.createSpan({ cls: "cristal-tool-step-icon" });
+		const iconEl = stepEl.createSpan({ cls: "crystal-tool-step-icon" });
 		setIcon(iconEl, this.getToolIcon(tool.name));
 
-		const textEl = stepEl.createSpan({ cls: "cristal-tool-step-text" });
+		const textEl = stepEl.createSpan({ cls: "crystal-tool-step-text" });
 		textEl.setText(this.formatToolStep(tool, locale));
 	}
 
@@ -2923,23 +2717,23 @@ Provide only the summary, no additional commentary.`;
 	private createToolStepElement(tool: ToolUseBlock, locale: ButtonLocale): HTMLElement {
 		if (!this.currentThinkingSteps) return document.createElement("div");
 
-		const stepEl = this.currentThinkingSteps.createDiv({ cls: "cristal-tool-step" });
+		const stepEl = this.currentThinkingSteps.createDiv({ cls: "crystal-tool-step" });
 
 		// Header with icon, text, counter, and expand arrow
-		const stepHeader = stepEl.createDiv({ cls: "cristal-tool-step-header" });
+		const stepHeader = stepEl.createDiv({ cls: "crystal-tool-step-header" });
 
-		const iconEl = stepHeader.createSpan({ cls: "cristal-tool-step-icon" });
+		const iconEl = stepHeader.createSpan({ cls: "crystal-tool-step-icon" });
 		setIcon(iconEl, this.getToolIcon(tool.name));
 
-		const textEl = stepHeader.createSpan({ cls: "cristal-tool-step-text" });
+		const textEl = stepHeader.createSpan({ cls: "crystal-tool-step-text" });
 		textEl.setText(this.formatToolStep(tool, locale));
 
 		// Counter badge (initially hidden, shown when group has >1 items)
-		const counterEl = stepHeader.createSpan({ cls: "cristal-tool-step-counter" });
+		const counterEl = stepHeader.createSpan({ cls: "crystal-tool-step-counter" });
 		counterEl.style.display = "none";
 
 		// Details block (use simple format without JSON wrapper)
-		const detailsEl = stepEl.createDiv({ cls: "cristal-tool-step-details" });
+		const detailsEl = stepEl.createDiv({ cls: "crystal-tool-step-details" });
 		this.renderToolDetailsSimple(detailsEl, tool);
 
 		// Special handling for todo_list: always expanded, no collapse
@@ -2947,10 +2741,10 @@ Provide only the summary, no additional commentary.`;
 		if (isTodoList) {
 			detailsEl.style.display = "block";
 			stepEl.addClass("expanded");
-			stepEl.addClass("cristal-tool-step-no-collapse");
+			stepEl.addClass("crystal-tool-step-no-collapse");
 		} else {
 			// Expand arrow (not for todo_list)
-			const expandEl = stepHeader.createSpan({ cls: "cristal-tool-step-expand" });
+			const expandEl = stepHeader.createSpan({ cls: "crystal-tool-step-expand" });
 			setIcon(expandEl, "chevron-down");
 			detailsEl.style.display = "none";
 
@@ -2978,20 +2772,20 @@ Provide only the summary, no additional commentary.`;
 		if (!lastTool) return;
 
 		// Update the header text to show last tool action
-		const textEl = group.element.querySelector(".cristal-tool-step-text");
+		const textEl = group.element.querySelector(".crystal-tool-step-text");
 		if (textEl) {
 			textEl.setText(this.formatToolStep(lastTool, locale));
 		}
 
 		// Show and update counter
-		const counterEl = group.element.querySelector(".cristal-tool-step-counter") as HTMLElement;
+		const counterEl = group.element.querySelector(".crystal-tool-step-counter") as HTMLElement;
 		if (counterEl && count > 1) {
 			counterEl.style.display = "inline";
 			counterEl.setText(`(${count})`);
 		}
 
 		// Add new tool details to the details section (no separator, just new line)
-		const detailsEl = group.element.querySelector(".cristal-tool-step-details");
+		const detailsEl = group.element.querySelector(".crystal-tool-step-details");
 		if (detailsEl) {
 			this.renderToolDetailsSimple(detailsEl as HTMLElement, lastTool);
 		}
@@ -3002,7 +2796,7 @@ Provide only the summary, no additional commentary.`;
 	 */
 	private renderToolDetailsSimple(container: HTMLElement, tool: ToolUseBlock): void {
 		const input = tool.input as Record<string, unknown>;
-		const line = container.createDiv({ cls: "cristal-tool-detail-line" });
+		const line = container.createDiv({ cls: "crystal-tool-detail-line" });
 
 		switch (tool.name) {
 			case "command_execution":
@@ -3028,11 +2822,11 @@ Provide only the summary, no additional commentary.`;
 				const items = input.items as Array<{ text: string; completed: boolean }> | undefined;
 				if (items && Array.isArray(items)) {
 					for (const item of items) {
-						const itemEl = container.createDiv({ cls: "cristal-todo-item" });
+						const itemEl = container.createDiv({ cls: "crystal-todo-item" });
 						const checkbox = itemEl.createEl("input", { type: "checkbox" });
 						checkbox.checked = item.completed;
 						checkbox.disabled = true;  // Read-only display
-						itemEl.createSpan({ cls: "cristal-todo-text", text: item.text });
+						itemEl.createSpan({ cls: "crystal-todo-text", text: item.text });
 					}
 				}
 				break;
@@ -3058,25 +2852,25 @@ Provide only the summary, no additional commentary.`;
 			this.currentReasoningGroup = { tools: [tool], element: null };
 
 			// Create the group container
-			const groupEl = this.currentThinkingSteps.createDiv({ cls: "cristal-reasoning-group" });
+			const groupEl = this.currentThinkingSteps.createDiv({ cls: "crystal-reasoning-group" });
 			this.currentReasoningGroup.element = groupEl;
 
 			// Group header (clickable to expand/collapse)
-			const headerEl = groupEl.createDiv({ cls: "cristal-reasoning-group-header" });
-			const iconEl = headerEl.createSpan({ cls: "cristal-reasoning-icon" });
+			const headerEl = groupEl.createDiv({ cls: "crystal-reasoning-group-header" });
+			const iconEl = headerEl.createSpan({ cls: "crystal-reasoning-icon" });
 			setIcon(iconEl, "brain");
 
-			const titleEl = headerEl.createSpan({ cls: "cristal-reasoning-group-title" });
+			const titleEl = headerEl.createSpan({ cls: "crystal-reasoning-group-title" });
 			titleEl.setText(locale.thinking || "Думает...");
 
-			const counterEl = headerEl.createSpan({ cls: "cristal-reasoning-group-counter" });
+			const counterEl = headerEl.createSpan({ cls: "crystal-reasoning-group-counter" });
 			counterEl.style.display = "none";
 
-			const expandEl = headerEl.createSpan({ cls: "cristal-reasoning-group-expand" });
+			const expandEl = headerEl.createSpan({ cls: "crystal-reasoning-group-expand" });
 			setIcon(expandEl, "chevron-down");
 
 			// Content area - always visible, click header to collapse
-			const contentEl = groupEl.createDiv({ cls: "cristal-reasoning-group-content" });
+			const contentEl = groupEl.createDiv({ cls: "crystal-reasoning-group-content" });
 			contentEl.dataset.reasoningGroup = "true";
 
 			// Render the first reasoning item
@@ -3115,14 +2909,14 @@ Provide only the summary, no additional commentary.`;
 		const count = this.currentReasoningGroup.tools.length;
 
 		// Update counter
-		const counterEl = this.currentReasoningGroup.element?.querySelector(".cristal-reasoning-group-counter") as HTMLElement;
+		const counterEl = this.currentReasoningGroup.element?.querySelector(".crystal-reasoning-group-counter") as HTMLElement;
 		if (counterEl && count > 1) {
 			counterEl.style.display = "inline";
 			counterEl.setText(`(${count})`);
 		}
 
 		// Add new reasoning content (on new line)
-		const contentEl = this.currentReasoningGroup.element?.querySelector(".cristal-reasoning-group-content") as HTMLElement;
+		const contentEl = this.currentReasoningGroup.element?.querySelector(".crystal-reasoning-group-content") as HTMLElement;
 		if (contentEl) {
 			// Add line break before new thought
 			contentEl.createEl("br");
@@ -3135,10 +2929,10 @@ Provide only the summary, no additional commentary.`;
 	 * Expands all reasoning groups in the current view (synchronized expand)
 	 */
 	private expandAllReasoningGroups(): void {
-		const groups = this.messagesContainer.querySelectorAll(".cristal-reasoning-group");
+		const groups = this.messagesContainer.querySelectorAll(".crystal-reasoning-group");
 		groups.forEach(group => {
-			const content = group.querySelector(".cristal-reasoning-group-content") as HTMLElement;
-			const expand = group.querySelector(".cristal-reasoning-group-expand");
+			const content = group.querySelector(".crystal-reasoning-group-content") as HTMLElement;
+			const expand = group.querySelector(".crystal-reasoning-group-expand");
 			if (content && content.style.display === "none") {
 				content.style.display = "block";
 				group.addClass("expanded");
@@ -3154,10 +2948,10 @@ Provide only the summary, no additional commentary.`;
 	 * Collapses all reasoning groups in the current view (synchronized collapse)
 	 */
 	private collapseAllReasoningGroups(): void {
-		const groups = this.messagesContainer.querySelectorAll(".cristal-reasoning-group");
+		const groups = this.messagesContainer.querySelectorAll(".crystal-reasoning-group");
 		groups.forEach(group => {
-			const content = group.querySelector(".cristal-reasoning-group-content") as HTMLElement;
-			const expand = group.querySelector(".cristal-reasoning-group-expand");
+			const content = group.querySelector(".crystal-reasoning-group-content") as HTMLElement;
+			const expand = group.querySelector(".crystal-reasoning-group-expand");
 			if (content && content.style.display !== "none") {
 				content.style.display = "none";
 				group.removeClass("expanded");
@@ -3332,7 +3126,7 @@ Provide only the summary, no additional commentary.`;
 				const url = input.url as string || "";
 				return `${locale.fetchingUrl}: ${url.substring(0, 40)}${url.length > 40 ? "..." : ""}`;
 
-			// Codex-specific tools
+			// Additional tools
 			case "thinking":
 				const summary = input.summary as string[] || [];
 				const firstSummary = summary[0];
@@ -3408,7 +3202,7 @@ Provide only the summary, no additional commentary.`;
 			case "Task":
 			case "todo_list":
 				return "list-todo";
-			// Codex-specific
+			// Additional
 			case "thinking":
 				return "brain";
 			case "file_change":
@@ -3433,10 +3227,10 @@ Provide only the summary, no additional commentary.`;
 
 	private addErrorMessage(error: string): void {
 		const msgEl = this.messagesContainer.createDiv({
-			cls: "cristal-message cristal-message-error"
+			cls: "crystal-message crystal-message-error"
 		});
 
-		const contentEl = msgEl.createDiv({ cls: "cristal-message-content" });
+		const contentEl = msgEl.createDiv({ cls: "crystal-message-content" });
 		contentEl.setText(error);
 
 		this.scrollToBottom();
@@ -3451,11 +3245,11 @@ Provide only the summary, no additional commentary.`;
 
 	private setStatus(status: "idle" | "loading" | "streaming" | "error", message?: string): void {
 		this.statusEl.empty();
-		this.statusEl.removeClass("cristal-status-error", "cristal-status-loading", "cristal-status-streaming");
+		this.statusEl.removeClass("crystal-status-error", "crystal-status-loading", "crystal-status-streaming");
 
 		// Only show status bar for errors
 		if (status === "error") {
-			this.statusEl.addClass("cristal-status-error");
+			this.statusEl.addClass("crystal-status-error");
 			this.statusEl.setText(message || "An error occurred");
 			this.statusEl.style.display = "block";
 		} else {
@@ -3472,8 +3266,8 @@ Provide only the summary, no additional commentary.`;
 			// Loading state: grey background with spinner
 			setIcon(this.sendButton, "loader-2");
 			this.sendButton.setAttribute("aria-label", "Stop generation");
-			this.sendButton.addClass("cristal-send-btn-loading");
-			this.sendButton.removeClass("cristal-send-btn-stop");
+			this.sendButton.addClass("crystal-send-btn-loading");
+			this.sendButton.removeClass("crystal-send-btn-stop");
 
 			// Hover listeners: show stop icon on hover
 			this.sendButton.addEventListener("mouseenter", this.showStopIcon);
@@ -3482,8 +3276,8 @@ Provide only the summary, no additional commentary.`;
 			// Idle state: purple background with arrow
 			setIcon(this.sendButton, "arrow-up");
 			this.sendButton.setAttribute("aria-label", "Send message");
-			this.sendButton.removeClass("cristal-send-btn-loading");
-			this.sendButton.removeClass("cristal-send-btn-stop");
+			this.sendButton.removeClass("crystal-send-btn-loading");
+			this.sendButton.removeClass("crystal-send-btn-stop");
 
 			// Remove hover listeners
 			this.sendButton.removeEventListener("mouseenter", this.showStopIcon);
@@ -3589,15 +3383,15 @@ Provide only the summary, no additional commentary.`;
 
 		for (const cmd of this.filteredCommands) {
 			const item = this.autocompleteEl.createDiv({
-				cls: "cristal-autocomplete-item"
+				cls: "crystal-autocomplete-item"
 			});
 
-			const iconEl = item.createSpan({ cls: "cristal-autocomplete-icon" });
+			const iconEl = item.createSpan({ cls: "crystal-autocomplete-icon" });
 			setIcon(iconEl, cmd.icon);
 
-			const textEl = item.createDiv({ cls: "cristal-autocomplete-text" });
-			textEl.createSpan({ cls: "cristal-autocomplete-name", text: cmd.command });
-			textEl.createSpan({ cls: "cristal-autocomplete-desc", text: cmd.description });
+			const textEl = item.createDiv({ cls: "crystal-autocomplete-text" });
+			textEl.createSpan({ cls: "crystal-autocomplete-name", text: cmd.command });
+			textEl.createSpan({ cls: "crystal-autocomplete-desc", text: cmd.description });
 
 			const index = this.filteredCommands.indexOf(cmd);
 			item.addEventListener("click", () => this.selectCommand(index));
@@ -3605,31 +3399,31 @@ Provide only the summary, no additional commentary.`;
 		}
 
 		// Highlight first item
-		const firstItem = this.autocompleteEl.querySelector(".cristal-autocomplete-item");
+		const firstItem = this.autocompleteEl.querySelector(".crystal-autocomplete-item");
 		if (firstItem) {
-			firstItem.addClass("cristal-autocomplete-item-selected");
+			firstItem.addClass("crystal-autocomplete-item-selected");
 		}
 
-		this.autocompleteEl.addClass("cristal-autocomplete-visible");
+		this.autocompleteEl.addClass("crystal-autocomplete-visible");
 	}
 
 	private hideAutocomplete(): void {
 		if (!this.autocompleteEl) return;
 
 		this.autocompleteVisible = false;
-		this.autocompleteEl.removeClass("cristal-autocomplete-visible");
+		this.autocompleteEl.removeClass("crystal-autocomplete-visible");
 		this.autocompleteEl.empty();
 	}
 
 	private highlightCommand(index: number): void {
 		if (!this.autocompleteEl) return;
 
-		const items = this.autocompleteEl.querySelectorAll(".cristal-autocomplete-item");
+		const items = this.autocompleteEl.querySelectorAll(".crystal-autocomplete-item");
 		items.forEach((item, i) => {
 			if (i === index) {
-				item.addClass("cristal-autocomplete-item-selected");
+				item.addClass("crystal-autocomplete-item-selected");
 			} else {
-				item.removeClass("cristal-autocomplete-item-selected");
+				item.removeClass("crystal-autocomplete-item-selected");
 			}
 		});
 		this.selectedCommandIndex = index;
@@ -3652,7 +3446,7 @@ Provide only the summary, no additional commentary.`;
 	private scrollAutocompleteToSelected(): void {
 		if (!this.autocompleteEl) return;
 
-		const selected = this.autocompleteEl.querySelector(".cristal-autocomplete-item-selected");
+		const selected = this.autocompleteEl.querySelector(".crystal-autocomplete-item-selected");
 		if (selected) {
 			selected.scrollIntoView({ block: "nearest" });
 		}
@@ -3740,15 +3534,15 @@ Provide only the summary, no additional commentary.`;
 
 		for (const file of this.filteredFiles) {
 			const item = this.mentionAutocompleteEl.createDiv({
-				cls: "cristal-autocomplete-item"
+				cls: "crystal-autocomplete-item"
 			});
 
-			const iconEl = item.createSpan({ cls: "cristal-autocomplete-icon" });
+			const iconEl = item.createSpan({ cls: "crystal-autocomplete-icon" });
 			setIcon(iconEl, "file-text");
 
-			const textEl = item.createDiv({ cls: "cristal-autocomplete-text" });
-			textEl.createSpan({ cls: "cristal-autocomplete-name", text: file.basename });
-			textEl.createSpan({ cls: "cristal-autocomplete-desc", text: file.path });
+			const textEl = item.createDiv({ cls: "crystal-autocomplete-text" });
+			textEl.createSpan({ cls: "crystal-autocomplete-name", text: file.basename });
+			textEl.createSpan({ cls: "crystal-autocomplete-desc", text: file.path });
 
 			const index = this.filteredFiles.indexOf(file);
 			item.addEventListener("click", () => this.selectFile(index));
@@ -3756,19 +3550,19 @@ Provide only the summary, no additional commentary.`;
 		}
 
 		// Highlight first item
-		const firstItem = this.mentionAutocompleteEl.querySelector(".cristal-autocomplete-item");
+		const firstItem = this.mentionAutocompleteEl.querySelector(".crystal-autocomplete-item");
 		if (firstItem) {
-			firstItem.addClass("cristal-autocomplete-item-selected");
+			firstItem.addClass("crystal-autocomplete-item-selected");
 		}
 
-		this.mentionAutocompleteEl.addClass("cristal-autocomplete-visible");
+		this.mentionAutocompleteEl.addClass("crystal-autocomplete-visible");
 	}
 
 	private hideMentionAutocomplete(): void {
 		if (!this.mentionAutocompleteEl) return;
 
 		this.mentionAutocompleteVisible = false;
-		this.mentionAutocompleteEl.removeClass("cristal-autocomplete-visible");
+		this.mentionAutocompleteEl.removeClass("crystal-autocomplete-visible");
 		this.mentionAutocompleteEl.empty();
 		this.mentionStartIndex = -1;
 	}
@@ -3776,12 +3570,12 @@ Provide only the summary, no additional commentary.`;
 	private highlightFile(index: number): void {
 		if (!this.mentionAutocompleteEl) return;
 
-		const items = this.mentionAutocompleteEl.querySelectorAll(".cristal-autocomplete-item");
+		const items = this.mentionAutocompleteEl.querySelectorAll(".crystal-autocomplete-item");
 		items.forEach((item, i) => {
 			if (i === index) {
-				item.addClass("cristal-autocomplete-item-selected");
+				item.addClass("crystal-autocomplete-item-selected");
 			} else {
-				item.removeClass("cristal-autocomplete-item-selected");
+				item.removeClass("crystal-autocomplete-item-selected");
 			}
 		});
 		this.selectedFileIndex = index;
@@ -3804,7 +3598,7 @@ Provide only the summary, no additional commentary.`;
 	private scrollMentionAutocompleteToSelected(): void {
 		if (!this.mentionAutocompleteEl) return;
 
-		const selected = this.mentionAutocompleteEl.querySelector(".cristal-autocomplete-item-selected");
+		const selected = this.mentionAutocompleteEl.querySelector(".crystal-autocomplete-item-selected");
 		if (selected) {
 			selected.scrollIntoView({ block: "nearest" });
 		}
@@ -3889,18 +3683,24 @@ Provide only the summary, no additional commentary.`;
 				btn.empty();
 				setIcon(btn, "check");
 				btn.setAttribute("title", locale.newPageSuccess);
-				btn.addClass("cristal-action-btn-success");
+				btn.addClass("crystal-action-btn-success");
 
 				setTimeout(() => {
 					btn.empty();
 					setIcon(btn, "file-plus-2");
 					btn.setAttribute("title", locale.newPage);
-					btn.removeClass("cristal-action-btn-success");
+					btn.removeClass("crystal-action-btn-success");
 				}, 2000);
 			} catch (err) {
 				console.error("Failed to create new page:", err);
 			}
 		}).open();
+	}
+
+	private triggerFileAttach(): void {
+		// Clear input and trigger file picker via hidden input
+		this.inputEl.value = "";
+		this.fileInputEl.click();
 	}
 
 	private async handleFileAttachment(file: File): Promise<void> {
@@ -3926,7 +3726,7 @@ Provide only the summary, no additional commentary.`;
 				return;
 			}
 
-			const tempDir = path.join(vaultPath, ".cristal-temp");
+			const tempDir = path.join(vaultPath, ".crystal-temp");
 			if (!fs.existsSync(tempDir)) {
 				fs.mkdirSync(tempDir, { recursive: true });
 			}
@@ -3990,7 +3790,7 @@ Provide only the summary, no additional commentary.`;
 				: "";
 			if (!vaultPath) return;
 
-			const tempDir = path.join(vaultPath, ".cristal-temp");
+			const tempDir = path.join(vaultPath, ".crystal-temp");
 			if (fs.existsSync(tempDir)) {
 				fs.rmSync(tempDir, { recursive: true, force: true });
 			}
@@ -4005,11 +3805,11 @@ Provide only the summary, no additional commentary.`;
 
 	private addUserMessageActions(messageEl: HTMLElement, content: string, messageId: string): void {
 		const locale = getButtonLocale(this.plugin.settings.language);
-		const actionsEl = messageEl.createDiv({ cls: "cristal-message-actions" });
+		const actionsEl = messageEl.createDiv({ cls: "crystal-message-actions" });
 
 		// Copy button
 		const copyBtn = actionsEl.createEl("button", {
-			cls: "cristal-action-btn-icon",
+			cls: "crystal-action-btn-icon",
 			attr: { "aria-label": locale.copy, "title": locale.copy }
 		});
 		setIcon(copyBtn, "copy");
@@ -4019,12 +3819,12 @@ Provide only the summary, no additional commentary.`;
 				copyBtn.empty();
 				setIcon(copyBtn, "check");
 				copyBtn.setAttribute("title", locale.copySuccess);
-				copyBtn.addClass("cristal-action-btn-success");
+				copyBtn.addClass("crystal-action-btn-success");
 				setTimeout(() => {
 					copyBtn.empty();
 					setIcon(copyBtn, "copy");
 					copyBtn.setAttribute("title", locale.copy);
-					copyBtn.removeClass("cristal-action-btn-success");
+					copyBtn.removeClass("crystal-action-btn-success");
 				}, 2000);
 			} catch (err) {
 				console.error("Failed to copy:", err);
@@ -4033,7 +3833,7 @@ Provide only the summary, no additional commentary.`;
 
 		// Edit button
 		const editBtn = actionsEl.createEl("button", {
-			cls: "cristal-action-btn-icon",
+			cls: "crystal-action-btn-icon",
 			attr: { "aria-label": locale.edit, "title": locale.edit }
 		});
 		setIcon(editBtn, "pencil");
@@ -4050,8 +3850,8 @@ Provide only the summary, no additional commentary.`;
 		this.editingMessageId = messageId;
 
 		const locale = getButtonLocale(this.plugin.settings.language);
-		const contentEl = messageEl.querySelector(".cristal-message-content") as HTMLElement;
-		const actionsEl = messageEl.querySelector(".cristal-message-actions") as HTMLElement;
+		const contentEl = messageEl.querySelector(".crystal-message-content") as HTMLElement;
+		const actionsEl = messageEl.querySelector(".crystal-message-actions") as HTMLElement;
 
 		if (!contentEl || !actionsEl) return;
 
@@ -4060,11 +3860,11 @@ Provide only the summary, no additional commentary.`;
 		actionsEl.style.display = "none";
 
 		// Create edit container
-		const editContainer = messageEl.createDiv({ cls: "cristal-edit-container" });
+		const editContainer = messageEl.createDiv({ cls: "crystal-edit-container" });
 		editContainer.dataset.editContainer = "true";
 
 		const textarea = editContainer.createEl("textarea", {
-			cls: "cristal-edit-textarea"
+			cls: "crystal-edit-textarea"
 		});
 		textarea.value = content;
 
@@ -4077,16 +3877,16 @@ Provide only the summary, no additional commentary.`;
 		});
 
 		// Action buttons
-		const editActionsEl = editContainer.createDiv({ cls: "cristal-edit-actions" });
+		const editActionsEl = editContainer.createDiv({ cls: "crystal-edit-actions" });
 
 		const cancelBtn = editActionsEl.createEl("button", {
-			cls: "cristal-edit-cancel-btn",
+			cls: "crystal-edit-cancel-btn",
 			text: locale.cancelEdit
 		});
 		cancelBtn.addEventListener("click", () => this.cancelEditing());
 
 		const submitBtn = editActionsEl.createEl("button", {
-			cls: "cristal-edit-submit-btn mod-cta",
+			cls: "crystal-edit-submit-btn mod-cta",
 			text: locale.resend
 		});
 		submitBtn.addEventListener("click", () => {
@@ -4108,8 +3908,8 @@ Provide only the summary, no additional commentary.`;
 			if (editContainer) editContainer.remove();
 
 			// Show original content and actions
-			const contentEl = messageEl.querySelector(".cristal-message-content") as HTMLElement;
-			const actionsEl = messageEl.querySelector(".cristal-message-actions") as HTMLElement;
+			const contentEl = messageEl.querySelector(".crystal-message-content") as HTMLElement;
+			const actionsEl = messageEl.querySelector(".crystal-message-actions") as HTMLElement;
 			if (contentEl) contentEl.style.display = "block";
 			if (actionsEl) actionsEl.style.display = "flex";
 		}
@@ -4128,13 +3928,12 @@ Provide only the summary, no additional commentary.`;
 		if (this.isGenerating) {
 			const currentSession = this.plugin.getCurrentSession();
 			if (currentSession) {
-				const service = this.plugin.getActiveService(this.currentProvider);
-				service.abort(currentSession.id);
+				this.plugin.claudeService.abort(currentSession.id);
 			}
 		}
 
 		// 2. Remove all messages after the edited one
-		const allMessages = Array.from(this.messagesContainer.querySelectorAll(".cristal-message"));
+		const allMessages = Array.from(this.messagesContainer.querySelectorAll(".crystal-message"));
 		const currentIndex = allMessages.findIndex(el => el.getAttribute("data-id") === messageId);
 
 		if (currentIndex !== -1) {
@@ -4145,7 +3944,7 @@ Provide only the summary, no additional commentary.`;
 		}
 
 		// Also remove thinking blocks after edited message
-		const thinkingBlocks = this.messagesContainer.querySelectorAll(".cristal-thinking-block");
+		const thinkingBlocks = this.messagesContainer.querySelectorAll(".crystal-thinking-block");
 		thinkingBlocks.forEach(block => {
 			if (block.compareDocumentPosition(messageEl) & Node.DOCUMENT_POSITION_PRECEDING) {
 				block.remove();
@@ -4154,7 +3953,7 @@ Provide only the summary, no additional commentary.`;
 
 		// 3. Update UI
 		this.cancelEditing();
-		const contentEl = messageEl.querySelector(".cristal-message-content") as HTMLElement;
+		const contentEl = messageEl.querySelector(".crystal-message-content") as HTMLElement;
 		if (contentEl) {
 			contentEl.setText(trimmedContent);
 		}
@@ -4197,13 +3996,13 @@ class FileNameModal extends Modal {
 	onOpen(): void {
 		const { contentEl } = this;
 		contentEl.empty();
-		contentEl.addClass("cristal-filename-modal");
+		contentEl.addClass("crystal-filename-modal");
 
 		contentEl.createEl("h3", { text: this.title });
 
-		const inputContainer = contentEl.createDiv({ cls: "cristal-filename-input-container" });
+		const inputContainer = contentEl.createDiv({ cls: "crystal-filename-input-container" });
 		this.inputEl = new TextComponent(inputContainer);
-		this.inputEl.inputEl.addClass("cristal-filename-input");
+		this.inputEl.inputEl.addClass("crystal-filename-input");
 		this.inputEl.setValue(this.defaultName);
 		this.inputEl.inputEl.select();
 
@@ -4215,7 +4014,7 @@ class FileNameModal extends Modal {
 			}
 		});
 
-		const buttonContainer = contentEl.createDiv({ cls: "cristal-modal-buttons" });
+		const buttonContainer = contentEl.createDiv({ cls: "crystal-modal-buttons" });
 
 		const cancelBtn = buttonContainer.createEl("button", { text: "Cancel" });
 		cancelBtn.addEventListener("click", () => {

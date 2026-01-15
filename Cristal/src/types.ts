@@ -104,13 +104,12 @@ export interface ChatMessage {
 
 export interface ChatSession {
 	id: string;
-	cliSessionId: string | null;  // Claude CLI session ID or Codex thread_id for --resume
+	cliSessionId: string | null;  // Claude CLI session ID for --resume
 	messages: ChatMessage[];
 	createdAt: number;
 	title?: string;  // Auto-generated from first message
-	model?: ClaudeModel | string;  // Model used for this session (Claude or Codex)
+	model?: ClaudeModel | string;  // Model used for this session
 	tokenStats?: SessionTokenStats;  // Token statistics for this session
-	provider?: AIProvider;  // Which AI provider was used for this session (legacy)
 	agentId?: string;  // Which agent was used for this session
 }
 
@@ -119,7 +118,7 @@ export interface ChatSession {
 // ============================================================================
 
 export interface PluginData {
-	settings: CristalSettings;
+	settings: CrystalSettings;
 	sessions: ChatSession[];
 	currentSessionId: string | null;
 }
@@ -149,8 +148,6 @@ export type { LanguageCode } from "./systemPrompts";
 // ============================================================================
 // AI Provider Types
 // ============================================================================
-
-export type AIProvider = "claude" | "codex";
 
 // Claude model types
 export type ClaudeModel = "claude-haiku-4-5-20251001" | "claude-sonnet-4-5-20250929" | "claude-opus-4-5-20251101";
@@ -185,41 +182,11 @@ export const DEFAULT_CLAUDE_PERMISSIONS: ClaudePermissions = {
 	extendedThinking: false
 };
 
-// Codex model types
-export const CODEX_MODELS: { value: string; label: string }[] = [
-	{ value: "gpt-5.2-codex", label: "GPT-5.2 Codex" },
-	{ value: "gpt-5.1-codex-max", label: "GPT-5.1 Codex Max" },
-	{ value: "gpt-5.1-codex-mini", label: "GPT-5.1 Codex Mini" },
-	{ value: "gpt-5.2", label: "GPT-5.2" }
-];
-
-// Codex reasoning levels (configured via ~/.codex/config.toml)
-// none = off, high = extended thinking enabled
-export type CodexReasoningLevel = "none" | "high";
-
-// Codex sandbox modes
-export type CodexSandboxMode = "read-only" | "workspace-write" | "danger-full-access";
-
-// Codex approval policies
-export type CodexApprovalPolicy = "untrusted" | "on-failure" | "on-request" | "never";
-
-export interface CodexPermissions {
-	sandboxMode: CodexSandboxMode;
-	approvalPolicy: CodexApprovalPolicy;
-	reasoning: CodexReasoningLevel;
-}
-
-export const DEFAULT_CODEX_PERMISSIONS: CodexPermissions = {
-	sandboxMode: "workspace-write",
-	approvalPolicy: "on-request",
-	reasoning: "none"
-};
-
 // ============================================================================
-// Agent Configuration (new multi-agent system)
+// Agent Configuration
 // ============================================================================
 
-export type CLIType = "claude" | "codex" | "gemini" | "grok";
+export type CLIType = "claude";
 
 export interface AgentConfig {
 	id: string;                      // Unique ID
@@ -233,22 +200,16 @@ export interface AgentConfig {
 	// Claude-specific
 	thinkingEnabled?: boolean;       // Extended thinking mode (legacy, use permissions.extendedThinking)
 	permissions?: ClaudePermissions; // Claude permissions
-	// Codex-specific
-	reasoningEnabled?: boolean;      // Deep reasoning (legacy, use codexPermissions.reasoning)
-	codexPermissions?: CodexPermissions; // Codex permissions
 	// Skills
 	enabledSkills?: string[];        // IDs of enabled skills for this agent
 }
 
-// CLI descriptions for the add agent dropdown
+// CLI descriptions
 export const CLI_INFO: Record<CLIType, { name: string; description: string; available: boolean }> = {
-	claude: { name: "Claude Code", description: "Anthropic Claude CLI", available: true },
-	codex: { name: "Codex", description: "OpenAI Codex CLI", available: true },
-	gemini: { name: "Gemini", description: "Google Gemini CLI", available: false },
-	grok: { name: "Grok", description: "xAI Grok CLI", available: false }
+	claude: { name: "Claude Code", description: "Anthropic Claude CLI", available: true }
 };
 
-export interface CristalSettings {
+export interface CrystalSettings {
 	// New agent-based settings
 	agents: AgentConfig[];
 	defaultAgentId: string | null;
@@ -260,23 +221,18 @@ export interface CristalSettings {
 	tokenHistory: Record<string, number>;  // date -> tokens used that day
 	agentTokenHistory: Record<string, Record<string, number>>;  // agentId -> date -> tokens
 	gettingStartedDismissed: boolean;  // Whether the Getting Started section is collapsed
-	terminal?: import("./terminal/types").TerminalSettings;  // Terminal settings
 
 	// Legacy fields for backwards compatibility (will be migrated)
 	cliPath?: string;
 	permissions?: ClaudePermissions;
 	defaultModel?: ClaudeModel;
-	codexCliPath?: string;
-	codexDefaultModel?: string;
-	codexReasoningLevel?: CodexReasoningLevel;
-	defaultProvider?: AIProvider;
 	thinkingEnabled?: boolean;
 }
 
 // Empty by default - user must add agents in settings
 export const DEFAULT_AGENTS: AgentConfig[] = [];
 
-export const DEFAULT_SETTINGS: CristalSettings = {
+export const DEFAULT_SETTINGS: CrystalSettings = {
 	agents: DEFAULT_AGENTS,
 	defaultAgentId: null,
 	language: "en",

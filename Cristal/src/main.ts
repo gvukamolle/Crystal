@@ -1,23 +1,19 @@
 import { Plugin, FileSystemAdapter, Menu, Editor, MarkdownView } from "obsidian";
-import { CristalChatView, CRISTAL_VIEW_TYPE } from "./ChatView";
+import { execSync } from "child_process";
+import { CrystalChatView, CRYSTAL_VIEW_TYPE } from "./ChatView";
 import { ClaudeService } from "./ClaudeService";
-import { CodexService } from "./CodexService";
-import { CristalSettingTab } from "./settings";
-import type { CristalSettings, ChatSession, PluginData, AIProvider, AgentConfig, CLIType } from "./types";
+import { CrystalSettingTab } from "./settings";
+import type { CrystalSettings, ChatSession, PluginData, AgentConfig, CLIType } from "./types";
 import { DEFAULT_SETTINGS, DEFAULT_AGENTS } from "./types";
 import { SYSTEM_PROMPTS, type LanguageCode } from "./systemPrompts";
-import { detectCLIPath, detectCodexCLIPath } from "./cliDetector";
-import { setCodexReasoningLevel } from "./codexConfig";
-import { TerminalService, TerminalView, TERMINAL_VIEW_TYPE } from "./terminal";
+import { detectCLIPath } from "./cliDetector";
 import { SkillLoader, CreateSkillModal, ValidateSkillModal, SkillSelectorModal } from "./skills";
 
 const MAX_SESSIONS = 20;
 
-export default class CristalPlugin extends Plugin {
-	settings: CristalSettings;
+export default class CrystalPlugin extends Plugin {
+	settings: CrystalSettings;
 	claudeService: ClaudeService;
-	codexService: CodexService;
-	terminalService: TerminalService;
 	skillLoader: SkillLoader;
 	sessions: ChatSession[] = [];
 	currentSessionId: string | null = null;
@@ -30,9 +26,8 @@ export default class CristalPlugin extends Plugin {
 			? this.app.vault.adapter.getBasePath()
 			: process.cwd();
 
-		// Get agent configs
+		// Get agent config
 		const claudeAgent = this.getAgentByCliType("claude");
-		const codexAgent = this.getAgentByCliType("codex");
 
 		// Claude service
 		this.claudeService = new ClaudeService(claudeAgent?.cliPath || "claude", vaultPath);
@@ -40,39 +35,13 @@ export default class CristalPlugin extends Plugin {
 			this.claudeService.setPermissions(claudeAgent.permissions);
 		}
 
-		// Codex service (full-access mode is hardcoded)
-		this.codexService = new CodexService(codexAgent?.cliPath || "codex", vaultPath);
-
-		// Sync Codex reasoning level to ~/.codex/config.toml on startup
-		if (codexAgent) {
-			const level = codexAgent.reasoningEnabled ? "high" : "none";
-			setCodexReasoningLevel(level);
-		}
-
-		// Initialize terminal service
-		this.terminalService = new TerminalService(vaultPath, this.settings.terminal);
-
 		// Initialize skill loader
 		this.skillLoader = new SkillLoader(this.app.vault);
 		await this.skillLoader.initialize();
-		console.log(`Cristal: Loaded ${this.skillLoader.getSkillReferences().length} skills`);
+		console.log(`Crystal: Loaded ${this.skillLoader.getSkillReferences().length} skills`);
 
-		// Register terminal view
-		this.registerView(
-			TERMINAL_VIEW_TYPE,
-			(leaf) => new TerminalView(leaf, this)
-		);
-
-		// Add command to open terminal
-		this.addCommand({
-			id: "open-terminal",
-			name: "Open terminal",
-			callback: () => this.openTerminal()
-		});
-
-		// Ensure agent instructions exist in Cristal Rules folder
-		await this.ensureAgentMd("claude");
-		await this.ensureAgentMd("codex");
+		// Ensure agent instructions exist in Crystal Rules folder
+		await this.ensureAgentMd();
 
 		// Sync skills for all agents on startup
 		await this.syncAllAgentSkills();
@@ -80,17 +49,17 @@ export default class CristalPlugin extends Plugin {
 		// Register the chat view (check if already registered for hot reload)
 		// @ts-ignore - viewRegistry is not in public API but exists
 		const viewRegistry = this.app.viewRegistry;
-		if (!viewRegistry?.typeByExtension?.[CRISTAL_VIEW_TYPE] && !viewRegistry?.viewByType?.[CRISTAL_VIEW_TYPE]) {
+		if (!viewRegistry?.typeByExtension?.[CRYSTAL_VIEW_TYPE] && !viewRegistry?.viewByType?.[CRYSTAL_VIEW_TYPE]) {
 			this.registerView(
-				CRISTAL_VIEW_TYPE,
-				(leaf) => new CristalChatView(leaf, this)
+				CRYSTAL_VIEW_TYPE,
+				(leaf) => new CrystalChatView(leaf, this)
 			);
 		} else {
-			console.log("Cristal: View type already registered (hot reload)");
+			console.log("Crystal: View type already registered (hot reload)");
 		}
 
 		// Add ribbon icon to open chat
-		this.addRibbonIcon("gem", "Open Cristal", () => {
+		this.addRibbonIcon("gem", "Open Crystal", () => {
 			this.activateView();
 		});
 
@@ -137,7 +106,7 @@ export default class CristalPlugin extends Plugin {
 				const vaultSkills = this.skillLoader.getSkillReferences().filter(s => !s.isBuiltin);
 
 				if (vaultSkills.length === 0) {
-					new (require("obsidian")).Notice("No custom skills found in .cristal/skills/");
+					new (require("obsidian")).Notice("No custom skills found in .crystal/skills/");
 					return;
 				}
 
@@ -164,7 +133,7 @@ export default class CristalPlugin extends Plugin {
 		});
 
 		// Add settings tab
-		this.addSettingTab(new CristalSettingTab(this.app, this));
+		this.addSettingTab(new CrystalSettingTab(this.app, this));
 
 		// Add context menu item to mention selected text in chat
 		this.registerEvent(
@@ -172,7 +141,7 @@ export default class CristalPlugin extends Plugin {
 				const selection = editor.getSelection();
 				if (selection && selection.trim().length > 0) {
 					menu.addItem((item) => {
-						item.setTitle("Cristal: Упомянуть при запросе")
+						item.setTitle("Crystal: Упомянуть при запросе")
 							.setIcon("text-cursor")
 							.onClick(() => {
 								// Get cursor positions for precise replacement later
@@ -193,7 +162,7 @@ export default class CristalPlugin extends Plugin {
 			})
 		);
 
-		console.log("Cristal plugin loaded");
+		console.log("Crystal plugin loaded");
 	}
 
 	// Add selected text to chat context with position info
@@ -210,10 +179,10 @@ export default class CristalPlugin extends Plugin {
 	): Promise<void> {
 		await this.activateView();
 
-		const leaves = this.app.workspace.getLeavesOfType(CRISTAL_VIEW_TYPE);
+		const leaves = this.app.workspace.getLeavesOfType(CRYSTAL_VIEW_TYPE);
 		if (leaves.length === 0) return;
 
-		const chatView = leaves[0]?.view as CristalChatView;
+		const chatView = leaves[0]?.view as CrystalChatView;
 		if (chatView && typeof chatView.addSelectedText === "function") {
 			chatView.addSelectedText(text, source, position);
 		}
@@ -222,13 +191,9 @@ export default class CristalPlugin extends Plugin {
 	onunload(): void {
 		// Abort all running processes
 		this.claudeService.abortAll();
-		this.codexService.abortAll();
-		// Kill all terminal sessions
-		this.terminalService?.killAll();
 		// Detach all leaves of this view type to avoid "existing view type" error on reload
-		this.app.workspace.detachLeavesOfType(CRISTAL_VIEW_TYPE);
-		this.app.workspace.detachLeavesOfType(TERMINAL_VIEW_TYPE);
-		console.log("Cristal plugin unloaded");
+		this.app.workspace.detachLeavesOfType(CRYSTAL_VIEW_TYPE);
+		console.log("Crystal plugin unloaded");
 	}
 
 	// ==================== Agent Helper Methods ====================
@@ -253,36 +218,18 @@ export default class CristalPlugin extends Plugin {
 		return this.settings.agents.filter(a => a.enabled);
 	}
 
-	// Get active service based on agent or provider
-	getActiveService(provider?: AIProvider): ClaudeService | CodexService {
-		// If provider specified, use it directly
-		if (provider) {
-			return provider === "codex" ? this.codexService : this.claudeService;
-		}
-		// Otherwise use default agent's CLI type
-		const defaultAgent = this.getDefaultAgent();
-		if (defaultAgent?.cliType === "codex") {
-			return this.codexService;
-		}
-		return this.claudeService;
-	}
-
-	getServiceForAgent(agent: AgentConfig): ClaudeService | CodexService {
-		return agent.cliType === "codex" ? this.codexService : this.claudeService;
-	}
-
 	async activateView(): Promise<void> {
 		const { workspace } = this.app;
 
 		// Check if view already exists
-		let leaf = workspace.getLeavesOfType(CRISTAL_VIEW_TYPE)[0];
+		let leaf = workspace.getLeavesOfType(CRYSTAL_VIEW_TYPE)[0];
 
 		if (!leaf) {
 			// Create new leaf in right sidebar
 			const rightLeaf = workspace.getRightLeaf(false);
 			if (rightLeaf) {
 				await rightLeaf.setViewState({
-					type: CRISTAL_VIEW_TYPE,
+					type: CRYSTAL_VIEW_TYPE,
 					active: true
 				});
 				leaf = rightLeaf;
@@ -296,42 +243,86 @@ export default class CristalPlugin extends Plugin {
 	}
 
 	/**
-	 * Open the terminal view
+	 * Open command in system terminal (Terminal.app on macOS)
+	 * Opens a new native terminal window with the command
 	 */
-	async openTerminal(): Promise<TerminalView | null> {
-		const { workspace } = this.app;
+	openInSystemTerminal(command: string): boolean {
+		const vaultPath = this.app.vault.adapter instanceof FileSystemAdapter
+			? this.app.vault.adapter.getBasePath()
+			: process.cwd();
+		const platform = process.platform;
 
-		// Check if terminal view already exists
-		let leaf = workspace.getLeavesOfType(TERMINAL_VIEW_TYPE)[0];
+		try {
+			if (platform === "darwin") {
+				// macOS: Use osascript to open Terminal.app
+				const escapedCwd = vaultPath.replace(/"/g, '\\"');
+				const escapedCommand = command.replace(/"/g, '\\"');
 
-		if (!leaf) {
-			// Create new leaf in right sidebar
-			const rightLeaf = workspace.getRightLeaf(false);
-			if (rightLeaf) {
-				await rightLeaf.setViewState({
-					type: TERMINAL_VIEW_TYPE,
-					active: true
+				// Add ~/.local/bin to PATH to avoid "not in PATH" warning
+				const pathSetup = 'export PATH=\\"$HOME/.local/bin:$PATH\\"';
+
+				const appleScript = `tell application "Terminal"
+					activate
+					do script "${pathSetup} && cd \\"${escapedCwd}\\" && ${escapedCommand}"
+				end tell`;
+
+				execSync(`osascript -e '${appleScript}'`, {
+					encoding: "utf-8",
+					timeout: 5000
 				});
-				leaf = rightLeaf;
+
+				return true;
+			} else if (platform === "linux") {
+				// Linux: Try common terminal emulators
+				const terminals = ["gnome-terminal", "konsole", "xfce4-terminal", "xterm"];
+
+				for (const term of terminals) {
+					try {
+						if (term === "gnome-terminal") {
+							execSync(`${term} -- bash -c 'cd "${vaultPath}" && ${command}; exec bash'`, {
+								encoding: "utf-8",
+								timeout: 5000
+							});
+						} else if (term === "konsole") {
+							execSync(`${term} --workdir "${vaultPath}" -e bash -c '${command}; exec bash'`, {
+								encoding: "utf-8",
+								timeout: 5000
+							});
+						} else {
+							execSync(`${term} -e bash -c 'cd "${vaultPath}" && ${command}; exec bash'`, {
+								encoding: "utf-8",
+								timeout: 5000
+							});
+						}
+						return true;
+					} catch {
+						continue;
+					}
+				}
+				console.warn("[Crystal] No supported terminal emulator found on Linux");
+				return false;
+			} else if (platform === "win32") {
+				// Windows: Use Windows Terminal or cmd
+				try {
+					execSync(`wt -d "${vaultPath}" cmd /k ${command}`, {
+						encoding: "utf-8",
+						timeout: 5000
+					});
+					return true;
+				} catch {
+					execSync(`cmd /c start cmd /k "cd /d "${vaultPath}" && ${command}"`, {
+						encoding: "utf-8",
+						timeout: 5000
+					});
+					return true;
+				}
 			}
-		}
 
-		if (leaf) {
-			workspace.revealLeaf(leaf);
-			return leaf.view as TerminalView;
-		}
-
-		return null;
-	}
-
-	/**
-	 * Open terminal and execute a command
-	 * Used by "Start Integration" button in settings
-	 */
-	async openTerminalWithCommand(command: string): Promise<void> {
-		const terminalView = await this.openTerminal();
-		if (terminalView) {
-			await terminalView.executeCommand(command);
+			console.warn(`[Crystal] Unsupported platform: ${platform}`);
+			return false;
+		} catch (error) {
+			console.error("[Crystal] Failed to open system terminal:", error);
+			return false;
 		}
 	}
 
@@ -344,9 +335,9 @@ export default class CristalPlugin extends Plugin {
 
 			// Migrate from old format if needed (no agents array)
 			if (!this.settings.agents || this.settings.agents.length === 0) {
-				console.log("Cristal: Migrating from old settings format to agents...");
+				console.log("Crystal: Migrating from old settings format to agents...");
 				this.settings.agents = this.migrateOldSettings(data.settings);
-				this.settings.defaultAgentId = data.settings.defaultProvider === "codex" ? "codex-default" : "claude-default";
+				this.settings.defaultAgentId = "claude-default";
 			}
 		} else {
 			this.settings = Object.assign({}, DEFAULT_SETTINGS);
@@ -360,14 +351,7 @@ export default class CristalPlugin extends Plugin {
 				const detected = detectCLIPath();
 				if (detected.found) {
 					agent.cliPath = detected.path;
-					console.log(`Cristal: Auto-detected Claude CLI at ${detected.path}`);
-				}
-			}
-			if (agent.cliType === "codex" && (!agent.cliPath || agent.cliPath === "codex")) {
-				const detected = detectCodexCLIPath();
-				if (detected.found) {
-					agent.cliPath = detected.path;
-					console.log(`Cristal: Auto-detected Codex CLI at ${detected.path}`);
+					console.log(`Crystal: Auto-detected Claude CLI at ${detected.path}`);
 				}
 			}
 		}
@@ -376,7 +360,7 @@ export default class CristalPlugin extends Plugin {
 	/**
 	 * Migrates old settings format to new agents array
 	 */
-	private migrateOldSettings(oldSettings: Partial<CristalSettings>): AgentConfig[] {
+	private migrateOldSettings(oldSettings: Partial<CrystalSettings>): AgentConfig[] {
 		const agents: AgentConfig[] = [];
 
 		// Migrate Claude settings
@@ -400,18 +384,6 @@ export default class CristalPlugin extends Plugin {
 			}
 		});
 
-		// Migrate Codex settings
-		agents.push({
-			id: "codex-default",
-			cliType: "codex",
-			name: "Codex",
-			description: "OpenAI Codex CLI",
-			enabled: oldSettings.defaultProvider === "codex",
-			cliPath: oldSettings.codexCliPath || "codex",
-			model: oldSettings.codexDefaultModel || "gpt-5.2-codex",
-			reasoningEnabled: oldSettings.codexReasoningLevel === "high"
-		});
-
 		return agents;
 	}
 
@@ -423,19 +395,13 @@ export default class CristalPlugin extends Plugin {
 		};
 		await this.saveData(data);
 
-		// Update services with agent settings
+		// Update Claude service with agent settings
 		const claudeAgent = this.getAgentByCliType("claude");
-		const codexAgent = this.getAgentByCliType("codex");
-
 		if (claudeAgent) {
 			this.claudeService.setCliPath(claudeAgent.cliPath);
 			if (claudeAgent.permissions) {
 				this.claudeService.setPermissions(claudeAgent.permissions);
 			}
-		}
-
-		if (codexAgent) {
-			this.codexService.setCliPath(codexAgent.cliPath);
 		}
 	}
 
@@ -518,9 +484,9 @@ export default class CristalPlugin extends Plugin {
 	}
 
 	// ==================== Agent Instructions Management ====================
-	// All agent instructions are stored in ".cristal-rules" folder (hidden)
+	// All agent instructions are stored in ".crystal-rules" folder (hidden)
 
-	private readonly CRISTAL_RULES_FOLDER = ".cristal-rules";
+	private readonly CRYSTAL_RULES_FOLDER = ".crystal-rules";
 
 	getVaultPath(): string {
 		return this.app.vault.adapter instanceof FileSystemAdapter
@@ -529,14 +495,14 @@ export default class CristalPlugin extends Plugin {
 	}
 
 	/**
-	 * Ensures the Cristal Rules folder exists
+	 * Ensures the Crystal Rules folder exists
 	 */
-	async ensureCristalRulesFolder(): Promise<void> {
-		const folder = this.app.vault.getAbstractFileByPath(this.CRISTAL_RULES_FOLDER);
+	async ensureCrystalRulesFolder(): Promise<void> {
+		const folder = this.app.vault.getAbstractFileByPath(this.CRYSTAL_RULES_FOLDER);
 		if (!folder) {
 			try {
-				await this.app.vault.createFolder(this.CRISTAL_RULES_FOLDER);
-				console.log(`Cristal: Created folder "${this.CRISTAL_RULES_FOLDER}"`);
+				await this.app.vault.createFolder(this.CRYSTAL_RULES_FOLDER);
+				console.log(`Crystal: Created folder "${this.CRYSTAL_RULES_FOLDER}"`);
 			} catch (e) {
 				// Folder might already exist (race condition or hidden folder detection issue)
 				if (!(e instanceof Error && e.message.includes("already exists"))) {
@@ -549,17 +515,16 @@ export default class CristalPlugin extends Plugin {
 	/**
 	 * Gets the vault path for agent instructions file
 	 */
-	getAgentMdPath(agent: "claude" | "codex"): string {
-		const filename = agent === "claude" ? "CLAUDE.md" : "AGENTS.md";
-		return `${this.CRISTAL_RULES_FOLDER}/${filename}`;
+	getAgentMdPath(): string {
+		return `${this.CRYSTAL_RULES_FOLDER}/CLAUDE.md`;
 	}
 
 	/**
-	 * Reads agent instructions from Cristal Rules folder
+	 * Reads agent instructions from Crystal Rules folder
 	 */
-	async readAgentMd(agent: "claude" | "codex"): Promise<string | null> {
+	async readAgentMd(): Promise<string | null> {
 		try {
-			const filePath = this.getAgentMdPath(agent);
+			const filePath = this.getAgentMdPath();
 			const file = this.app.vault.getAbstractFileByPath(filePath);
 			if (file && "extension" in file) {
 				return await this.app.vault.read(file as import("obsidian").TFile);
@@ -571,11 +536,11 @@ export default class CristalPlugin extends Plugin {
 	}
 
 	/**
-	 * Writes agent instructions to Cristal Rules folder
+	 * Writes agent instructions to Crystal Rules folder
 	 */
-	async writeAgentMd(agent: "claude" | "codex", content: string): Promise<void> {
-		await this.ensureCristalRulesFolder();
-		const filePath = this.getAgentMdPath(agent);
+	async writeAgentMd(content: string): Promise<void> {
+		await this.ensureCrystalRulesFolder();
+		const filePath = this.getAgentMdPath();
 		const file = this.app.vault.getAbstractFileByPath(filePath);
 		if (file && "extension" in file) {
 			await this.app.vault.modify(file as import("obsidian").TFile, content);
@@ -592,7 +557,7 @@ export default class CristalPlugin extends Plugin {
 	}
 
 	/**
-	 * Gets default content for agent instructions (same for both agents)
+	 * Gets default content for agent instructions
 	 */
 	getDefaultAgentMdContent(): string {
 		const lang = this.settings.language as LanguageCode;
@@ -602,44 +567,42 @@ export default class CristalPlugin extends Plugin {
 	/**
 	 * Ensures agent instructions file exists, migrating from root if needed
 	 */
-	async ensureAgentMd(agent: "claude" | "codex"): Promise<void> {
-		// For Claude: check if old CLAUDE.md exists in root and migrate
-		if (agent === "claude") {
-			const oldFile = this.app.vault.getAbstractFileByPath("CLAUDE.md");
-			if (oldFile && "extension" in oldFile) {
-				// Read old content
-				const oldContent = await this.app.vault.read(oldFile as import("obsidian").TFile);
-				// Write to new location
-				await this.writeAgentMd("claude", oldContent);
-				// Delete old file
-				await this.app.vault.delete(oldFile);
-				console.log(`Cristal: Migrated CLAUDE.md to ${this.CRISTAL_RULES_FOLDER}/`);
-				return;
-			}
+	async ensureAgentMd(): Promise<void> {
+		// Check if old CLAUDE.md exists in root and migrate
+		const oldFile = this.app.vault.getAbstractFileByPath("CLAUDE.md");
+		if (oldFile && "extension" in oldFile) {
+			// Read old content
+			const oldContent = await this.app.vault.read(oldFile as import("obsidian").TFile);
+			// Write to new location
+			await this.writeAgentMd(oldContent);
+			// Delete old file
+			await this.app.vault.delete(oldFile);
+			console.log(`Crystal: Migrated CLAUDE.md to ${this.CRYSTAL_RULES_FOLDER}/`);
+			return;
 		}
 
-		// Check if file already exists in Cristal Rules
-		const existing = await this.readAgentMd(agent);
+		// Check if file already exists in Crystal Rules
+		const existing = await this.readAgentMd();
 		if (!existing) {
-			await this.writeAgentMd(agent, this.getDefaultAgentMdContent());
-			console.log(`Cristal: Created ${this.getAgentMdPath(agent)}`);
+			await this.writeAgentMd(this.getDefaultAgentMdContent());
+			console.log(`Crystal: Created ${this.getAgentMdPath()}`);
 		}
 	}
 
 	/**
 	 * Resets agent instructions to default
 	 */
-	async resetAgentMd(agent: "claude" | "codex"): Promise<void> {
-		await this.writeAgentMd(agent, this.getDefaultAgentMdContent());
+	async resetAgentMd(): Promise<void> {
+		await this.writeAgentMd(this.getDefaultAgentMdContent());
 	}
 
 	// Legacy methods for backwards compatibility
 	async readClaudeMd(): Promise<string | null> {
-		return this.readAgentMd("claude");
+		return this.readAgentMd();
 	}
 
 	async writeClaudeMd(content: string): Promise<void> {
-		return this.writeAgentMd("claude", content);
+		return this.writeAgentMd(content);
 	}
 
 	getDefaultClaudeMdContent(): string {
@@ -647,21 +610,21 @@ export default class CristalPlugin extends Plugin {
 	}
 
 	async ensureClaudeMd(): Promise<void> {
-		return this.ensureAgentMd("claude");
+		return this.ensureAgentMd();
 	}
 
 	async resetClaudeMd(): Promise<void> {
-		return this.resetAgentMd("claude");
+		return this.resetAgentMd();
 	}
 
 	/**
-	 * Sync skills for all agents that support them (Claude and Codex)
+	 * Sync skills for all Claude agents
 	 */
 	async syncAllAgentSkills(): Promise<void> {
 		if (!this.skillLoader) return;
 
 		for (const agent of this.settings.agents) {
-			if (agent.cliType === "claude" || agent.cliType === "codex") {
+			if (agent.cliType === "claude") {
 				const enabledSkills = agent.enabledSkills || [];
 				if (enabledSkills.length > 0) {
 					await this.skillLoader.syncSkillsForAgent(agent.cliType, enabledSkills);

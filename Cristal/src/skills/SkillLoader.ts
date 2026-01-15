@@ -5,6 +5,8 @@ import * as fs from "fs";
 import type { Skill, SkillReference, SkillResource, SkillValidationResult } from "./types";
 import { SkillParser } from "./SkillParser";
 import type { CLIType } from "../types";
+import type { LanguageCode } from "../systemPrompts";
+import { getSkillDescription } from "../skillLocales";
 
 // Import builtin skills
 import { OBSIDIAN_MARKDOWN_SKILL } from "./builtins/obsidian-markdown";
@@ -23,7 +25,7 @@ const BUILTIN_SKILLS_RAW: string[] = [
 	OBSIDIAN_DATAVIEW_SKILL
 ];
 
-const SKILLS_FOLDER = ".cristal/skills";
+const SKILLS_FOLDER = ".crystal/skills";
 
 // Resource folder names
 const RESOURCE_FOLDERS = ['scripts', 'references', 'assets'] as const;
@@ -70,7 +72,7 @@ export class SkillLoader {
 	}
 
 	/**
-	 * Discover custom skills in vault's .cristal/skills/ folder
+	 * Discover custom skills in vault's .crystal/skills/ folder
 	 * Now also discovers scripts/, references/, assets/ subfolders
 	 */
 	async discoverVaultSkills(): Promise<void> {
@@ -190,21 +192,28 @@ export class SkillLoader {
 
 	/**
 	 * Get all available skills as references (for UI)
+	 * @param language - Optional language code for localized descriptions (for builtin skills)
 	 */
-	getSkillReferences(): SkillReference[] {
+	getSkillReferences(language?: LanguageCode): SkillReference[] {
 		const refs: SkillReference[] = [];
 
-		// Builtin skills first
+		// Builtin skills first (with localized descriptions if available)
 		for (const skill of this.builtinSkills.values()) {
+			// Get localized description for builtin skills
+			const localizedDesc = language
+				? getSkillDescription(skill.id, language)
+				: null;
+
 			refs.push({
 				id: skill.id,
 				name: skill.metadata.name,
-				description: skill.metadata.description,
+				description: localizedDesc || skill.metadata.description,
 				isBuiltin: true
 			});
 		}
 
 		// Then vault skills (can override builtins by having same ID)
+		// Vault skills keep their original descriptions (user-defined)
 		for (const skill of this.vaultSkills.values()) {
 			// Check if this overrides a builtin
 			const existingIndex = refs.findIndex((r) => r.id === skill.id);
@@ -321,9 +330,7 @@ export class SkillLoader {
 		}
 
 		const vaultPath = adapter.getBasePath();
-		const skillsDir = cliType === "claude"
-			? path.join(vaultPath, ".claude", "skills")
-			: path.join(vaultPath, ".codex", "skills");
+		const skillsDir = path.join(vaultPath, ".claude", "skills");
 
 		try {
 			// Create skills directory if it doesn't exist
@@ -471,7 +478,7 @@ export class SkillLoader {
 		const skillPath = `${SKILLS_FOLDER}/${name}`;
 
 		try {
-			// Ensure .cristal/skills folder exists
+			// Ensure .crystal/skills folder exists
 			await this.ensureFolderExists(SKILLS_FOLDER);
 
 			// Create skill folder

@@ -130,14 +130,14 @@ export class ClaudeService extends EventEmitter {
 			"Write(./.trash/**)",
 			"Delete(./.trash/**)",
 			// Hide AGENTS.md from Claude (Claude uses CLAUDE.md only)
-			"Read(./.cristal-rules/AGENTS.md)",
-			"Edit(./.cristal-rules/AGENTS.md)",
-			"Write(./.cristal-rules/AGENTS.md)",
-			"Delete(./.cristal-rules/AGENTS.md)",
+			"Read(./.crystal-rules/AGENTS.md)",
+			"Edit(./.crystal-rules/AGENTS.md)",
+			"Write(./.crystal-rules/AGENTS.md)",
+			"Delete(./.crystal-rules/AGENTS.md)",
 			// Block editing CLAUDE.md (read-only access)
-			"Edit(./.cristal-rules/CLAUDE.md)",
-			"Write(./.cristal-rules/CLAUDE.md)",
-			"Delete(./.cristal-rules/CLAUDE.md)"
+			"Edit(./.crystal-rules/CLAUDE.md)",
+			"Write(./.crystal-rules/CLAUDE.md)",
+			"Delete(./.crystal-rules/CLAUDE.md)"
 		];
 
 		const config = {
@@ -185,8 +185,14 @@ export class ClaudeService extends EventEmitter {
 		this.log("Spawning:", this.cliPath, args, "for sessionId:", sessionId);
 
 		// Set up environment for Electron
-		const pathAdditions = ["/usr/local/bin", "/opt/homebrew/bin", "/usr/bin", "/bin"];
 		const homeDir = process.env.HOME || os.homedir();
+		const pathAdditions = [
+			`${homeDir}/.local/bin`,  // User local binaries (common for npm global installs)
+			"/usr/local/bin",
+			"/opt/homebrew/bin",
+			"/usr/bin",
+			"/bin"
+		];
 		const env = {
 			...process.env,
 			PATH: pathAdditions.join(":") + ":" + (process.env.PATH || ""),

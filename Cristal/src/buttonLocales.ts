@@ -35,7 +35,7 @@ export interface ButtonLocale {
 	thinking: string;
 	showFullReasoning: string;
 	thinkingDeeper: string;
-	deepReasoning: string;  // Codex deep reasoning toggle
+	deepReasoning: string;
 	// Difficulty levels
 	difficultyKids: string;
 	difficultyKidsDesc: string;
@@ -81,6 +81,9 @@ export interface ButtonLocale {
 	unavailableAgentTitle: string;
 	unavailableAgentSubtitle: string;
 	unavailableAgentPlaceholder: string;
+	// Button labels
+	thinkButton: string;
+	fileButton: string;
 }
 
 export const BUTTON_LOCALES: Record<LanguageCode, ButtonLocale> = {
@@ -129,7 +132,7 @@ export const BUTTON_LOCALES: Record<LanguageCode, ButtonLocale> = {
 		rateLimitTitle: "Лимит исчерпан",
 		rateLimitMessage: "Достигнут лимит использования. Попробуйте позже.",
 		rateLimitResets: "Сброс",
-		welcomeTitle: "Добро пожаловать в Cristal",
+		welcomeTitle: "Добро пожаловать в Crystal",
 		welcomeSubtitle: "Ваш ИИ-ассистент прямо в Obsidian",
 		welcomeTip: "Enter — отправить, Shift+Enter — новая строка",
 		welcomeFeature1: "Общайся с ИИ-ассистентом на любые темы",
@@ -153,7 +156,10 @@ export const BUTTON_LOCALES: Record<LanguageCode, ButtonLocale> = {
 		// Unavailable agent
 		unavailableAgentTitle: "Агент недоступен",
 		unavailableAgentSubtitle: "Агент этого диалога был удалён или отключён. Переключитесь на другой диалог или создайте новый.",
-		unavailableAgentPlaceholder: "Агент недоступен..."
+		unavailableAgentPlaceholder: "Агент недоступен...",
+		// Button labels
+		thinkButton: "Подумать",
+		fileButton: "Файл"
 	},
 	en: {
 		copy: "Copy",
@@ -200,7 +206,7 @@ export const BUTTON_LOCALES: Record<LanguageCode, ButtonLocale> = {
 		rateLimitTitle: "Rate limit reached",
 		rateLimitMessage: "Usage limit reached. Please try again later.",
 		rateLimitResets: "Resets",
-		welcomeTitle: "Welcome to Cristal",
+		welcomeTitle: "Welcome to Crystal",
 		welcomeSubtitle: "Your AI assistant right in Obsidian",
 		welcomeTip: "Enter to send, Shift+Enter for new line",
 		welcomeFeature1: "Chat with your AI assistant about anything",
@@ -224,7 +230,10 @@ export const BUTTON_LOCALES: Record<LanguageCode, ButtonLocale> = {
 		// Unavailable agent
 		unavailableAgentTitle: "Agent unavailable",
 		unavailableAgentSubtitle: "This conversation's agent has been deleted or disabled. Switch to another conversation or create a new one.",
-		unavailableAgentPlaceholder: "Agent unavailable..."
+		unavailableAgentPlaceholder: "Agent unavailable...",
+		// Button labels
+		thinkButton: "Think",
+		fileButton: "File"
 	},
 	fr: {
 		copy: "Copier",
@@ -271,7 +280,7 @@ export const BUTTON_LOCALES: Record<LanguageCode, ButtonLocale> = {
 		rateLimitTitle: "Limite atteinte",
 		rateLimitMessage: "Limite d'utilisation atteinte. Réessayez plus tard.",
 		rateLimitResets: "Réinitialisation",
-		welcomeTitle: "Bienvenue sur Cristal",
+		welcomeTitle: "Bienvenue sur Crystal",
 		welcomeSubtitle: "Votre assistant IA directement dans Obsidian",
 		welcomeTip: "Entrée pour envoyer, Shift+Entrée pour nouvelle ligne",
 		welcomeFeature1: "Discutez avec l'assistant IA de tout",
@@ -295,7 +304,10 @@ export const BUTTON_LOCALES: Record<LanguageCode, ButtonLocale> = {
 		// Unavailable agent
 		unavailableAgentTitle: "Agent indisponible",
 		unavailableAgentSubtitle: "L'agent de cette conversation a été supprimé ou désactivé. Passez à une autre conversation ou créez-en une nouvelle.",
-		unavailableAgentPlaceholder: "Agent indisponible..."
+		unavailableAgentPlaceholder: "Agent indisponible...",
+		// Button labels
+		thinkButton: "Réfléchir",
+		fileButton: "Fichier"
 	},
 	de: {
 		copy: "Kopieren",
@@ -342,7 +354,7 @@ export const BUTTON_LOCALES: Record<LanguageCode, ButtonLocale> = {
 		rateLimitTitle: "Limit erreicht",
 		rateLimitMessage: "Nutzungslimit erreicht. Bitte später erneut versuchen.",
 		rateLimitResets: "Zurücksetzen",
-		welcomeTitle: "Willkommen bei Cristal",
+		welcomeTitle: "Willkommen bei Crystal",
 		welcomeSubtitle: "Ihr KI-Assistent direkt in Obsidian",
 		welcomeTip: "Enter zum Senden, Shift+Enter für neue Zeile",
 		welcomeFeature1: "Mit dem KI-Assistenten über alles chatten",
@@ -366,7 +378,10 @@ export const BUTTON_LOCALES: Record<LanguageCode, ButtonLocale> = {
 		// Unavailable agent
 		unavailableAgentTitle: "Agent nicht verfügbar",
 		unavailableAgentSubtitle: "Der Agent dieser Konversation wurde gelöscht oder deaktiviert. Wechseln Sie zu einer anderen Konversation oder erstellen Sie eine neue.",
-		unavailableAgentPlaceholder: "Agent nicht verfügbar..."
+		unavailableAgentPlaceholder: "Agent nicht verfügbar...",
+		// Button labels
+		thinkButton: "Denken",
+		fileButton: "Datei"
 	},
 	es: {
 		copy: "Copiar",
@@ -413,7 +428,7 @@ export const BUTTON_LOCALES: Record<LanguageCode, ButtonLocale> = {
 		rateLimitTitle: "Límite alcanzado",
 		rateLimitMessage: "Límite de uso alcanzado. Inténtelo más tarde.",
 		rateLimitResets: "Reinicio",
-		welcomeTitle: "Bienvenido a Cristal",
+		welcomeTitle: "Bienvenido a Crystal",
 		welcomeSubtitle: "Tu asistente IA directamente en Obsidian",
 		welcomeTip: "Enter para enviar, Shift+Enter para nueva línea",
 		welcomeFeature1: "Chatea con el asistente IA sobre cualquier tema",
@@ -437,7 +452,10 @@ export const BUTTON_LOCALES: Record<LanguageCode, ButtonLocale> = {
 		// Unavailable agent
 		unavailableAgentTitle: "Agente no disponible",
 		unavailableAgentSubtitle: "El agente de esta conversación ha sido eliminado o desactivado. Cambia a otra conversación o crea una nueva.",
-		unavailableAgentPlaceholder: "Agente no disponible..."
+		unavailableAgentPlaceholder: "Agente no disponible...",
+		// Button labels
+		thinkButton: "Pensar",
+		fileButton: "Archivo"
 	},
 	hi: {
 		copy: "कॉपी करें",
@@ -484,7 +502,7 @@ export const BUTTON_LOCALES: Record<LanguageCode, ButtonLocale> = {
 		rateLimitTitle: "सीमा पहुँच गई",
 		rateLimitMessage: "उपयोग सीमा पहुँच गई। बाद में पुनः प्रयास करें।",
 		rateLimitResets: "रीसेट",
-		welcomeTitle: "Cristal में आपका स्वागत है",
+		welcomeTitle: "Crystal में आपका स्वागत है",
 		welcomeSubtitle: "Obsidian में आपका AI सहायक",
 		welcomeTip: "भेजने के लिए Enter, नई पंक्ति के लिए Shift+Enter",
 		welcomeFeature1: "AI सहायक से किसी भी विषय पर बात करें",
@@ -508,7 +526,10 @@ export const BUTTON_LOCALES: Record<LanguageCode, ButtonLocale> = {
 		// Unavailable agent
 		unavailableAgentTitle: "एजेंट उपलब्ध नहीं",
 		unavailableAgentSubtitle: "इस वार्तालाप का एजेंट हटा दिया गया या अक्षम कर दिया गया है। किसी अन्य वार्तालाप पर स्विच करें या नया बनाएं।",
-		unavailableAgentPlaceholder: "एजेंट उपलब्ध नहीं..."
+		unavailableAgentPlaceholder: "एजेंट उपलब्ध नहीं...",
+		// Button labels
+		thinkButton: "सोचें",
+		fileButton: "फ़ाइल"
 	},
 	zh: {
 		copy: "复制",
@@ -555,7 +576,7 @@ export const BUTTON_LOCALES: Record<LanguageCode, ButtonLocale> = {
 		rateLimitTitle: "达到限制",
 		rateLimitMessage: "使用限制已达到。请稍后再试。",
 		rateLimitResets: "重置",
-		welcomeTitle: "欢迎使用 Cristal",
+		welcomeTitle: "欢迎使用 Crystal",
 		welcomeSubtitle: "Obsidian 中的 AI 助手",
 		welcomeTip: "Enter 发送，Shift+Enter 换行",
 		welcomeFeature1: "与 AI 助手聊任何话题",
@@ -579,7 +600,10 @@ export const BUTTON_LOCALES: Record<LanguageCode, ButtonLocale> = {
 		// Unavailable agent
 		unavailableAgentTitle: "代理不可用",
 		unavailableAgentSubtitle: "此对话的代理已被删除或禁用。切换到其他对话或创建新对话。",
-		unavailableAgentPlaceholder: "代理不可用..."
+		unavailableAgentPlaceholder: "代理不可用...",
+		// Button labels
+		thinkButton: "思考",
+		fileButton: "文件"
 	},
 	ja: {
 		copy: "コピー",
@@ -626,7 +650,7 @@ export const BUTTON_LOCALES: Record<LanguageCode, ButtonLocale> = {
 		rateLimitTitle: "制限に達しました",
 		rateLimitMessage: "使用制限に達しました。後でもう一度お試しください。",
 		rateLimitResets: "リセット",
-		welcomeTitle: "Cristal へようこそ",
+		welcomeTitle: "Crystal へようこそ",
 		welcomeSubtitle: "Obsidian の AI アシスタント",
 		welcomeTip: "Enter で送信、Shift+Enter で改行",
 		welcomeFeature1: "AI アシスタントと何でも話そう",
@@ -650,7 +674,10 @@ export const BUTTON_LOCALES: Record<LanguageCode, ButtonLocale> = {
 		// Unavailable agent
 		unavailableAgentTitle: "エージェントが利用できません",
 		unavailableAgentSubtitle: "この会話のエージェントは削除または無効化されました。別の会話に切り替えるか、新しい会話を作成してください。",
-		unavailableAgentPlaceholder: "エージェントが利用できません..."
+		unavailableAgentPlaceholder: "エージェントが利用できません...",
+		// Button labels
+		thinkButton: "考える",
+		fileButton: "ファイル"
 	}
 };
 

@@ -389,11 +389,97 @@ const COMMAND_LOCALES: Record<string, CommandLocales> = {
 			description: "会話コンテキストを圧縮",
 			prompt: "__COMPACT__"
 		}
+	},
+	attach: {
+		en: {
+			name: "Attach",
+			description: "Attach a file to message",
+			prompt: "__ATTACH__"
+		},
+		ru: {
+			name: "Прикрепить",
+			description: "Прикрепить файл к сообщению",
+			prompt: "__ATTACH__"
+		},
+		fr: {
+			name: "Joindre",
+			description: "Joindre un fichier au message",
+			prompt: "__ATTACH__"
+		},
+		de: {
+			name: "Anhängen",
+			description: "Datei an Nachricht anhängen",
+			prompt: "__ATTACH__"
+		},
+		es: {
+			name: "Adjuntar",
+			description: "Adjuntar archivo al mensaje",
+			prompt: "__ATTACH__"
+		},
+		hi: {
+			name: "संलग्न करें",
+			description: "संदेश में फ़ाइल संलग्न करें",
+			prompt: "__ATTACH__"
+		},
+		zh: {
+			name: "附加",
+			description: "将文件附加到消息",
+			prompt: "__ATTACH__"
+		},
+		ja: {
+			name: "添付",
+			description: "メッセージにファイルを添付",
+			prompt: "__ATTACH__"
+		}
+	},
+	mention: {
+		en: {
+			name: "Mention",
+			description: "Mention a note (@)",
+			prompt: "__MENTION__"
+		},
+		ru: {
+			name: "Упомянуть",
+			description: "Упомянуть заметку (@)",
+			prompt: "__MENTION__"
+		},
+		fr: {
+			name: "Mentionner",
+			description: "Mentionner une note (@)",
+			prompt: "__MENTION__"
+		},
+		de: {
+			name: "Erwähnen",
+			description: "Notiz erwähnen (@)",
+			prompt: "__MENTION__"
+		},
+		es: {
+			name: "Mencionar",
+			description: "Mencionar una nota (@)",
+			prompt: "__MENTION__"
+		},
+		hi: {
+			name: "उल्लेख करें",
+			description: "नोट का उल्लेख करें (@)",
+			prompt: "__MENTION__"
+		},
+		zh: {
+			name: "提及",
+			description: "提及笔记 (@)",
+			prompt: "__MENTION__"
+		},
+		ja: {
+			name: "メンション",
+			description: "ノートをメンション (@)",
+			prompt: "__MENTION__"
+		}
 	}
 };
 
 // Command IDs and icons (language-independent)
 const BUILTIN_COMMAND_IDS = [
+	{ id: "attach", command: "/attach", icon: "paperclip" },
+	{ id: "mention", command: "/mention", icon: "at-sign" },
 	{ id: "summarize", command: "/summarize", icon: "list" },
 	{ id: "translate", command: "/translate", icon: "languages" },
 	{ id: "rewrite", command: "/rewrite", icon: "pencil" },

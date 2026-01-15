@@ -29,7 +29,7 @@ export class CreateSkillModal extends Modal {
 	onOpen(): void {
 		const { contentEl } = this;
 		contentEl.empty();
-		contentEl.addClass('cristal-create-skill-modal');
+		contentEl.addClass('crystal-create-skill-modal');
 
 		contentEl.createEl('h2', { text: 'Create New Skill' });
 
@@ -43,7 +43,7 @@ export class CreateSkillModal extends Modal {
 					.onChange(value => {
 						// Real-time validation feedback
 						const isValid = SkillParser.isValidSkillName(value) || value === '';
-						text.inputEl.classList.toggle('cristal-input-error', !isValid);
+						text.inputEl.classList.toggle('crystal-input-error', !isValid);
 					});
 			});
 
@@ -58,7 +58,7 @@ export class CreateSkillModal extends Modal {
 			});
 
 		// Optional folders section
-		contentEl.createEl('h3', { text: 'Optional Folders', cls: 'cristal-section-header' });
+		contentEl.createEl('h3', { text: 'Optional Folders', cls: 'crystal-section-header' });
 
 		new Setting(contentEl)
 			.setName('Include scripts/')
@@ -91,7 +91,7 @@ export class CreateSkillModal extends Modal {
 			});
 
 		// Buttons
-		const buttonContainer = contentEl.createDiv({ cls: 'cristal-modal-buttons' });
+		const buttonContainer = contentEl.createDiv({ cls: 'crystal-modal-buttons' });
 
 		const cancelBtn = buttonContainer.createEl('button', { text: 'Cancel' });
 		cancelBtn.addEventListener('click', () => this.close());
@@ -159,7 +159,7 @@ export class ValidateSkillModal extends Modal {
 	async onOpen(): Promise<void> {
 		const { contentEl } = this;
 		contentEl.empty();
-		contentEl.addClass('cristal-validate-skill-modal');
+		contentEl.addClass('crystal-validate-skill-modal');
 
 		contentEl.createEl('h2', { text: `Validate: ${this.skillId}` });
 
@@ -173,10 +173,10 @@ export class ValidateSkillModal extends Modal {
 
 		// Show result
 		if (result.isValid) {
-			const successEl = contentEl.createDiv({ cls: 'cristal-validation-success' });
+			const successEl = contentEl.createDiv({ cls: 'crystal-validation-success' });
 			successEl.createEl('span', { text: '✓ Skill is valid' });
 		} else {
-			const errorEl = contentEl.createDiv({ cls: 'cristal-validation-errors' });
+			const errorEl = contentEl.createDiv({ cls: 'crystal-validation-errors' });
 			errorEl.createEl('h3', { text: 'Errors' });
 			const errorList = errorEl.createEl('ul');
 			for (const error of result.errors) {
@@ -188,7 +188,7 @@ export class ValidateSkillModal extends Modal {
 
 		// Show warnings
 		if (result.warnings.length > 0) {
-			const warnEl = contentEl.createDiv({ cls: 'cristal-validation-warnings' });
+			const warnEl = contentEl.createDiv({ cls: 'crystal-validation-warnings' });
 			warnEl.createEl('h3', { text: 'Warnings' });
 			const warnList = warnEl.createEl('ul');
 			for (const warning of result.warnings) {
@@ -199,7 +199,7 @@ export class ValidateSkillModal extends Modal {
 		}
 
 		// Close button
-		const buttonContainer = contentEl.createDiv({ cls: 'cristal-modal-buttons' });
+		const buttonContainer = contentEl.createDiv({ cls: 'crystal-modal-buttons' });
 		const closeBtn = buttonContainer.createEl('button', { text: 'Close', cls: 'mod-cta' });
 		closeBtn.addEventListener('click', () => this.close());
 	}
@@ -230,22 +230,22 @@ export class SkillSelectorModal extends Modal {
 	onOpen(): void {
 		const { contentEl } = this;
 		contentEl.empty();
-		contentEl.addClass('cristal-skill-selector-modal');
+		contentEl.addClass('crystal-skill-selector-modal');
 
 		contentEl.createEl('h2', { text: 'Select a Skill' });
 
 		if (this.skills.length === 0) {
 			contentEl.createEl('p', {
-				text: 'No custom skills found in .cristal/skills/',
-				cls: 'cristal-no-skills'
+				text: 'No custom skills found in .crystal/skills/',
+				cls: 'crystal-no-skills'
 			});
 		} else {
-			const list = contentEl.createDiv({ cls: 'cristal-skill-list' });
+			const list = contentEl.createDiv({ cls: 'crystal-skill-list' });
 
 			for (const skill of this.skills) {
-				const item = list.createDiv({ cls: 'cristal-skill-item' });
+				const item = list.createDiv({ cls: 'crystal-skill-item' });
 				item.createEl('strong', { text: skill.name });
-				item.createEl('p', { text: skill.description, cls: 'cristal-skill-desc' });
+				item.createEl('p', { text: skill.description, cls: 'crystal-skill-desc' });
 
 				item.addEventListener('click', () => {
 					this.onSelect(skill.id);
@@ -255,7 +255,7 @@ export class SkillSelectorModal extends Modal {
 		}
 
 		// Cancel button
-		const buttonContainer = contentEl.createDiv({ cls: 'cristal-modal-buttons' });
+		const buttonContainer = contentEl.createDiv({ cls: 'crystal-modal-buttons' });
 		const cancelBtn = buttonContainer.createEl('button', { text: 'Cancel' });
 		cancelBtn.addEventListener('click', () => this.close());
 	}

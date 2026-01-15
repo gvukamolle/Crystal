@@ -25,6 +25,7 @@ function getCandidatePaths(): string[] {
 	switch (platform) {
 		case "darwin": // macOS
 			return [
+				path.join(homeDir, ".local/bin/claude"),  // User local binaries
 				"/usr/local/bin/claude",
 				"/opt/homebrew/bin/claude",
 				path.join(homeDir, ".npm/bin/claude"),
@@ -38,6 +39,7 @@ function getCandidatePaths(): string[] {
 			];
 		case "linux":
 			return [
+				path.join(homeDir, ".local/bin/claude"),  // User local binaries
 				"/usr/local/bin/claude",
 				"/usr/bin/claude",
 				path.join(homeDir, ".npm/bin/claude"),
@@ -181,169 +183,3 @@ export async function checkCLIInstalled(cliPath: string): Promise<CLIStatusResul
 	});
 }
 
-// ============================================================================
-// Codex CLI Detection
-// ============================================================================
-
-/**
- * Returns candidate paths for Codex CLI based on OS
- */
-function getCodexCandidatePaths(): string[] {
-	const homeDir = os.homedir();
-
-	switch (process.platform) {
-		case "darwin":
-			return [
-				// Custom npm global prefix (common setup)
-				path.join(homeDir, ".npm-global/bin/codex"),
-				// Standard locations
-				"/usr/local/bin/codex",
-				"/opt/homebrew/bin/codex",
-				path.join(homeDir, ".cargo/bin/codex"),
-				path.join(homeDir, ".local/bin/codex"),
-				path.join(homeDir, ".npm/bin/codex"),
-				path.join(homeDir, ".nvm/versions/node"),  // NVM support
-				"/usr/local/lib/node_modules/@openai/codex/bin/codex",
-			];
-		case "linux":
-			return [
-				// Custom npm global prefix (common setup)
-				path.join(homeDir, ".npm-global/bin/codex"),
-				// Standard locations
-				"/usr/local/bin/codex",
-				"/usr/bin/codex",
-				path.join(homeDir, ".cargo/bin/codex"),
-				path.join(homeDir, ".local/bin/codex"),
-				path.join(homeDir, ".npm/bin/codex"),
-				path.join(homeDir, ".nvm/versions/node"),  // NVM support
-				"/usr/local/lib/node_modules/@openai/codex/bin/codex",
-			];
-		case "win32":
-			const appData = process.env.APPDATA || path.join(homeDir, "AppData/Roaming");
-			return [
-				path.join(homeDir, ".npm-global/codex.cmd"),
-				path.join(homeDir, ".cargo/bin/codex.exe"),
-				path.join(appData, "npm/codex.cmd"),
-				path.join(appData, "npm/node_modules/@openai/codex/bin/codex.cmd"),
-				"C:\\Program Files\\codex\\codex.exe",
-			];
-		default:
-			return [];
-	}
-}
-
-/**
- * Checks if file exists, with NVM directory support for Codex
- */
-function findCodexExecutable(candidatePath: string): string | null {
-	// NVM directory - search for codex in subdirs
-	if (candidatePath.includes(".nvm/versions/node") && !candidatePath.includes("bin/codex")) {
-		try {
-			if (fs.existsSync(candidatePath)) {
-				const versions = fs.readdirSync(candidatePath);
-				for (const version of versions.reverse()) {  // Check newer versions first
-					const codexPath = path.join(candidatePath, version, "bin/codex");
-					if (fs.existsSync(codexPath)) {
-						return codexPath;
-					}
-				}
-			}
-		} catch {
-			return null;
-		}
-		return null;
-	}
-
-	return fs.existsSync(candidatePath) ? candidatePath : null;
-}
-
-/**
- * Tries to find Codex CLI via which/where command
- */
-function findCodexViaWhich(): string | null {
-	try {
-		const cmd = process.platform === "win32" ? "where" : "which";
-		const result = execSync(`${cmd} codex`, {
-			encoding: "utf-8",
-			timeout: 5000,
-			stdio: ["pipe", "pipe", "pipe"]
-		}).trim();
-		return result.split("\n")[0] || null;
-	} catch {
-		return null;
-	}
-}
-
-/**
- * Auto-detects path to Codex CLI
- */
-export function detectCodexCLIPath(): CLIDetectionResult {
-	// 1. Try which/where first
-	const whichPath = findCodexViaWhich();
-	if (whichPath) {
-		return { found: true, path: whichPath, method: "which" };
-	}
-
-	// 2. Check known paths (with NVM support)
-	for (const candidatePath of getCodexCandidatePaths()) {
-		const resolvedPath = findCodexExecutable(candidatePath);
-		if (resolvedPath) {
-			return { found: true, path: resolvedPath, method: "explicit" };
-		}
-	}
-
-	// 3. Return default
-	return { found: false, path: "codex", method: "default" };
-}
-
-/**
- * Checks if Codex CLI is installed and returns version (async)
- */
-export async function checkCodexInstalled(cliPath: string): Promise<CLIStatusResult> {
-	return new Promise((resolve) => {
-		const homeDir = process.env.HOME || os.homedir();
-		const pathAdditions = [
-			path.join(homeDir, ".npm-global/bin"),  // Custom npm global prefix
-			"/usr/local/bin",
-			"/opt/homebrew/bin",
-			"/usr/bin",
-			"/bin"
-		];
-		const env = {
-			...process.env,
-			PATH: pathAdditions.join(":") + ":" + (process.env.PATH || ""),
-			HOME: homeDir,
-		};
-
-		const proc = spawn(cliPath, ["--version"], {
-			timeout: 10000,
-			stdio: ["pipe", "pipe", "pipe"],
-			env
-		});
-
-		let stdout = "";
-		let stderr = "";
-
-		proc.stdout?.on("data", (data) => { stdout += data.toString(); });
-		proc.stderr?.on("data", (data) => { stderr += data.toString(); });
-
-		proc.on("close", (code) => {
-			if (code === 0 && stdout.trim()) {
-				const versionMatch = stdout.trim().match(/(\d+\.\d+\.\d+)/);
-				resolve({
-					installed: true,
-					version: versionMatch ? versionMatch[1] : stdout.trim().split("\n")[0]
-				});
-			} else {
-				resolve({
-					installed: false,
-					error: stderr.trim() || "Codex CLI not found"
-				});
-			}
-		});
-
-		proc.on("error", (err) => {
-			resolve({ installed: false, error: err.message });
-		});
-	});
-}

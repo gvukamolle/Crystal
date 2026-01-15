@@ -1,6 +1,6 @@
 {
-	"id": "cristal-cli-llm",
-	"name": "Cristal",
+	"id": "crystal-cli-llm",
+	"name": "Crystal",
 	"version": "0.2.0",
 	"minAppVersion": "0.15.0",
 	"description": "Universal LLM CLI integration for Obsidian",
