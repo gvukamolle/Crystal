@@ -223,6 +223,38 @@ Check statistics in settings, use smaller models (Haiku instead of Sonnet)
 
 ---
 
+## Development
+
+### Building from source
+
+```bash
+git clone https://github.com/gvukamolle/crystal-cli-llm.git
+cd crystal-cli-llm
+npm install
+npm run build
+```
+
+### Installing to vault
+
+```bash
+npm run install-plugin [path-to-vault]
+```
+
+Default path: `/Users/timofeygrushko/Documents/Big Base`
+
+After installation, reload Obsidian (`Cmd/Ctrl + R`) and enable the plugin in settings.
+
+### Available scripts
+
+| Command | Description |
+|---------|-------------|
+| `npm run dev` | Watch mode — auto-rebuild on changes |
+| `npm run build` | Production build (type check + bundle) |
+| `npm run install-plugin` | Install plugin to vault via symlink |
+| `npm run lint` | Run ESLint |
+
+---
+
 ## Author
 
 [Timofey Grushko](https://github.com/gvukamolle)

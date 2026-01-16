@@ -85,7 +85,7 @@ Anthropic **официально не разрешает** third-party прил�
 ### Структура проекта
 
 ```
-Crystal/
+crystal-cli-llm/
 ├── src/
 │   ├── main.ts                    # Plugin entry (CrystalPlugin class) — 505 строк
 │   ├── ChatView.ts                # Chat UI (ItemView) — 4047 строк
@@ -723,8 +723,8 @@ Claude Pro/Max имеет rate limits на количество сообщени
 
 ### Installation
 ```bash
-git clone <repo>
-cd Crystal/Crystal
+git clone https://github.com/gvukamolle/crystal-cli-llm.git
+cd crystal-cli-llm
 npm install
 ```
 
@@ -746,6 +746,15 @@ npm run dev  # Watch mode compilation
 ```bash
 npm run build  # Production build
 ```
+
+### Available Scripts
+
+| Command | Description |
+|---------|-------------|
+| `npm run dev` | Watch mode — auto-rebuild on changes |
+| `npm run build` | Production build (type check + bundle) |
+| `npm run install-plugin` | Install plugin to vault via symlink |
+| `npm run lint` | Run ESLint |
 
 ### Debugging
 - Chrome DevTools: View → Toggle Developer Tools

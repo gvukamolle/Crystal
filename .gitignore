@@ -45,5 +45,4 @@ plugin.gitignore.bak
 
 # Development files (not needed for plugin users)
 CLAUDE.md
-install.mjs
 .obsidian/

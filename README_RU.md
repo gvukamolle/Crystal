@@ -268,6 +268,38 @@ CLI автоматически обновляет токены. Если не р
 
 ---
 
+## Разработка
+
+### Сборка из исходников
+
+```bash
+git clone https://github.com/gvukamolle/crystal-cli-llm.git
+cd crystal-cli-llm
+npm install
+npm run build
+```
+
+### Установка в vault
+
+```bash
+npm run install-plugin [путь-к-vault]
+```
+
+Путь по умолчанию: `/Users/timofeygrushko/Documents/Big Base`
+
+После установки перезагрузите Obsidian (`Cmd/Ctrl + R`) и включите плагин в настройках.
+
+### Доступные команды
+
+| Команда | Описание |
+|---------|----------|
+| `npm run dev` | Watch mode — автосборка при изменениях |
+| `npm run build` | Продакшн сборка (проверка типов + бандлинг) |
+| `npm run install-plugin` | Установка плагина в vault через symlink |
+| `npm run lint` | Запуск ESLint |
+
+---
+
 ## Автор
 
-gvukamolle. Сделано с помощью Claude.
+[Timofey Grushko](https://github.com/gvukamolle)
