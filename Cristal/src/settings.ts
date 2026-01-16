@@ -1,12 +1,12 @@
 import { App, PluginSettingTab, Setting, Modal, TextComponent, setIcon, Notice } from "obsidian";
 import type CrystalPlugin from "./main";
-import type { SlashCommand, LanguageCode, ClaudeModel, AgentConfig, CLIType } from "./types";
-import { CLAUDE_MODELS, CLI_INFO, DEFAULT_CLAUDE_PERMISSIONS } from "./types";
+import type { SlashCommand, LanguageCode, ClaudeModel, AgentConfig, CLIType, AgentPersonalization } from "./types";
+import { CLAUDE_MODELS, CLI_INFO, DEFAULT_CLAUDE_PERMISSIONS, DEFAULT_AGENT_PERSONALIZATION } from "./types";
 import { getBuiltinCommands } from "./commands";
 import { LANGUAGE_NAMES } from "./systemPrompts";
 import { checkCLIInstalled, detectCLIPath } from "./cliDetector";
 import { getSettingsLocale, type SettingsLocale } from "./settingsLocales";
-import { CreateSkillModal, ValidateSkillModal } from "./skills";
+import { CreateSkillModal, ValidateSkillModal, EditSkillModal } from "./skills";
 
 export class CrystalSettingTab extends PluginSettingTab {
 	plugin: CrystalPlugin;
@@ -44,13 +44,19 @@ export class CrystalSettingTab extends PluginSettingTab {
 					});
 			});
 
-		// 3. Claude Code Integration settings
+		// 3. Agent Personalization
+		this.displayAgentPersonalizationSection(containerEl);
+
+		// 4. Claude Code Integration settings
 		this.displayClaudeSettings(containerEl);
 
-		// 4. Slash Commands section
+		// 5. Slash Commands section
 		this.displaySlashCommandsSection(containerEl);
 
-		// 5. Getting Started section (at the bottom)
+		// 6. Skills section
+		this.displaySkillsSectionStandalone(containerEl);
+
+		// 7. Getting Started section (at the bottom)
 		this.displayGettingStarted(containerEl);
 	}
 
@@ -255,6 +261,24 @@ export class CrystalSettingTab extends PluginSettingTab {
 		if (!success) {
 			new Notice("Failed to open system terminal");
 		}
+	}
+
+	private displayAgentPersonalizationSection(containerEl: HTMLElement): void {
+		// Ensure agentPersonalization exists with defaults
+		if (!this.plugin.settings.agentPersonalization) {
+			this.plugin.settings.agentPersonalization = { ...DEFAULT_AGENT_PERSONALIZATION };
+		}
+
+		new Setting(containerEl)
+			.setName(this.locale.agentPersonalization)
+			.setDesc(this.locale.agentPersonalizationDesc)
+			.addButton(btn => btn
+				.setButtonText(this.locale.personalizationNotConfigured)
+				.onClick(() => {
+					new AgentPersonalizationModal(this.app, this.plugin, () => {
+						this.display();
+					}).open();
+				}));
 	}
 
 	private displayClaudeSettings(containerEl: HTMLElement): void {
@@ -468,9 +492,6 @@ export class CrystalSettingTab extends PluginSettingTab {
 					agent!.permissions.task = value;
 					await this.plugin.saveSettings();
 				}));
-
-		// Skills section
-		this.displaySkillsSection(containerEl, agent);
 	}
 
 	private async checkAndDisplayCLIStatus(container: HTMLElement, agent: AgentConfig): Promise<void> {
@@ -563,63 +584,62 @@ export class CrystalSettingTab extends PluginSettingTab {
 		}
 	}
 
-	private displaySkillsSection(container: HTMLElement, agent: AgentConfig): void {
-		// Skills section header with Create button
-		const headerEl = container.createDiv({ cls: "crystal-skills-header" });
-		headerEl.createEl("h4", { text: this.locale.skills || "Skills" });
+	private displaySkillsSectionStandalone(containerEl: HTMLElement): void {
+		// Get agent for skill toggles
+		const agent = this.plugin.getAgentByCliType("claude");
+		if (!agent) return;
 
-		// Create new skill button
-		const createBtn = headerEl.createEl("button", {
-			text: this.locale.createNewSkill || "Create new",
-			cls: "crystal-create-skill-btn"
-		});
-		createBtn.addEventListener("click", () => {
-			new CreateSkillModal(
-				this.app,
-				this.plugin.skillLoader,
-				async (skillId: string) => {
-					await this.plugin.skillLoader.refresh();
-					new Notice(`Skill "${skillId}" created successfully`);
-					this.display();
-				}
-			).open();
-		});
+		containerEl.createEl("h3", { text: this.locale.skills || "Skills" });
 
-		container.createEl("p", {
+		containerEl.createEl("p", {
 			cls: "crystal-settings-note",
 			text: this.locale.skillsNote || "Skills provide specialized knowledge for Obsidian workflows"
 		});
 
-		// Get skills from plugin (with localized descriptions)
+		// Built-in skills
+		containerEl.createEl("h4", { text: this.locale.builtinSkills || "Built-in Skills" });
+
 		const skillRefs = this.plugin.skillLoader?.getSkillReferences(this.plugin.settings.language) || [];
 		const enabledSkills = agent.enabledSkills || [];
-
-		if (skillRefs.length === 0) {
-			container.createEl("p", {
-				cls: "crystal-settings-note",
-				text: this.locale.noSkillsAvailable || "No skills available. Skills will load when the plugin initializes."
-			});
-			return;
-		}
-
-		// Separate builtin and custom skills
 		const builtinSkills = skillRefs.filter(s => s.isBuiltin);
 		const customSkills = skillRefs.filter(s => !s.isBuiltin);
 
-		// Built-in skills section
-		if (builtinSkills.length > 0) {
-			container.createEl("h5", { text: this.locale.builtinSkills || "Built-in Skills" });
+		if (builtinSkills.length === 0) {
+			containerEl.createEl("p", {
+				cls: "crystal-settings-note",
+				text: this.locale.noSkillsAvailable || "No skills available"
+			});
+		} else {
 			for (const skill of builtinSkills) {
-				this.renderSkillToggle(container, skill, enabledSkills, false, agent);
+				this.renderSkillToggle(containerEl, skill, enabledSkills, false, agent);
 			}
 		}
 
-		// Custom skills section
-		if (customSkills.length > 0) {
-			container.createEl("h5", { text: this.locale.customSkills || "Custom Skills" });
-			for (const skill of customSkills) {
-				this.renderSkillToggle(container, skill, enabledSkills, true, agent);
-			}
+		// Custom skills
+		containerEl.createEl("h4", { text: this.locale.customSkills || "Custom Skills" });
+
+		// Add custom skill button
+		new Setting(containerEl)
+			.setName(this.locale.addCustomSkill || "Add custom skill")
+			.setDesc(this.locale.addCustomSkillDesc || "Create your own skill with custom instructions")
+			.addButton(button => button
+				.setButtonText(this.locale.addButton || "Add")
+				.onClick(() => {
+					new CreateSkillModal(
+						this.app,
+						this.plugin.skillLoader,
+						this.plugin.settings.language,
+						async (skillId: string) => {
+							await this.plugin.skillLoader.refresh();
+							new Notice(this.locale.skillCreatedSuccess?.replace("{name}", skillId) || `Skill "${skillId}" created`);
+							this.display();
+						}
+					).open();
+				}));
+
+		// Display existing custom skills
+		for (const skill of customSkills) {
+			this.renderSkillToggle(containerEl, skill, enabledSkills, true, agent);
 		}
 	}
 
@@ -659,13 +679,48 @@ export class CrystalSettingTab extends PluginSettingTab {
 					);
 				}));
 
-		// Add validate button for custom skills
+		// Add edit and validate buttons for custom skills
 		if (showValidate) {
+			// Edit button
+			setting.addButton(btn => btn
+				.setIcon("pencil")
+				.setTooltip(this.locale.editButton || "Edit")
+				.onClick(async () => {
+					const fullSkill = this.plugin.skillLoader.getSkill(skill.id);
+					if (fullSkill) {
+						new EditSkillModal(
+							this.app,
+							this.plugin.skillLoader,
+							fullSkill,
+							this.plugin.settings.language,
+							async () => {
+								// On save - refresh and sync
+								await this.plugin.skillLoader.refresh();
+								await this.plugin.syncAllAgentSkills();
+								this.display();
+							},
+							async (deletedSkillId: string) => {
+								// On delete - remove skill from all agents, refresh and sync
+								for (const agent of this.plugin.settings.agents) {
+									if (agent.enabledSkills?.includes(deletedSkillId)) {
+										agent.enabledSkills = agent.enabledSkills.filter(id => id !== deletedSkillId);
+									}
+								}
+								await this.plugin.saveSettings();
+								await this.plugin.skillLoader.refresh();
+								await this.plugin.syncAllAgentSkills();
+								this.display();
+							}
+						).open();
+					}
+				}));
+
+			// Validate button
 			setting.addButton(btn => btn
 				.setIcon("check-circle")
 				.setTooltip(this.locale.validateSkill || "Validate skill")
 				.onClick(() => {
-					new ValidateSkillModal(this.app, this.plugin.skillLoader, skill.id).open();
+					new ValidateSkillModal(this.app, this.plugin.skillLoader, skill.id, this.plugin.settings.language).open();
 				}));
 		}
 	}
@@ -1000,59 +1055,178 @@ class CommandModal extends Modal {
 }
 
 /**
- * Modal for editing agent system instructions (CLAUDE.md)
+ * Modal for editing agent personalization settings
  */
-class AgentMdModal extends Modal {
+class AgentPersonalizationModal extends Modal {
 	private plugin: CrystalPlugin;
-	private textarea!: HTMLTextAreaElement;
+	private onSave: () => void;
 
 	private get locale(): SettingsLocale {
 		return getSettingsLocale(this.plugin.settings.language);
 	}
 
-	constructor(app: App, plugin: CrystalPlugin) {
+	constructor(app: App, plugin: CrystalPlugin, onSave: () => void) {
 		super(app);
 		this.plugin = plugin;
+		this.onSave = onSave;
 	}
 
-	async onOpen(): Promise<void> {
+	onOpen(): void {
 		const { contentEl } = this;
 		contentEl.empty();
-		contentEl.addClass("crystal-claudemd-modal");
+		contentEl.addClass("crystal-personalization-modal");
 
-		contentEl.createEl("h2", { text: `CLAUDE.md ${this.locale.systemInstructionsTitle || "Instructions"}` });
+		// Ensure agentPersonalization exists
+		if (!this.plugin.settings.agentPersonalization) {
+			this.plugin.settings.agentPersonalization = { ...DEFAULT_AGENT_PERSONALIZATION };
+		}
+		const personalization = this.plugin.settings.agentPersonalization;
 
+		// Header with icon
+		const header = contentEl.createDiv({ cls: "crystal-personalization-header" });
+		const headerIcon = header.createDiv({ cls: "crystal-personalization-header-icon" });
+		setIcon(headerIcon, "user");
+		header.createEl("h2", { text: this.locale.agentPersonalization });
+
+		// Description
 		contentEl.createEl("p", {
-			cls: "crystal-settings-note",
-			text: this.locale.systemInstructionsModalDesc
+			cls: "crystal-personalization-desc",
+			text: this.locale.agentPersonalizationDesc
 		});
 
-		// Textarea container
-		const container = contentEl.createDiv({ cls: "crystal-claudemd-container" });
-		this.textarea = container.createEl("textarea", {
-			cls: "crystal-claudemd-textarea",
-			attr: { rows: "16", placeholder: this.locale.loadingPlaceholder }
-		});
+		// Form container
+		const form = contentEl.createDiv({ cls: "crystal-personalization-form" });
 
-		// Load current content
-		const content = await this.plugin.readAgentMd();
-		this.textarea.value = content || this.plugin.getDefaultAgentMdContent();
+		// User Name
+		const nameGroup = form.createDiv({ cls: "crystal-personalization-group" });
+		const nameLabel = nameGroup.createDiv({ cls: "crystal-personalization-label" });
+		const nameLabelIcon = nameLabel.createSpan({ cls: "crystal-personalization-label-icon" });
+		setIcon(nameLabelIcon, "at-sign");
+		nameLabel.createSpan({ text: this.locale.personalizationUserName });
+		nameGroup.createEl("p", {
+			cls: "crystal-personalization-hint",
+			text: this.locale.personalizationUserNameDesc
+		});
+		const nameInput = nameGroup.createEl("input", {
+			cls: "crystal-personalization-input",
+			attr: {
+				type: "text",
+				placeholder: this.locale.personalizationUserNamePlaceholder
+			}
+		});
+		nameInput.value = personalization.userName || "";
+
+		// User Role
+		const roleGroup = form.createDiv({ cls: "crystal-personalization-group" });
+		const roleLabel = roleGroup.createDiv({ cls: "crystal-personalization-label" });
+		const roleLabelIcon = roleLabel.createSpan({ cls: "crystal-personalization-label-icon" });
+		setIcon(roleLabelIcon, "briefcase");
+		roleLabel.createSpan({ text: this.locale.personalizationUserRole });
+		roleGroup.createEl("p", {
+			cls: "crystal-personalization-hint",
+			text: this.locale.personalizationUserRoleDesc
+		});
+		const roleInput = roleGroup.createEl("input", {
+			cls: "crystal-personalization-input",
+			attr: {
+				type: "text",
+				placeholder: this.locale.personalizationUserRolePlaceholder
+			}
+		});
+		roleInput.value = personalization.userRole || "";
+
+		// Work Context
+		const workGroup = form.createDiv({ cls: "crystal-personalization-group" });
+		const workLabel = workGroup.createDiv({ cls: "crystal-personalization-label" });
+		const workLabelIcon = workLabel.createSpan({ cls: "crystal-personalization-label-icon" });
+		setIcon(workLabelIcon, "book-open");
+		workLabel.createSpan({ text: this.locale.personalizationWorkContext });
+		workGroup.createEl("p", {
+			cls: "crystal-personalization-hint",
+			text: this.locale.personalizationWorkContextDesc
+		});
+		const workTextarea = workGroup.createEl("textarea", {
+			cls: "crystal-personalization-textarea",
+			attr: {
+				rows: "3",
+				placeholder: this.locale.personalizationWorkContextPlaceholder
+			}
+		});
+		workTextarea.value = personalization.workContext || "";
+
+		// Communication Style
+		const styleGroup = form.createDiv({ cls: "crystal-personalization-group" });
+		const styleLabel = styleGroup.createDiv({ cls: "crystal-personalization-label" });
+		const styleLabelIcon = styleLabel.createSpan({ cls: "crystal-personalization-label-icon" });
+		setIcon(styleLabelIcon, "message-circle");
+		styleLabel.createSpan({ text: this.locale.personalizationCommunicationStyle });
+		styleGroup.createEl("p", {
+			cls: "crystal-personalization-hint",
+			text: this.locale.personalizationCommunicationStyleDesc
+		});
+		const styleTextarea = styleGroup.createEl("textarea", {
+			cls: "crystal-personalization-textarea",
+			attr: {
+				rows: "2",
+				placeholder: this.locale.personalizationCommunicationStylePlaceholder
+			}
+		});
+		styleTextarea.value = personalization.communicationStyle || "";
+
+		// Current Focus
+		const focusGroup = form.createDiv({ cls: "crystal-personalization-group" });
+		const focusLabel = focusGroup.createDiv({ cls: "crystal-personalization-label" });
+		const focusLabelIcon = focusLabel.createSpan({ cls: "crystal-personalization-label-icon" });
+		setIcon(focusLabelIcon, "target");
+		focusLabel.createSpan({ text: this.locale.personalizationCurrentFocus });
+		focusGroup.createEl("p", {
+			cls: "crystal-personalization-hint",
+			text: this.locale.personalizationCurrentFocusDesc
+		});
+		const focusTextarea = focusGroup.createEl("textarea", {
+			cls: "crystal-personalization-textarea",
+			attr: {
+				rows: "2",
+				placeholder: this.locale.personalizationCurrentFocusPlaceholder
+			}
+		});
+		focusTextarea.value = personalization.currentFocus || "";
 
 		// Buttons
 		const buttonContainer = contentEl.createDiv({ cls: "crystal-modal-buttons" });
 
-		const resetBtn = buttonContainer.createEl("button", { text: this.locale.resetToDefaultButton });
-		resetBtn.addEventListener("click", async () => {
-			const defaultContent = this.plugin.getDefaultAgentMdContent();
-			this.textarea.value = defaultContent;
+		const clearBtn = buttonContainer.createEl("button", {
+			text: this.locale.clearAllButton || "Clear all",
+			cls: "crystal-personalization-clear-btn"
 		});
+		clearBtn.addEventListener("click", () => {
+			nameInput.value = "";
+			roleInput.value = "";
+			workTextarea.value = "";
+			styleTextarea.value = "";
+			focusTextarea.value = "";
+		});
+
+		// Spacer
+		buttonContainer.createDiv({ cls: "crystal-modal-buttons-spacer" });
+
+		const cancelBtn = buttonContainer.createEl("button", { text: this.locale.cancelButton });
+		cancelBtn.addEventListener("click", () => this.close());
 
 		const saveBtn = buttonContainer.createEl("button", {
 			text: this.locale.saveButton,
 			cls: "mod-cta"
 		});
 		saveBtn.addEventListener("click", async () => {
-			await this.plugin.writeAgentMd(this.textarea.value);
+			this.plugin.settings.agentPersonalization = {
+				userName: nameInput.value.trim(),
+				userRole: roleInput.value.trim(),
+				workContext: workTextarea.value.trim(),
+				communicationStyle: styleTextarea.value.trim(),
+				currentFocus: focusTextarea.value.trim()
+			};
+			await this.plugin.saveSettings();
+			this.onSave();
 			this.close();
 		});
 	}

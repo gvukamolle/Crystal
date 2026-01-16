@@ -5,7 +5,6 @@ import { ClaudeService } from "./ClaudeService";
 import { CrystalSettingTab } from "./settings";
 import type { CrystalSettings, ChatSession, PluginData, AgentConfig, CLIType } from "./types";
 import { DEFAULT_SETTINGS, DEFAULT_AGENTS } from "./types";
-import { SYSTEM_PROMPTS, type LanguageCode } from "./systemPrompts";
 import { detectCLIPath } from "./cliDetector";
 import { SkillLoader, CreateSkillModal, ValidateSkillModal, SkillSelectorModal } from "./skills";
 
@@ -39,9 +38,6 @@ export default class CrystalPlugin extends Plugin {
 		this.skillLoader = new SkillLoader(this.app.vault);
 		await this.skillLoader.initialize();
 		console.log(`Crystal: Loaded ${this.skillLoader.getSkillReferences().length} skills`);
-
-		// Ensure agent instructions exist in Crystal Rules folder
-		await this.ensureAgentMd();
 
 		// Sync skills for all agents on startup
 		await this.syncAllAgentSkills();
@@ -89,6 +85,7 @@ export default class CrystalPlugin extends Plugin {
 				new CreateSkillModal(
 					this.app,
 					this.skillLoader,
+					this.settings.language,
 					async (skillId: string) => {
 						await this.skillLoader.refresh();
 						await this.syncAllAgentSkills();
@@ -113,8 +110,9 @@ export default class CrystalPlugin extends Plugin {
 				new SkillSelectorModal(
 					this.app,
 					vaultSkills,
+					this.settings.language,
 					(skillId: string) => {
-						new ValidateSkillModal(this.app, this.skillLoader, skillId).open();
+						new ValidateSkillModal(this.app, this.skillLoader, skillId, this.settings.language).open();
 					}
 				).open();
 			}
@@ -483,138 +481,10 @@ export default class CrystalPlugin extends Plugin {
 		return this.settings.tokenHistory || {};
 	}
 
-	// ==================== Agent Instructions Management ====================
-	// All agent instructions are stored in ".crystal-rules" folder (hidden)
-
-	private readonly CRYSTAL_RULES_FOLDER = ".crystal-rules";
-
 	getVaultPath(): string {
 		return this.app.vault.adapter instanceof FileSystemAdapter
 			? this.app.vault.adapter.getBasePath()
 			: process.cwd();
-	}
-
-	/**
-	 * Ensures the Crystal Rules folder exists
-	 */
-	async ensureCrystalRulesFolder(): Promise<void> {
-		const folder = this.app.vault.getAbstractFileByPath(this.CRYSTAL_RULES_FOLDER);
-		if (!folder) {
-			try {
-				await this.app.vault.createFolder(this.CRYSTAL_RULES_FOLDER);
-				console.log(`Crystal: Created folder "${this.CRYSTAL_RULES_FOLDER}"`);
-			} catch (e) {
-				// Folder might already exist (race condition or hidden folder detection issue)
-				if (!(e instanceof Error && e.message.includes("already exists"))) {
-					throw e;
-				}
-			}
-		}
-	}
-
-	/**
-	 * Gets the vault path for agent instructions file
-	 */
-	getAgentMdPath(): string {
-		return `${this.CRYSTAL_RULES_FOLDER}/CLAUDE.md`;
-	}
-
-	/**
-	 * Reads agent instructions from Crystal Rules folder
-	 */
-	async readAgentMd(): Promise<string | null> {
-		try {
-			const filePath = this.getAgentMdPath();
-			const file = this.app.vault.getAbstractFileByPath(filePath);
-			if (file && "extension" in file) {
-				return await this.app.vault.read(file as import("obsidian").TFile);
-			}
-			return null;
-		} catch {
-			return null;
-		}
-	}
-
-	/**
-	 * Writes agent instructions to Crystal Rules folder
-	 */
-	async writeAgentMd(content: string): Promise<void> {
-		await this.ensureCrystalRulesFolder();
-		const filePath = this.getAgentMdPath();
-		const file = this.app.vault.getAbstractFileByPath(filePath);
-		if (file && "extension" in file) {
-			await this.app.vault.modify(file as import("obsidian").TFile, content);
-		} else {
-			try {
-				await this.app.vault.create(filePath, content);
-			} catch (e) {
-				// File might already exist (hidden folder detection issue)
-				if (!(e instanceof Error && e.message.includes("already exists"))) {
-					throw e;
-				}
-			}
-		}
-	}
-
-	/**
-	 * Gets default content for agent instructions
-	 */
-	getDefaultAgentMdContent(): string {
-		const lang = this.settings.language as LanguageCode;
-		return SYSTEM_PROMPTS[lang] || SYSTEM_PROMPTS.en;
-	}
-
-	/**
-	 * Ensures agent instructions file exists, migrating from root if needed
-	 */
-	async ensureAgentMd(): Promise<void> {
-		// Check if old CLAUDE.md exists in root and migrate
-		const oldFile = this.app.vault.getAbstractFileByPath("CLAUDE.md");
-		if (oldFile && "extension" in oldFile) {
-			// Read old content
-			const oldContent = await this.app.vault.read(oldFile as import("obsidian").TFile);
-			// Write to new location
-			await this.writeAgentMd(oldContent);
-			// Delete old file
-			await this.app.vault.delete(oldFile);
-			console.log(`Crystal: Migrated CLAUDE.md to ${this.CRYSTAL_RULES_FOLDER}/`);
-			return;
-		}
-
-		// Check if file already exists in Crystal Rules
-		const existing = await this.readAgentMd();
-		if (!existing) {
-			await this.writeAgentMd(this.getDefaultAgentMdContent());
-			console.log(`Crystal: Created ${this.getAgentMdPath()}`);
-		}
-	}
-
-	/**
-	 * Resets agent instructions to default
-	 */
-	async resetAgentMd(): Promise<void> {
-		await this.writeAgentMd(this.getDefaultAgentMdContent());
-	}
-
-	// Legacy methods for backwards compatibility
-	async readClaudeMd(): Promise<string | null> {
-		return this.readAgentMd();
-	}
-
-	async writeClaudeMd(content: string): Promise<void> {
-		return this.writeAgentMd(content);
-	}
-
-	getDefaultClaudeMdContent(): string {
-		return this.getDefaultAgentMdContent();
-	}
-
-	async ensureClaudeMd(): Promise<void> {
-		return this.ensureAgentMd();
-	}
-
-	async resetClaudeMd(): Promise<void> {
-		return this.resetAgentMd();
 	}
 
 	/**

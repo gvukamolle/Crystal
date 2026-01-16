@@ -1,7 +1,7 @@
 // Skills module exports
 export { SkillLoader } from "./SkillLoader";
 export { SkillParser } from "./SkillParser";
-export { CreateSkillModal, ValidateSkillModal, SkillSelectorModal } from "./SkillCreator";
+export { CreateSkillModal, ValidateSkillModal, SkillSelectorModal, EditSkillModal } from "./SkillCreator";
 
 // Types
 export type {

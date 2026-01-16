@@ -4,7 +4,7 @@ import type { ChatMessage, SlashCommand, StreamingEvent, CompleteEvent, ResultEv
 import { CLAUDE_MODELS } from "./types";
 import { getAvailableCommands, filterCommands, parseCommand, buildCommandPrompt } from "./commands";
 import { getButtonLocale, type ButtonLocale } from "./buttonLocales";
-import { wrapHiddenInstructions } from "./systemPrompts";
+import { wrapHiddenInstructions, getSystemPrompt, type LanguageCode } from "./systemPrompts";
 import * as fs from "fs";
 import * as path from "path";
 
@@ -2033,10 +2033,10 @@ Provide only the summary, no additional commentary.`;
 
 		// Add hidden system instructions for first message in new session
 		if (isFirstMessage) {
-			const agentInstructions = await this.plugin.readAgentMd();
-			if (agentInstructions) {
-				fullPrompt = `${wrapHiddenInstructions(agentInstructions)}\n\n${fullPrompt}`;
-			}
+			const lang = this.plugin.settings.language as LanguageCode;
+			const userContext = this.plugin.settings.agentPersonalization;
+			const systemPrompt = getSystemPrompt(lang, userContext);
+			fullPrompt = `${wrapHiddenInstructions(systemPrompt)}\n\n${fullPrompt}`;
 		}
 
 		// Add compact summary if exists (system prompt is now read from CLAUDE.md automatically)

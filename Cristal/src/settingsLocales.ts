@@ -44,6 +44,66 @@ export interface SettingsLocale {
 	builtinSkills: string;
 	customSkills: string;
 	validateSkill: string;
+	addCustomSkill: string;
+	addCustomSkillDesc: string;
+	skillCreatedSuccess: string;
+
+	// Create Skill Modal
+	createNewSkillTitle: string;
+	skillNameField: string;
+	skillNameFieldDesc: string;
+	skillNamePlaceholder: string;
+	skillDescriptionField: string;
+	skillDescriptionFieldDesc: string;
+	skillDescriptionPlaceholder: string;
+	optionalFolders: string;
+	includeScripts: string;
+	includeScriptsDesc: string;
+	includeReferences: string;
+	includeReferencesDesc: string;
+	includeAssets: string;
+	includeAssetsDesc: string;
+	createSkillButton: string;
+	skillNameRequired: string;
+	invalidSkillName: string;
+	skillDescriptionRequired: string;
+	skillCreationFailed: string;
+
+	// Validate Skill Modal
+	validateSkillTitle: string;
+	validating: string;
+	skillIsValid: string;
+	errors: string;
+	warnings: string;
+	closeButton: string;
+
+	// Skill Selector Modal
+	selectSkillTitle: string;
+	noCustomSkillsFound: string;
+
+	// Edit Skill Modal
+	editSkillTitle: string;
+	skillInstructionsField: string;
+	skillInstructionsFieldDesc: string;
+	resourceFolders: string;
+	scriptsFolder: string;
+	scriptsFolderDesc: string;
+	referencesFolder: string;
+	referencesFolderDesc: string;
+	assetsFolder: string;
+	assetsFolderDesc: string;
+	deleteSkillButton: string;
+	noFilesInFolder: string;
+	openFolderButton: string;
+	addFilesButton: string;
+	selectFilesToAdd: string;
+	filesAdded: string;
+	filesAddFailed: string;
+	skillSaved: string;
+	skillSaveFailed: string;
+	confirmDeleteSkill: string;
+	skillDeleted: string;
+	skillDeleteFailed: string;
 
 	// Slash Commands section
 	slashCommands: string;
@@ -160,6 +220,28 @@ export interface SettingsLocale {
 	// Model management
 	availableModels: string;
 	availableModelsDesc: string;
+
+	// Agent Personalization
+	agentPersonalization: string;
+	agentPersonalizationDesc: string;
+	personalizationUserName: string;
+	personalizationUserNameDesc: string;
+	personalizationUserNamePlaceholder: string;
+	personalizationUserRole: string;
+	personalizationUserRoleDesc: string;
+	personalizationUserRolePlaceholder: string;
+	personalizationWorkContext: string;
+	personalizationWorkContextDesc: string;
+	personalizationWorkContextPlaceholder: string;
+	personalizationCommunicationStyle: string;
+	personalizationCommunicationStyleDesc: string;
+	personalizationCommunicationStylePlaceholder: string;
+	personalizationCurrentFocus: string;
+	personalizationCurrentFocusDesc: string;
+	personalizationCurrentFocusPlaceholder: string;
+	personalizationConfigured: string;
+	personalizationNotConfigured: string;
+	clearAllButton: string;
 }
 
 export const SETTINGS_LOCALES: Record<LanguageCode, SettingsLocale> = {
@@ -207,6 +289,66 @@ export const SETTINGS_LOCALES: Record<LanguageCode, SettingsLocale> = {
 		builtinSkills: "Встроенные навыки",
 		customSkills: "Пользовательские навыки",
 		validateSkill: "Проверить навык",
+		addCustomSkill: "Добавить навык",
+		addCustomSkillDesc: "Создайте свой навык с пользовательскими инструкциями",
+		skillCreatedSuccess: "Навык \"{name}\" успешно создан",
+
+		// Create Skill Modal
+		createNewSkillTitle: "Создать навык",
+		skillNameField: "Название навыка",
+		skillNameFieldDesc: "Уникальный идентификатор в kebab-case (например, my-custom-skill)",
+		skillNamePlaceholder: "my-skill-name",
+		skillDescriptionField: "Описание",
+		skillDescriptionFieldDesc: "Детальное описание для триггера (что делает, когда использовать)",
+		skillDescriptionPlaceholder: "Опишите, что делает этот навык...",
+		optionalFolders: "Дополнительные папки",
+		includeScripts: "Включить scripts/",
+		includeScriptsDesc: "Для исполняемого кода (Python, shell-скрипты)",
+		includeReferences: "Включить references/",
+		includeReferencesDesc: "Для документации, загружаемой в контекст",
+		includeAssets: "Включить assets/",
+		includeAssetsDesc: "Для выходных файлов (шаблоны, изображения)",
+		createSkillButton: "Создать",
+		skillNameRequired: "Название навыка обязательно",
+		invalidSkillName: "Неверное название. Используйте kebab-case (строчные буквы, цифры, дефисы).",
+		skillDescriptionRequired: "Описание обязательно",
+		skillCreationFailed: "Не удалось создать навык",
+
+		// Validate Skill Modal
+		validateSkillTitle: "Проверка: {name}",
+		validating: "Проверка...",
+		skillIsValid: "✓ Навык валиден",
+		errors: "Ошибки",
+		warnings: "Предупреждения",
+		closeButton: "Закрыть",
+
+		// Skill Selector Modal
+		selectSkillTitle: "Выберите навык",
+		noCustomSkillsFound: "Пользовательские навыки не найдены в .crystal/skills/",
+
+		// Edit Skill Modal
+		editSkillTitle: "Редактирование: {name}",
+		skillInstructionsField: "Инструкции",
+		skillInstructionsFieldDesc: "Основное содержание навыка — инструкции для ИИ",
+		resourceFolders: "Папки ресурсов",
+		scriptsFolder: "scripts/",
+		scriptsFolderDesc: "Исполняемый код (Python, shell-скрипты)",
+		referencesFolder: "references/",
+		referencesFolderDesc: "Документация, загружаемая в контекст",
+		assetsFolder: "assets/",
+		assetsFolderDesc: "Выходные файлы (шаблоны, изображения)",
+		deleteSkillButton: "Удалить навык",
+		noFilesInFolder: "Нет файлов. Добавьте файлы напрямую в папку.",
+		openFolderButton: "Открыть папку",
+		skillSaved: "Навык сохранён",
+		skillSaveFailed: "Не удалось сохранить навык",
+		confirmDeleteSkill: "Вы уверены, что хотите удалить навык \"{name}\"?",
+		skillDeleted: "Навык удалён",
+		skillDeleteFailed: "Не удалось удалить навык",
+		addFilesButton: "Добавить файлы",
+		selectFilesToAdd: "Выберите файлы для добавления",
+		filesAdded: "Файлы успешно добавлены",
+		filesAddFailed: "Не удалось добавить файлы",
 
 		// Slash Commands section
 		slashCommands: "Слеш-команды",
@@ -320,7 +462,29 @@ export const SETTINGS_LOCALES: Record<LanguageCode, SettingsLocale> = {
 
 		// Model management
 		availableModels: "Доступные модели",
-		availableModelsDesc: "Отключите модели, которые не хотите использовать"
+		availableModelsDesc: "Отключите модели, которые не хотите использовать",
+
+		// Agent Personalization
+		agentPersonalization: "Персонализация агента",
+		agentPersonalizationDesc: "Эти данные помогут Claude лучше понять ваш контекст и адаптировать ответы. Все поля опциональны.",
+		personalizationUserName: "Имя",
+		personalizationUserNameDesc: "Как к вам обращаться",
+		personalizationUserNamePlaceholder: "Например: Алексей",
+		personalizationUserRole: "Роль / Профессия",
+		personalizationUserRoleDesc: "Ваша профессия или роль",
+		personalizationUserRolePlaceholder: "Например: продуктовый дизайнер",
+		personalizationWorkContext: "Контекст работы",
+		personalizationWorkContextDesc: "Опишите специфику вашей работы и базы знаний",
+		personalizationWorkContextPlaceholder: "Например: Веду базу знаний по UX-исследованиям и дизайн-системам",
+		personalizationCommunicationStyle: "Стиль коммуникации",
+		personalizationCommunicationStyleDesc: "Как вы предпочитаете получать ответы",
+		personalizationCommunicationStylePlaceholder: "Например: Кратко, по делу, с примерами",
+		personalizationCurrentFocus: "Текущий фокус",
+		personalizationCurrentFocusDesc: "Над чем сейчас работаете",
+		personalizationCurrentFocusPlaceholder: "Например: Редизайн мобильного приложения",
+		personalizationConfigured: "Настроено",
+		personalizationNotConfigured: "Настроить...",
+		clearAllButton: "Очистить всё"
 	},
 
 	en: {
@@ -367,6 +531,66 @@ export const SETTINGS_LOCALES: Record<LanguageCode, SettingsLocale> = {
 		builtinSkills: "Built-in Skills",
 		customSkills: "Custom Skills",
 		validateSkill: "Validate skill",
+		addCustomSkill: "Add skill",
+		addCustomSkillDesc: "Create your own skill with custom instructions",
+		skillCreatedSuccess: "Skill \"{name}\" created successfully",
+
+		// Create Skill Modal
+		createNewSkillTitle: "Create Skill",
+		skillNameField: "Skill Name",
+		skillNameFieldDesc: "Unique identifier in kebab-case (e.g., my-custom-skill)",
+		skillNamePlaceholder: "my-skill-name",
+		skillDescriptionField: "Description",
+		skillDescriptionFieldDesc: "Detailed description for triggering (what it does, when to use)",
+		skillDescriptionPlaceholder: "Describe what this skill does...",
+		optionalFolders: "Optional Folders",
+		includeScripts: "Include scripts/",
+		includeScriptsDesc: "For executable code (Python, shell scripts)",
+		includeReferences: "Include references/",
+		includeReferencesDesc: "For documentation loaded into context",
+		includeAssets: "Include assets/",
+		includeAssetsDesc: "For output files (templates, images)",
+		createSkillButton: "Create",
+		skillNameRequired: "Skill name is required",
+		invalidSkillName: "Invalid skill name. Must be kebab-case (lowercase letters, digits, hyphens).",
+		skillDescriptionRequired: "Description is required",
+		skillCreationFailed: "Failed to create skill",
+
+		// Validate Skill Modal
+		validateSkillTitle: "Validate: {name}",
+		validating: "Validating...",
+		skillIsValid: "✓ Skill is valid",
+		errors: "Errors",
+		warnings: "Warnings",
+		closeButton: "Close",
+
+		// Skill Selector Modal
+		selectSkillTitle: "Select a Skill",
+		noCustomSkillsFound: "No custom skills found in .crystal/skills/",
+
+		// Edit Skill Modal
+		editSkillTitle: "Edit: {name}",
+		skillInstructionsField: "Instructions",
+		skillInstructionsFieldDesc: "The main content of the skill — instructions for the AI",
+		resourceFolders: "Resource Folders",
+		scriptsFolder: "scripts/",
+		scriptsFolderDesc: "Executable code (Python, shell scripts)",
+		referencesFolder: "references/",
+		referencesFolderDesc: "Documentation loaded into context",
+		assetsFolder: "assets/",
+		assetsFolderDesc: "Output files (templates, images)",
+		deleteSkillButton: "Delete Skill",
+		noFilesInFolder: "No files. Add files directly to the folder.",
+		openFolderButton: "Open Folder",
+		skillSaved: "Skill saved",
+		skillSaveFailed: "Failed to save skill",
+		confirmDeleteSkill: "Are you sure you want to delete skill \"{name}\"?",
+		skillDeleted: "Skill deleted",
+		skillDeleteFailed: "Failed to delete skill",
+		addFilesButton: "Add Files",
+		selectFilesToAdd: "Select files to add",
+		filesAdded: "Files added successfully",
+		filesAddFailed: "Failed to add files",
 
 		// Slash Commands section
 		slashCommands: "Slash Commands",
@@ -480,7 +704,29 @@ export const SETTINGS_LOCALES: Record<LanguageCode, SettingsLocale> = {
 
 		// Model management
 		availableModels: "Available Models",
-		availableModelsDesc: "Disable models you don't want to use"
+		availableModelsDesc: "Disable models you don't want to use",
+
+		// Agent Personalization
+		agentPersonalization: "Agent Personalization",
+		agentPersonalizationDesc: "This information helps Claude understand your context and tailor responses. All fields are optional.",
+		personalizationUserName: "Name",
+		personalizationUserNameDesc: "How should I address you",
+		personalizationUserNamePlaceholder: "e.g., Alex",
+		personalizationUserRole: "Role / Profession",
+		personalizationUserRoleDesc: "Your profession or role",
+		personalizationUserRolePlaceholder: "e.g., product designer",
+		personalizationWorkContext: "Work Context",
+		personalizationWorkContextDesc: "Describe your work specifics and knowledge base",
+		personalizationWorkContextPlaceholder: "e.g., Managing a knowledge base for UX research and design systems",
+		personalizationCommunicationStyle: "Communication Style",
+		personalizationCommunicationStyleDesc: "How you prefer to receive responses",
+		personalizationCommunicationStylePlaceholder: "e.g., Brief, to the point, with examples",
+		personalizationCurrentFocus: "Current Focus",
+		personalizationCurrentFocusDesc: "What you're currently working on",
+		personalizationCurrentFocusPlaceholder: "e.g., Mobile app redesign",
+		personalizationConfigured: "Configured",
+		personalizationNotConfigured: "Configure...",
+		clearAllButton: "Clear all"
 	},
 
 	fr: {
@@ -527,6 +773,66 @@ export const SETTINGS_LOCALES: Record<LanguageCode, SettingsLocale> = {
 		builtinSkills: "Compétences intégrées",
 		customSkills: "Compétences personnalisées",
 		validateSkill: "Valider la compétence",
+		addCustomSkill: "Ajouter une compétence",
+		addCustomSkillDesc: "Créez votre propre compétence avec des instructions personnalisées",
+		skillCreatedSuccess: "Compétence \"{name}\" créée avec succès",
+
+		// Create Skill Modal
+		createNewSkillTitle: "Créer une compétence",
+		skillNameField: "Nom de la compétence",
+		skillNameFieldDesc: "Identifiant unique en kebab-case (ex: ma-competence-perso)",
+		skillNamePlaceholder: "ma-competence",
+		skillDescriptionField: "Description",
+		skillDescriptionFieldDesc: "Description détaillée pour le déclenchement (ce qu'elle fait, quand l'utiliser)",
+		skillDescriptionPlaceholder: "Décrivez ce que fait cette compétence...",
+		optionalFolders: "Dossiers optionnels",
+		includeScripts: "Inclure scripts/",
+		includeScriptsDesc: "Pour le code exécutable (Python, scripts shell)",
+		includeReferences: "Inclure references/",
+		includeReferencesDesc: "Pour la documentation chargée dans le contexte",
+		includeAssets: "Inclure assets/",
+		includeAssetsDesc: "Pour les fichiers de sortie (modèles, images)",
+		createSkillButton: "Créer",
+		skillNameRequired: "Le nom de la compétence est requis",
+		invalidSkillName: "Nom invalide. Utilisez le kebab-case (lettres minuscules, chiffres, tirets).",
+		skillDescriptionRequired: "La description est requise",
+		skillCreationFailed: "Échec de la création de la compétence",
+
+		// Validate Skill Modal
+		validateSkillTitle: "Validation: {name}",
+		validating: "Validation...",
+		skillIsValid: "✓ La compétence est valide",
+		errors: "Erreurs",
+		warnings: "Avertissements",
+		closeButton: "Fermer",
+
+		// Skill Selector Modal
+		selectSkillTitle: "Sélectionner une compétence",
+		noCustomSkillsFound: "Aucune compétence personnalisée trouvée dans .crystal/skills/",
+
+		// Edit Skill Modal
+		editSkillTitle: "Modifier: {name}",
+		skillInstructionsField: "Instructions",
+		skillInstructionsFieldDesc: "Le contenu principal de la compétence — instructions pour l'IA",
+		resourceFolders: "Dossiers de ressources",
+		scriptsFolder: "scripts/",
+		scriptsFolderDesc: "Code exécutable (Python, scripts shell)",
+		referencesFolder: "references/",
+		referencesFolderDesc: "Documentation chargée dans le contexte",
+		assetsFolder: "assets/",
+		assetsFolderDesc: "Fichiers de sortie (modèles, images)",
+		deleteSkillButton: "Supprimer la compétence",
+		noFilesInFolder: "Aucun fichier. Ajoutez des fichiers directement dans le dossier.",
+		openFolderButton: "Ouvrir le dossier",
+		skillSaved: "Compétence sauvegardée",
+		skillSaveFailed: "Échec de la sauvegarde de la compétence",
+		confirmDeleteSkill: "Êtes-vous sûr de vouloir supprimer la compétence \"{name}\" ?",
+		skillDeleted: "Compétence supprimée",
+		skillDeleteFailed: "Échec de la suppression de la compétence",
+		addFilesButton: "Ajouter des fichiers",
+		selectFilesToAdd: "Sélectionnez les fichiers à ajouter",
+		filesAdded: "Fichiers ajoutés avec succès",
+		filesAddFailed: "Échec de l'ajout des fichiers",
 
 		// Slash Commands section
 		slashCommands: "Commandes Slash",
@@ -640,7 +946,29 @@ export const SETTINGS_LOCALES: Record<LanguageCode, SettingsLocale> = {
 
 		// Model management
 		availableModels: "Modèles disponibles",
-		availableModelsDesc: "Désactivez les modèles que vous ne souhaitez pas utiliser"
+		availableModelsDesc: "Désactivez les modèles que vous ne souhaitez pas utiliser",
+
+		// Agent Personalization
+		agentPersonalization: "Personnalisation de l'agent",
+		agentPersonalizationDesc: "Ces informations aident Claude à comprendre votre contexte et à adapter ses réponses. Tous les champs sont optionnels.",
+		personalizationUserName: "Nom",
+		personalizationUserNameDesc: "Comment dois-je vous appeler",
+		personalizationUserNamePlaceholder: "ex: Alexandre",
+		personalizationUserRole: "Rôle / Profession",
+		personalizationUserRoleDesc: "Votre profession ou rôle",
+		personalizationUserRolePlaceholder: "ex: designer produit",
+		personalizationWorkContext: "Contexte de travail",
+		personalizationWorkContextDesc: "Décrivez votre travail et votre base de connaissances",
+		personalizationWorkContextPlaceholder: "ex: Je gère une base de connaissances pour la recherche UX et les design systems",
+		personalizationCommunicationStyle: "Style de communication",
+		personalizationCommunicationStyleDesc: "Comment préférez-vous recevoir les réponses",
+		personalizationCommunicationStylePlaceholder: "ex: Bref, concis, avec des exemples",
+		personalizationCurrentFocus: "Focus actuel",
+		personalizationCurrentFocusDesc: "Sur quoi travaillez-vous actuellement",
+		personalizationCurrentFocusPlaceholder: "ex: Refonte de l'application mobile",
+		personalizationConfigured: "Configuré",
+		personalizationNotConfigured: "Configurer...",
+		clearAllButton: "Tout effacer"
 	},
 
 	de: {
@@ -687,6 +1015,66 @@ export const SETTINGS_LOCALES: Record<LanguageCode, SettingsLocale> = {
 		builtinSkills: "Integrierte Fähigkeiten",
 		customSkills: "Benutzerdefinierte Fähigkeiten",
 		validateSkill: "Fähigkeit validieren",
+		addCustomSkill: "Fähigkeit hinzufügen",
+		addCustomSkillDesc: "Erstellen Sie Ihre eigene Fähigkeit mit benutzerdefinierten Anweisungen",
+		skillCreatedSuccess: "Fähigkeit \"{name}\" erfolgreich erstellt",
+
+		// Create Skill Modal
+		createNewSkillTitle: "Fähigkeit erstellen",
+		skillNameField: "Fähigkeitsname",
+		skillNameFieldDesc: "Eindeutiger Bezeichner in Kebab-Case (z.B. meine-eigene-faehigkeit)",
+		skillNamePlaceholder: "meine-faehigkeit",
+		skillDescriptionField: "Beschreibung",
+		skillDescriptionFieldDesc: "Detaillierte Beschreibung für die Auslösung (was sie macht, wann sie verwendet wird)",
+		skillDescriptionPlaceholder: "Beschreiben Sie, was diese Fähigkeit macht...",
+		optionalFolders: "Optionale Ordner",
+		includeScripts: "scripts/ einschließen",
+		includeScriptsDesc: "Für ausführbaren Code (Python, Shell-Skripte)",
+		includeReferences: "references/ einschließen",
+		includeReferencesDesc: "Für Dokumentation, die in den Kontext geladen wird",
+		includeAssets: "assets/ einschließen",
+		includeAssetsDesc: "Für Ausgabedateien (Vorlagen, Bilder)",
+		createSkillButton: "Erstellen",
+		skillNameRequired: "Fähigkeitsname ist erforderlich",
+		invalidSkillName: "Ungültiger Name. Verwenden Sie Kebab-Case (Kleinbuchstaben, Ziffern, Bindestriche).",
+		skillDescriptionRequired: "Beschreibung ist erforderlich",
+		skillCreationFailed: "Fähigkeit konnte nicht erstellt werden",
+
+		// Validate Skill Modal
+		validateSkillTitle: "Validierung: {name}",
+		validating: "Validierung...",
+		skillIsValid: "✓ Fähigkeit ist gültig",
+		errors: "Fehler",
+		warnings: "Warnungen",
+		closeButton: "Schließen",
+
+		// Skill Selector Modal
+		selectSkillTitle: "Fähigkeit auswählen",
+		noCustomSkillsFound: "Keine benutzerdefinierten Fähigkeiten in .crystal/skills/ gefunden",
+
+		// Edit Skill Modal
+		editSkillTitle: "Bearbeiten: {name}",
+		skillInstructionsField: "Anweisungen",
+		skillInstructionsFieldDesc: "Der Hauptinhalt der Fähigkeit — Anweisungen für die KI",
+		resourceFolders: "Ressourcenordner",
+		scriptsFolder: "scripts/",
+		scriptsFolderDesc: "Ausführbarer Code (Python, Shell-Skripte)",
+		referencesFolder: "references/",
+		referencesFolderDesc: "Dokumentation, die in den Kontext geladen wird",
+		assetsFolder: "assets/",
+		assetsFolderDesc: "Ausgabedateien (Vorlagen, Bilder)",
+		deleteSkillButton: "Fähigkeit löschen",
+		noFilesInFolder: "Keine Dateien. Fügen Sie Dateien direkt zum Ordner hinzu.",
+		openFolderButton: "Ordner öffnen",
+		skillSaved: "Fähigkeit gespeichert",
+		skillSaveFailed: "Fähigkeit konnte nicht gespeichert werden",
+		confirmDeleteSkill: "Sind Sie sicher, dass Sie die Fähigkeit \"{name}\" löschen möchten?",
+		skillDeleted: "Fähigkeit gelöscht",
+		skillDeleteFailed: "Fähigkeit konnte nicht gelöscht werden",
+		addFilesButton: "Dateien hinzufügen",
+		selectFilesToAdd: "Dateien zum Hinzufügen auswählen",
+		filesAdded: "Dateien erfolgreich hinzugefügt",
+		filesAddFailed: "Dateien konnten nicht hinzugefügt werden",
 
 		// Slash Commands section
 		slashCommands: "Slash-Befehle",
@@ -800,7 +1188,29 @@ export const SETTINGS_LOCALES: Record<LanguageCode, SettingsLocale> = {
 
 		// Model management
 		availableModels: "Verfügbare Modelle",
-		availableModelsDesc: "Deaktivieren Sie Modelle, die Sie nicht verwenden möchten"
+		availableModelsDesc: "Deaktivieren Sie Modelle, die Sie nicht verwenden möchten",
+
+		// Agent Personalization
+		agentPersonalization: "Agent-Personalisierung",
+		agentPersonalizationDesc: "Diese Informationen helfen Claude, Ihren Kontext zu verstehen und Antworten anzupassen. Alle Felder sind optional.",
+		personalizationUserName: "Name",
+		personalizationUserNameDesc: "Wie soll ich Sie ansprechen",
+		personalizationUserNamePlaceholder: "z.B.: Alexander",
+		personalizationUserRole: "Rolle / Beruf",
+		personalizationUserRoleDesc: "Ihr Beruf oder Ihre Rolle",
+		personalizationUserRolePlaceholder: "z.B.: Produktdesigner",
+		personalizationWorkContext: "Arbeitskontext",
+		personalizationWorkContextDesc: "Beschreiben Sie Ihre Arbeit und Ihre Wissensbasis",
+		personalizationWorkContextPlaceholder: "z.B.: Ich verwalte eine Wissensbasis für UX-Forschung und Design-Systeme",
+		personalizationCommunicationStyle: "Kommunikationsstil",
+		personalizationCommunicationStyleDesc: "Wie bevorzugen Sie Antworten zu erhalten",
+		personalizationCommunicationStylePlaceholder: "z.B.: Kurz, prägnant, mit Beispielen",
+		personalizationCurrentFocus: "Aktueller Fokus",
+		personalizationCurrentFocusDesc: "Woran arbeiten Sie gerade",
+		personalizationCurrentFocusPlaceholder: "z.B.: Neugestaltung der mobilen App",
+		personalizationConfigured: "Konfiguriert",
+		personalizationNotConfigured: "Konfigurieren...",
+		clearAllButton: "Alles löschen"
 	},
 
 	es: {
@@ -847,6 +1257,66 @@ export const SETTINGS_LOCALES: Record<LanguageCode, SettingsLocale> = {
 		builtinSkills: "Habilidades integradas",
 		customSkills: "Habilidades personalizadas",
 		validateSkill: "Validar habilidad",
+		addCustomSkill: "Agregar habilidad",
+		addCustomSkillDesc: "Crea tu propia habilidad con instrucciones personalizadas",
+		skillCreatedSuccess: "Habilidad \"{name}\" creada con éxito",
+
+		// Create Skill Modal
+		createNewSkillTitle: "Crear habilidad",
+		skillNameField: "Nombre de la habilidad",
+		skillNameFieldDesc: "Identificador único en kebab-case (ej: mi-habilidad-personalizada)",
+		skillNamePlaceholder: "mi-habilidad",
+		skillDescriptionField: "Descripción",
+		skillDescriptionFieldDesc: "Descripción detallada para activación (qué hace, cuándo usar)",
+		skillDescriptionPlaceholder: "Describe qué hace esta habilidad...",
+		optionalFolders: "Carpetas opcionales",
+		includeScripts: "Incluir scripts/",
+		includeScriptsDesc: "Para código ejecutable (Python, scripts de shell)",
+		includeReferences: "Incluir references/",
+		includeReferencesDesc: "Para documentación cargada en contexto",
+		includeAssets: "Incluir assets/",
+		includeAssetsDesc: "Para archivos de salida (plantillas, imágenes)",
+		createSkillButton: "Crear",
+		skillNameRequired: "El nombre de la habilidad es obligatorio",
+		invalidSkillName: "Nombre inválido. Usa kebab-case (letras minúsculas, dígitos, guiones).",
+		skillDescriptionRequired: "La descripción es obligatoria",
+		skillCreationFailed: "Error al crear la habilidad",
+
+		// Validate Skill Modal
+		validateSkillTitle: "Validación: {name}",
+		validating: "Validando...",
+		skillIsValid: "✓ La habilidad es válida",
+		errors: "Errores",
+		warnings: "Advertencias",
+		closeButton: "Cerrar",
+
+		// Skill Selector Modal
+		selectSkillTitle: "Seleccionar habilidad",
+		noCustomSkillsFound: "No se encontraron habilidades personalizadas en .crystal/skills/",
+
+		// Edit Skill Modal
+		editSkillTitle: "Editar: {name}",
+		skillInstructionsField: "Instrucciones",
+		skillInstructionsFieldDesc: "El contenido principal de la habilidad — instrucciones para la IA",
+		resourceFolders: "Carpetas de recursos",
+		scriptsFolder: "scripts/",
+		scriptsFolderDesc: "Código ejecutable (Python, scripts de shell)",
+		referencesFolder: "references/",
+		referencesFolderDesc: "Documentación cargada en contexto",
+		assetsFolder: "assets/",
+		assetsFolderDesc: "Archivos de salida (plantillas, imágenes)",
+		deleteSkillButton: "Eliminar habilidad",
+		noFilesInFolder: "Sin archivos. Añade archivos directamente a la carpeta.",
+		openFolderButton: "Abrir carpeta",
+		skillSaved: "Habilidad guardada",
+		skillSaveFailed: "Error al guardar la habilidad",
+		confirmDeleteSkill: "¿Estás seguro de que quieres eliminar la habilidad \"{name}\"?",
+		skillDeleted: "Habilidad eliminada",
+		skillDeleteFailed: "Error al eliminar la habilidad",
+		addFilesButton: "Agregar archivos",
+		selectFilesToAdd: "Selecciona archivos para agregar",
+		filesAdded: "Archivos agregados con éxito",
+		filesAddFailed: "Error al agregar archivos",
 
 		// Slash Commands section
 		slashCommands: "Comandos Slash",
@@ -962,7 +1432,29 @@ export const SETTINGS_LOCALES: Record<LanguageCode, SettingsLocale> = {
 
 		// Model management
 		availableModels: "Modelos disponibles",
-		availableModelsDesc: "Desactiva los modelos que no quieras usar"
+		availableModelsDesc: "Desactiva los modelos que no quieras usar",
+
+		// Agent Personalization
+		agentPersonalization: "Personalización del agente",
+		agentPersonalizationDesc: "Esta información ayuda a Claude a entender tu contexto y adaptar las respuestas. Todos los campos son opcionales.",
+		personalizationUserName: "Nombre",
+		personalizationUserNameDesc: "¿Cómo debo llamarte?",
+		personalizationUserNamePlaceholder: "ej: Alejandro",
+		personalizationUserRole: "Rol / Profesión",
+		personalizationUserRoleDesc: "Tu profesión o rol",
+		personalizationUserRolePlaceholder: "ej: diseñador de producto",
+		personalizationWorkContext: "Contexto de trabajo",
+		personalizationWorkContextDesc: "Describe tu trabajo y tu base de conocimientos",
+		personalizationWorkContextPlaceholder: "ej: Gestiono una base de conocimientos para investigación UX y sistemas de diseño",
+		personalizationCommunicationStyle: "Estilo de comunicación",
+		personalizationCommunicationStyleDesc: "¿Cómo prefieres recibir las respuestas?",
+		personalizationCommunicationStylePlaceholder: "ej: Breve, al punto, con ejemplos",
+		personalizationCurrentFocus: "Enfoque actual",
+		personalizationCurrentFocusDesc: "¿En qué estás trabajando actualmente?",
+		personalizationCurrentFocusPlaceholder: "ej: Rediseño de la app móvil",
+		personalizationConfigured: "Configurado",
+		personalizationNotConfigured: "Configurar...",
+		clearAllButton: "Borrar todo"
 	},
 
 	hi: {
@@ -1009,6 +1501,66 @@ export const SETTINGS_LOCALES: Record<LanguageCode, SettingsLocale> = {
 		builtinSkills: "अंतर्निहित कौशल",
 		customSkills: "कस्टम कौशल",
 		validateSkill: "कौशल सत्यापित करें",
+		addCustomSkill: "कौशल जोड़ें",
+		addCustomSkillDesc: "कस्टम निर्देशों के साथ अपना कौशल बनाएं",
+		skillCreatedSuccess: "कौशल \"{name}\" सफलतापूर्वक बनाया गया",
+
+		// Create Skill Modal
+		createNewSkillTitle: "कौशल बनाएं",
+		skillNameField: "कौशल का नाम",
+		skillNameFieldDesc: "केबाब-केस में अद्वितीय पहचानकर्ता (जैसे, my-custom-skill)",
+		skillNamePlaceholder: "my-skill-name",
+		skillDescriptionField: "विवरण",
+		skillDescriptionFieldDesc: "ट्रिगरिंग के लिए विस्तृत विवरण (यह क्या करता है, कब उपयोग करें)",
+		skillDescriptionPlaceholder: "बताएं कि यह कौशल क्या करता है...",
+		optionalFolders: "वैकल्पिक फोल्डर",
+		includeScripts: "scripts/ शामिल करें",
+		includeScriptsDesc: "निष्पादन योग्य कोड के लिए (Python, shell स्क्रिप्ट)",
+		includeReferences: "references/ शामिल करें",
+		includeReferencesDesc: "संदर्भ में लोड किए गए दस्तावेज़ों के लिए",
+		includeAssets: "assets/ शामिल करें",
+		includeAssetsDesc: "आउटपुट फ़ाइलों के लिए (टेम्पलेट, चित्र)",
+		createSkillButton: "बनाएं",
+		skillNameRequired: "कौशल का नाम आवश्यक है",
+		invalidSkillName: "अमान्य नाम। केबाब-केस उपयोग करें (छोटे अक्षर, अंक, हाइफ़न)।",
+		skillDescriptionRequired: "विवरण आवश्यक है",
+		skillCreationFailed: "कौशल बनाने में विफल",
+
+		// Validate Skill Modal
+		validateSkillTitle: "सत्यापन: {name}",
+		validating: "सत्यापित कर रहे हैं...",
+		skillIsValid: "✓ कौशल मान्य है",
+		errors: "त्रुटियां",
+		warnings: "चेतावनियां",
+		closeButton: "बंद करें",
+
+		// Skill Selector Modal
+		selectSkillTitle: "कौशल चुनें",
+		noCustomSkillsFound: ".crystal/skills/ में कोई कस्टम कौशल नहीं मिला",
+
+		// Edit Skill Modal
+		editSkillTitle: "संपादित करें: {name}",
+		skillInstructionsField: "निर्देश",
+		skillInstructionsFieldDesc: "कौशल की मुख्य सामग्री — AI के लिए निर्देश",
+		resourceFolders: "संसाधन फ़ोल्डर",
+		scriptsFolder: "scripts/",
+		scriptsFolderDesc: "निष्पादन योग्य कोड (Python, shell स्क्रिप्ट)",
+		referencesFolder: "references/",
+		referencesFolderDesc: "संदर्भ में लोड किए गए दस्तावेज़",
+		assetsFolder: "assets/",
+		assetsFolderDesc: "आउटपुट फ़ाइलें (टेम्पलेट, चित्र)",
+		deleteSkillButton: "कौशल हटाएं",
+		noFilesInFolder: "कोई फ़ाइल नहीं। फ़ोल्डर में सीधे फ़ाइलें जोड़ें।",
+		openFolderButton: "फ़ोल्डर खोलें",
+		skillSaved: "कौशल सहेजा गया",
+		skillSaveFailed: "कौशल सहेजने में विफल",
+		confirmDeleteSkill: "क्या आप वाकई कौशल \"{name}\" हटाना चाहते हैं?",
+		skillDeleted: "कौशल हटाया गया",
+		skillDeleteFailed: "कौशल हटाने में विफल",
+		addFilesButton: "फ़ाइलें जोड़ें",
+		selectFilesToAdd: "जोड़ने के लिए फ़ाइलें चुनें",
+		filesAdded: "फ़ाइलें सफलतापूर्वक जोड़ी गईं",
+		filesAddFailed: "फ़ाइलें जोड़ने में विफल",
 
 		// Slash Commands section
 		slashCommands: "स्लैश कमांड",
@@ -1124,7 +1676,29 @@ export const SETTINGS_LOCALES: Record<LanguageCode, SettingsLocale> = {
 
 		// Model management
 		availableModels: "उपलब्ध मॉडल",
-		availableModelsDesc: "जिन मॉडलों का उपयोग नहीं करना चाहते उन्हें अक्षम करें"
+		availableModelsDesc: "जिन मॉडलों का उपयोग नहीं करना चाहते उन्हें अक्षम करें",
+
+		// Agent Personalization
+		agentPersonalization: "एजेंट वैयक्तिकरण",
+		agentPersonalizationDesc: "यह जानकारी Claude को आपके संदर्भ को समझने और प्रतिक्रियाओं को अनुकूलित करने में मदद करती है। सभी फ़ील्ड वैकल्पिक हैं।",
+		personalizationUserName: "नाम",
+		personalizationUserNameDesc: "मुझे आपको कैसे संबोधित करना चाहिए",
+		personalizationUserNamePlaceholder: "जैसे: अलेक्स",
+		personalizationUserRole: "भूमिका / पेशा",
+		personalizationUserRoleDesc: "आपका पेशा या भूमिका",
+		personalizationUserRolePlaceholder: "जैसे: उत्पाद डिजाइनर",
+		personalizationWorkContext: "कार्य संदर्भ",
+		personalizationWorkContextDesc: "अपने कार्य और ज्ञान आधार का वर्णन करें",
+		personalizationWorkContextPlaceholder: "जैसे: UX अनुसंधान और डिज़ाइन सिस्टम के लिए ज्ञान आधार का प्रबंधन",
+		personalizationCommunicationStyle: "संचार शैली",
+		personalizationCommunicationStyleDesc: "आप प्रतिक्रियाएं कैसे प्राप्त करना पसंद करते हैं",
+		personalizationCommunicationStylePlaceholder: "जैसे: संक्षिप्त, सटीक, उदाहरणों के साथ",
+		personalizationCurrentFocus: "वर्तमान फोकस",
+		personalizationCurrentFocusDesc: "आप वर्तमान में किस पर काम कर रहे हैं",
+		personalizationCurrentFocusPlaceholder: "जैसे: मोबाइल ऐप का रीडिज़ाइन",
+		personalizationConfigured: "कॉन्फ़िगर किया गया",
+		personalizationNotConfigured: "कॉन्फ़िगर करें...",
+		clearAllButton: "सब मिटाएं"
 	},
 
 	zh: {
@@ -1171,6 +1745,66 @@ export const SETTINGS_LOCALES: Record<LanguageCode, SettingsLocale> = {
 		builtinSkills: "内置技能",
 		customSkills: "自定义技能",
 		validateSkill: "验证技能",
+		addCustomSkill: "添加技能",
+		addCustomSkillDesc: "使用自定义指令创建您自己的技能",
+		skillCreatedSuccess: "技能 \"{name}\" 创建成功",
+
+		// Create Skill Modal
+		createNewSkillTitle: "创建技能",
+		skillNameField: "技能名称",
+		skillNameFieldDesc: "使用 kebab-case 格式的唯一标识符（例如：my-custom-skill）",
+		skillNamePlaceholder: "my-skill-name",
+		skillDescriptionField: "描述",
+		skillDescriptionFieldDesc: "用于触发的详细描述（功能、使用场景）",
+		skillDescriptionPlaceholder: "描述这个技能的功能...",
+		optionalFolders: "可选文件夹",
+		includeScripts: "包含 scripts/",
+		includeScriptsDesc: "用于可执行代码（Python、shell 脚本）",
+		includeReferences: "包含 references/",
+		includeReferencesDesc: "用于加载到上下文中的文档",
+		includeAssets: "包含 assets/",
+		includeAssetsDesc: "用于输出文件（模板、图片）",
+		createSkillButton: "创建",
+		skillNameRequired: "技能名称为必填项",
+		invalidSkillName: "名称无效。请使用 kebab-case（小写字母、数字、连字符）。",
+		skillDescriptionRequired: "描述为必填项",
+		skillCreationFailed: "创建技能失败",
+
+		// Validate Skill Modal
+		validateSkillTitle: "验证：{name}",
+		validating: "验证中...",
+		skillIsValid: "✓ 技能有效",
+		errors: "错误",
+		warnings: "警告",
+		closeButton: "关闭",
+
+		// Skill Selector Modal
+		selectSkillTitle: "选择技能",
+		noCustomSkillsFound: "在 .crystal/skills/ 中未找到自定义技能",
+
+		// Edit Skill Modal
+		editSkillTitle: "编辑：{name}",
+		skillInstructionsField: "指令",
+		skillInstructionsFieldDesc: "技能的主要内容 — AI 的指令",
+		resourceFolders: "资源文件夹",
+		scriptsFolder: "scripts/",
+		scriptsFolderDesc: "可执行代码（Python、shell 脚本）",
+		referencesFolder: "references/",
+		referencesFolderDesc: "加载到上下文中的文档",
+		assetsFolder: "assets/",
+		assetsFolderDesc: "输出文件（模板、图片）",
+		deleteSkillButton: "删除技能",
+		noFilesInFolder: "没有文件。直接将文件添加到文件夹。",
+		openFolderButton: "打开文件夹",
+		skillSaved: "技能已保存",
+		skillSaveFailed: "保存技能失败",
+		confirmDeleteSkill: "您确定要删除技能 \"{name}\" 吗？",
+		skillDeleted: "技能已删除",
+		skillDeleteFailed: "删除技能失败",
+		addFilesButton: "添加文件",
+		selectFilesToAdd: "选择要添加的文件",
+		filesAdded: "文件添加成功",
+		filesAddFailed: "添加文件失败",
 
 		// Slash Commands section
 		slashCommands: "斜杠命令",
@@ -1286,7 +1920,29 @@ export const SETTINGS_LOCALES: Record<LanguageCode, SettingsLocale> = {
 
 		// Model management
 		availableModels: "可用模型",
-		availableModelsDesc: "禁用您不想使用的模型"
+		availableModelsDesc: "禁用您不想使用的模型",
+
+		// Agent Personalization
+		agentPersonalization: "助手个性化",
+		agentPersonalizationDesc: "这些信息帮助 Claude 理解您的背景并调整回复。所有字段都是可选的。",
+		personalizationUserName: "姓名",
+		personalizationUserNameDesc: "我该如何称呼您",
+		personalizationUserNamePlaceholder: "例如：小明",
+		personalizationUserRole: "角色 / 职业",
+		personalizationUserRoleDesc: "您的职业或角色",
+		personalizationUserRolePlaceholder: "例如：产品设计师",
+		personalizationWorkContext: "工作背景",
+		personalizationWorkContextDesc: "描述您的工作和知识库",
+		personalizationWorkContextPlaceholder: "例如：管理 UX 研究和设计系统的知识库",
+		personalizationCommunicationStyle: "沟通风格",
+		personalizationCommunicationStyleDesc: "您希望如何接收回复",
+		personalizationCommunicationStylePlaceholder: "例如：简洁、重点突出、带示例",
+		personalizationCurrentFocus: "当前关注",
+		personalizationCurrentFocusDesc: "您目前在做什么",
+		personalizationCurrentFocusPlaceholder: "例如：移动应用重新设计",
+		personalizationConfigured: "已配置",
+		personalizationNotConfigured: "配置...",
+		clearAllButton: "清除全部"
 	},
 
 	ja: {
@@ -1333,6 +1989,66 @@ export const SETTINGS_LOCALES: Record<LanguageCode, SettingsLocale> = {
 		builtinSkills: "内蔵スキル",
 		customSkills: "カスタムスキル",
 		validateSkill: "スキルを検証",
+		addCustomSkill: "スキルを追加",
+		addCustomSkillDesc: "カスタム指示で独自のスキルを作成",
+		skillCreatedSuccess: "スキル「{name}」が正常に作成されました",
+
+		// Create Skill Modal
+		createNewSkillTitle: "スキルを作成",
+		skillNameField: "スキル名",
+		skillNameFieldDesc: "ケバブケースの一意の識別子（例：my-custom-skill）",
+		skillNamePlaceholder: "my-skill-name",
+		skillDescriptionField: "説明",
+		skillDescriptionFieldDesc: "トリガー用の詳細な説明（機能、使用タイミング）",
+		skillDescriptionPlaceholder: "このスキルの機能を説明してください...",
+		optionalFolders: "オプションフォルダ",
+		includeScripts: "scripts/ を含める",
+		includeScriptsDesc: "実行可能コード用（Python、シェルスクリプト）",
+		includeReferences: "references/ を含める",
+		includeReferencesDesc: "コンテキストに読み込むドキュメント用",
+		includeAssets: "assets/ を含める",
+		includeAssetsDesc: "出力ファイル用（テンプレート、画像）",
+		createSkillButton: "作成",
+		skillNameRequired: "スキル名は必須です",
+		invalidSkillName: "無効な名前。ケバブケースを使用してください（小文字、数字、ハイフン）。",
+		skillDescriptionRequired: "説明は必須です",
+		skillCreationFailed: "スキルの作成に失敗しました",
+
+		// Validate Skill Modal
+		validateSkillTitle: "検証：{name}",
+		validating: "検証中...",
+		skillIsValid: "✓ スキルは有効です",
+		errors: "エラー",
+		warnings: "警告",
+		closeButton: "閉じる",
+
+		// Skill Selector Modal
+		selectSkillTitle: "スキルを選択",
+		noCustomSkillsFound: ".crystal/skills/ にカスタムスキルが見つかりません",
+
+		// Edit Skill Modal
+		editSkillTitle: "編集：{name}",
+		skillInstructionsField: "指示",
+		skillInstructionsFieldDesc: "スキルの主要コンテンツ — AI への指示",
+		resourceFolders: "リソースフォルダ",
+		scriptsFolder: "scripts/",
+		scriptsFolderDesc: "実行可能コード（Python、シェルスクリプト）",
+		referencesFolder: "references/",
+		referencesFolderDesc: "コンテキストに読み込むドキュメント",
+		assetsFolder: "assets/",
+		assetsFolderDesc: "出力ファイル（テンプレート、画像）",
+		deleteSkillButton: "スキルを削除",
+		noFilesInFolder: "ファイルがありません。フォルダに直接ファイルを追加してください。",
+		openFolderButton: "フォルダを開く",
+		skillSaved: "スキルを保存しました",
+		skillSaveFailed: "スキルの保存に失敗しました",
+		confirmDeleteSkill: "スキル「{name}」を削除してもよろしいですか？",
+		skillDeleted: "スキルを削除しました",
+		skillDeleteFailed: "スキルの削除に失敗しました",
+		addFilesButton: "ファイルを追加",
+		selectFilesToAdd: "追加するファイルを選択",
+		filesAdded: "ファイルが正常に追加されました",
+		filesAddFailed: "ファイルの追加に失敗しました",
 
 		// Slash Commands section
 		slashCommands: "スラッシュコマンド",
@@ -1448,7 +2164,29 @@ export const SETTINGS_LOCALES: Record<LanguageCode, SettingsLocale> = {
 
 		// Model management
 		availableModels: "利用可能なモデル",
-		availableModelsDesc: "使用したくないモデルを無効にする"
+		availableModelsDesc: "使用したくないモデルを無効にする",
+
+		// Agent Personalization
+		agentPersonalization: "エージェントのパーソナライズ",
+		agentPersonalizationDesc: "この情報はClaudeがあなたのコンテキストを理解し、回答をカスタマイズするのに役立ちます。すべてのフィールドは任意です。",
+		personalizationUserName: "名前",
+		personalizationUserNameDesc: "どのようにお呼びすればよいですか",
+		personalizationUserNamePlaceholder: "例：太郎",
+		personalizationUserRole: "役割 / 職業",
+		personalizationUserRoleDesc: "あなたの職業または役割",
+		personalizationUserRolePlaceholder: "例：プロダクトデザイナー",
+		personalizationWorkContext: "仕事の背景",
+		personalizationWorkContextDesc: "あなたの仕事とナレッジベースについて説明してください",
+		personalizationWorkContextPlaceholder: "例：UXリサーチとデザインシステムのナレッジベースを管理",
+		personalizationCommunicationStyle: "コミュニケーションスタイル",
+		personalizationCommunicationStyleDesc: "どのように回答を受け取りたいですか",
+		personalizationCommunicationStylePlaceholder: "例：簡潔に、要点を押さえて、例を交えて",
+		personalizationCurrentFocus: "現在のフォーカス",
+		personalizationCurrentFocusDesc: "現在取り組んでいること",
+		personalizationCurrentFocusPlaceholder: "例：モバイルアプリのリデザイン",
+		personalizationConfigured: "設定済み",
+		personalizationNotConfigured: "設定する...",
+		clearAllButton: "すべてクリア"
 	}
 };
 

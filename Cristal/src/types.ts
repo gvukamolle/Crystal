@@ -183,6 +183,26 @@ export const DEFAULT_CLAUDE_PERMISSIONS: ClaudePermissions = {
 };
 
 // ============================================================================
+// Agent Personalization
+// ============================================================================
+
+export interface AgentPersonalization {
+	userName: string;
+	userRole: string;
+	workContext: string;
+	communicationStyle: string;
+	currentFocus: string;
+}
+
+export const DEFAULT_AGENT_PERSONALIZATION: AgentPersonalization = {
+	userName: "",
+	userRole: "",
+	workContext: "",
+	communicationStyle: "",
+	currentFocus: ""
+};
+
+// ============================================================================
 // Agent Configuration
 // ============================================================================
 
@@ -222,6 +242,9 @@ export interface CrystalSettings {
 	agentTokenHistory: Record<string, Record<string, number>>;  // agentId -> date -> tokens
 	gettingStartedDismissed: boolean;  // Whether the Getting Started section is collapsed
 
+	// Agent personalization (user context for system prompt)
+	agentPersonalization: AgentPersonalization;
+
 	// Legacy fields for backwards compatibility (will be migrated)
 	cliPath?: string;
 	permissions?: ClaudePermissions;
@@ -240,7 +263,8 @@ export const DEFAULT_SETTINGS: CrystalSettings = {
 	disabledBuiltinCommands: [],
 	tokenHistory: {},
 	agentTokenHistory: {},
-	gettingStartedDismissed: false
+	gettingStartedDismissed: false,
+	agentPersonalization: DEFAULT_AGENT_PERSONALIZATION
 };
 
 // ============================================================================

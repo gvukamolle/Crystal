@@ -1,4 +1,4 @@
-import type { Vault, TFolder, TFile } from "obsidian";
+import type { Vault } from "obsidian";
 import { FileSystemAdapter } from "obsidian";
 import * as path from "path";
 import * as fs from "fs";
@@ -73,22 +73,29 @@ export class SkillLoader {
 
 	/**
 	 * Discover custom skills in vault's .crystal/skills/ folder
-	 * Now also discovers scripts/, references/, assets/ subfolders
+	 * Uses file system directly since Obsidian cache may not be updated
 	 */
 	async discoverVaultSkills(): Promise<void> {
 		this.vaultSkills.clear();
 
-		const folder = this.vault.getAbstractFileByPath(SKILLS_FOLDER);
-		if (!folder || !(folder as TFolder).children) {
+		const adapter = this.vault.adapter;
+		if (!(adapter instanceof FileSystemAdapter)) {
 			return;
 		}
 
-		const skillFolders = (folder as TFolder).children.filter(
-			(child) => (child as TFolder).children !== undefined
-		) as TFolder[];
+		const skillsDir = path.join(adapter.getBasePath(), SKILLS_FOLDER);
+
+		// Check if skills folder exists
+		if (!fs.existsSync(skillsDir)) {
+			return;
+		}
+
+		// Get all subdirectories (each is a skill)
+		const entries = fs.readdirSync(skillsDir, { withFileTypes: true });
+		const skillFolders = entries.filter(e => e.isDirectory());
 
 		for (const skillFolder of skillFolders) {
-			const skill = await this.loadSkillFromFolder(skillFolder);
+			const skill = await this.loadSkillFromFolderFS(skillFolder.name, skillsDir);
 			if (skill) {
 				this.vaultSkills.set(skill.id, skill);
 			}
@@ -96,40 +103,43 @@ export class SkillLoader {
 	}
 
 	/**
-	 * Load a complete skill from a folder, including all resources
+	 * Load a complete skill from a folder using file system directly
 	 */
-	private async loadSkillFromFolder(skillFolder: TFolder): Promise<Skill | null> {
-		// Find SKILL.md
-		const skillFile = skillFolder.children.find(
-			(child) => child.name === "SKILL.md"
-		) as TFile | undefined;
+	private async loadSkillFromFolderFS(
+		folderName: string,
+		skillsDir: string
+	): Promise<Skill | null> {
+		const skillDir = path.join(skillsDir, folderName);
+		const skillMdPath = path.join(skillDir, 'SKILL.md');
 
-		if (!skillFile) {
-			console.warn(`SkillLoader: No SKILL.md in ${skillFolder.path}`);
+		// Check if SKILL.md exists
+		if (!fs.existsSync(skillMdPath)) {
+			console.warn(`SkillLoader: No SKILL.md in ${skillDir}`);
 			return null;
 		}
 
 		try {
-			const content = await this.vault.cachedRead(skillFile);
+			const content = fs.readFileSync(skillMdPath, 'utf-8');
 			const parsed = SkillParser.parse(content);
 
 			if (!parsed || !SkillParser.isValidSkillName(parsed.metadata.name)) {
-				console.warn(`SkillLoader: Invalid skill in ${skillFolder.path}`);
+				console.warn(`SkillLoader: Invalid skill in ${skillDir}`);
 				return null;
 			}
 
 			// Load resources from subfolders
-			const scripts = await this.loadResourceFolder(skillFolder, 'scripts');
-			const references = await this.loadResourceFolder(skillFolder, 'references');
-			const assets = await this.loadResourceFolder(skillFolder, 'assets');
+			const vaultRelativePath = `${SKILLS_FOLDER}/${folderName}`;
+			const scripts = this.loadResourceFolderFS(skillDir, 'scripts', vaultRelativePath);
+			const references = this.loadResourceFolderFS(skillDir, 'references', vaultRelativePath);
+			const assets = this.loadResourceFolderFS(skillDir, 'assets', vaultRelativePath);
 
 			const skill: Skill = {
 				id: parsed.metadata.name,
 				metadata: parsed.metadata,
 				instructions: parsed.instructions,
 				isBuiltin: false,
-				path: skillFolder.path,
-				skillMdPath: skillFile.path,
+				path: vaultRelativePath,
+				skillMdPath: `${vaultRelativePath}/SKILL.md`,
 				scripts,
 				references,
 				assets
@@ -137,56 +147,56 @@ export class SkillLoader {
 
 			return skill;
 		} catch (e) {
-			console.error(`SkillLoader: Failed to load skill from ${skillFolder.path}:`, e);
+			console.error(`SkillLoader: Failed to load skill from ${skillDir}:`, e);
 			return null;
 		}
 	}
 
 	/**
-	 * Load resources from a subfolder (scripts/, references/, assets/)
-	 * Recursively collects all files
+	 * Load resources from a subfolder using file system directly
 	 */
-	private async loadResourceFolder(
-		skillFolder: TFolder,
-		resourceType: ResourceFolderType
-	): Promise<SkillResource[]> {
+	private loadResourceFolderFS(
+		skillDir: string,
+		resourceType: ResourceFolderType,
+		vaultRelativePath: string
+	): SkillResource[] {
 		const resources: SkillResource[] = [];
+		const resourceDir = path.join(skillDir, resourceType);
 
-		const resourceFolder = skillFolder.children.find(
-			(child) => child.name === resourceType && (child as TFolder).children !== undefined
-		) as TFolder | undefined;
-
-		if (!resourceFolder) {
+		if (!fs.existsSync(resourceDir)) {
 			return resources;
 		}
 
-		// Recursively collect all files in resource folder
-		const collectFiles = (folder: TFolder, relativePath: string): void => {
-			for (const child of folder.children) {
-				if ((child as TFolder).children !== undefined) {
-					// It's a subfolder - recurse
+		// Recursively collect all files
+		const collectFiles = (dir: string, relativePath: string): void => {
+			const entries = fs.readdirSync(dir, { withFileTypes: true });
+
+			for (const entry of entries) {
+				const fullPath = path.join(dir, entry.name);
+
+				if (entry.isDirectory()) {
+					// Recurse into subdirectory
 					collectFiles(
-						child as TFolder,
-						relativePath ? `${relativePath}/${child.name}` : child.name
+						fullPath,
+						relativePath ? `${relativePath}/${entry.name}` : entry.name
 					);
 				} else {
-					// It's a file - skip .gitkeep
-					if (child.name === '.gitkeep') continue;
+					// Skip .gitkeep
+					if (entry.name === '.gitkeep') continue;
 
-					const file = child as TFile;
 					const relPath = relativePath
-						? `${resourceType}/${relativePath}/${file.name}`
-						: `${resourceType}/${file.name}`;
+						? `${resourceType}/${relativePath}/${entry.name}`
+						: `${resourceType}/${entry.name}`;
 
 					resources.push({
 						relativePath: relPath,
-						absolutePath: file.path
+						absolutePath: `${vaultRelativePath}/${relPath}`
 					});
 				}
 			}
 		};
 
-		collectFiles(resourceFolder, '');
+		collectFiles(resourceDir, '');
 		return resources;
 	}
 
@@ -277,11 +287,11 @@ export class SkillLoader {
 	}
 
 	/**
-	 * Validate a skill folder
+	 * Validate a skill folder using file system directly
 	 */
 	async validateSkill(skillId: string): Promise<SkillValidationResult> {
 		const skill = this.vaultSkills.get(skillId);
-		if (!skill) {
+		if (!skill || !skill.path) {
 			return {
 				isValid: false,
 				errors: [{ code: 'MISSING_SKILL_MD', message: 'Skill not found' }],
@@ -289,31 +299,42 @@ export class SkillLoader {
 			};
 		}
 
-		// Read SKILL.md content
-		let content: string | null = null;
-		if (skill.skillMdPath) {
-			const file = this.vault.getAbstractFileByPath(skill.skillMdPath);
-			if (file && 'extension' in file) {
-				content = await this.vault.cachedRead(file as TFile);
-			}
+		const adapter = this.vault.adapter;
+		if (!(adapter instanceof FileSystemAdapter)) {
+			return {
+				isValid: false,
+				errors: [{ code: 'MISSING_SKILL_MD', message: 'Not a file system adapter' }],
+				warnings: []
+			};
 		}
 
-		// Collect all files in skill folder
-		const folder = this.vault.getAbstractFileByPath(skill.path!);
-		const files: string[] = [];
-		if (folder && (folder as TFolder).children) {
-			const collectFiles = (f: TFolder, prefix: string): void => {
-				for (const child of f.children) {
-					if ((child as TFolder).children) {
-						collectFiles(child as TFolder, prefix ? `${prefix}/${child.name}` : child.name);
-					} else {
-						const filePath = prefix ? `${prefix}/${child.name}` : child.name;
-						files.push(filePath);
-					}
-				}
-			};
-			collectFiles(folder as TFolder, '');
+		const vaultPath = adapter.getBasePath();
+		const skillDir = path.join(vaultPath, skill.path);
+		const skillMdPath = path.join(skillDir, 'SKILL.md');
+
+		// Read SKILL.md content using fs
+		let content: string | null = null;
+		if (fs.existsSync(skillMdPath)) {
+			content = fs.readFileSync(skillMdPath, 'utf-8');
 		}
+
+		// Collect all files in skill folder using fs
+		const files: string[] = [];
+		const collectFilesFS = (dir: string, prefix: string): void => {
+			if (!fs.existsSync(dir)) return;
+
+			const entries = fs.readdirSync(dir, { withFileTypes: true });
+			for (const entry of entries) {
+				const fullPath = path.join(dir, entry.name);
+				if (entry.isDirectory()) {
+					collectFilesFS(fullPath, prefix ? `${prefix}/${entry.name}` : entry.name);
+				} else {
+					const filePath = prefix ? `${prefix}/${entry.name}` : entry.name;
+					files.push(filePath);
+				}
+			}
+		};
+		collectFilesFS(skillDir, '');
 
 		return SkillParser.validate(content, files);
 	}
@@ -390,21 +411,22 @@ export class SkillLoader {
 		const skillMdContent = this.buildSkillMdContent(skill);
 		fs.writeFileSync(path.join(skillFolder, 'SKILL.md'), skillMdContent, 'utf-8');
 
-		// For vault skills, copy resource folders
+		// For vault skills, copy resource folders (even if empty)
 		if (!skill.isBuiltin && skill.path) {
-			// Copy scripts
-			if (skill.scripts.length > 0) {
-				this.copyResourceFiles(skill.scripts, skillFolder, vaultPath);
-			}
+			const sourceSkillDir = path.join(vaultPath, skill.path);
 
-			// Copy references
-			if (skill.references.length > 0) {
-				this.copyResourceFiles(skill.references, skillFolder, vaultPath);
-			}
+			// Always sync resource folders if they exist in source
+			for (const folderType of RESOURCE_FOLDERS) {
+				const sourceFolder = path.join(sourceSkillDir, folderType);
+				const targetFolder = path.join(skillFolder, folderType);
 
-			// Copy assets
-			if (skill.assets.length > 0) {
-				this.copyResourceFiles(skill.assets, skillFolder, vaultPath);
+				if (fs.existsSync(sourceFolder)) {
+					// Create folder in target
+					fs.mkdirSync(targetFolder, { recursive: true });
+
+					// Copy all files (excluding .gitkeep since target doesn't need it)
+					this.copyFolderContents(sourceFolder, targetFolder);
+				}
 			}
 		}
 
@@ -412,29 +434,26 @@ export class SkillLoader {
 	}
 
 	/**
-	 * Copy resource files to target directory
+	 * Recursively copy folder contents
 	 */
-	private copyResourceFiles(
-		resources: SkillResource[],
-		targetSkillFolder: string,
-		vaultPath: string
-	): void {
-		for (const resource of resources) {
-			const sourcePath = path.join(vaultPath, resource.absolutePath);
-			const targetPath = path.join(targetSkillFolder, resource.relativePath);
+	private copyFolderContents(sourceDir: string, targetDir: string): void {
+		if (!fs.existsSync(sourceDir)) return;
 
-			// Ensure parent directory exists
-			const parentDir = path.dirname(targetPath);
-			if (!fs.existsSync(parentDir)) {
-				fs.mkdirSync(parentDir, { recursive: true });
-			}
+		const entries = fs.readdirSync(sourceDir, { withFileTypes: true });
 
-			// Copy file
-			if (fs.existsSync(sourcePath)) {
+		for (const entry of entries) {
+			const sourcePath = path.join(sourceDir, entry.name);
+			const targetPath = path.join(targetDir, entry.name);
+
+			if (entry.isDirectory()) {
+				fs.mkdirSync(targetPath, { recursive: true });
+				this.copyFolderContents(sourcePath, targetPath);
+			} else {
 				fs.copyFileSync(sourcePath, targetPath);
 			}
 		}
 	}
+
 
 	/**
 	 * Build SKILL.md content from skill object
@@ -456,6 +475,7 @@ export class SkillLoader {
 
 	/**
 	 * Create a new skill folder with template
+	 * Uses file system directly to avoid Obsidian cache issues
 	 */
 	async createNewSkill(
 		name: string,
@@ -475,57 +495,61 @@ export class SkillLoader {
 			return { success: false, error: `Skill "${name}" already exists.` };
 		}
 
-		const skillPath = `${SKILLS_FOLDER}/${name}`;
+		const adapter = this.vault.adapter;
+		if (!(adapter instanceof FileSystemAdapter)) {
+			return { success: false, error: "Not a file system adapter" };
+		}
+
+		const vaultPath = adapter.getBasePath();
+		const skillsDir = path.join(vaultPath, SKILLS_FOLDER);
+		const skillDir = path.join(skillsDir, name);
 
 		try {
+			// Check if folder already exists on disk
+			if (fs.existsSync(skillDir)) {
+				return { success: false, error: `Folder "${name}" already exists.` };
+			}
+
 			// Ensure .crystal/skills folder exists
-			await this.ensureFolderExists(SKILLS_FOLDER);
+			if (!fs.existsSync(skillsDir)) {
+				fs.mkdirSync(skillsDir, { recursive: true });
+			}
 
 			// Create skill folder
-			await this.vault.createFolder(skillPath);
+			fs.mkdirSync(skillDir);
 
 			// Create SKILL.md with template
 			const skillMdContent = this.generateSkillMdTemplate(name, description);
-			await this.vault.create(`${skillPath}/SKILL.md`, skillMdContent);
+			fs.writeFileSync(path.join(skillDir, 'SKILL.md'), skillMdContent, 'utf-8');
 
 			// Create optional folders with .gitkeep
 			if (options.includeScripts) {
-				await this.vault.createFolder(`${skillPath}/scripts`);
-				await this.vault.create(`${skillPath}/scripts/.gitkeep`, '');
+				const scriptsDir = path.join(skillDir, 'scripts');
+				fs.mkdirSync(scriptsDir);
+				fs.writeFileSync(path.join(scriptsDir, '.gitkeep'), '', 'utf-8');
 			}
 
 			if (options.includeReferences) {
-				await this.vault.createFolder(`${skillPath}/references`);
-				await this.vault.create(`${skillPath}/references/.gitkeep`, '');
+				const refsDir = path.join(skillDir, 'references');
+				fs.mkdirSync(refsDir);
+				fs.writeFileSync(path.join(refsDir, '.gitkeep'), '', 'utf-8');
 			}
 
 			if (options.includeAssets) {
-				await this.vault.createFolder(`${skillPath}/assets`);
-				await this.vault.create(`${skillPath}/assets/.gitkeep`, '');
+				const assetsDir = path.join(skillDir, 'assets');
+				fs.mkdirSync(assetsDir);
+				fs.writeFileSync(path.join(assetsDir, '.gitkeep'), '', 'utf-8');
 			}
+
+			// Wait a bit for Obsidian to detect new files
+			await new Promise(resolve => setTimeout(resolve, 500));
 
 			// Refresh skills list
-			await this.discoverVaultSkills();
+			await this.refresh();
 
-			return { success: true, path: skillPath };
+			return { success: true, path: `${SKILLS_FOLDER}/${name}` };
 		} catch (error) {
 			return { success: false, error: String(error) };
-		}
-	}
-
-	/**
-	 * Ensure a folder exists in vault (creates parent folders if needed)
-	 */
-	private async ensureFolderExists(folderPath: string): Promise<void> {
-		const parts = folderPath.split('/');
-		let currentPath = '';
-
-		for (const part of parts) {
-			currentPath = currentPath ? `${currentPath}/${part}` : part;
-			const folder = this.vault.getAbstractFileByPath(currentPath);
-			if (!folder) {
-				await this.vault.createFolder(currentPath);
-			}
 		}
 	}
 
@@ -574,5 +598,104 @@ description: ${description}
 			return adapter.getBasePath();
 		}
 		return null;
+	}
+
+	/**
+	 * Ensure a resource folder exists for a skill
+	 */
+	async ensureResourceFolder(skillId: string, resourceType: string): Promise<void> {
+		const adapter = this.vault.adapter;
+		if (!(adapter instanceof FileSystemAdapter)) {
+			return;
+		}
+
+		const vaultPath = adapter.getBasePath();
+		const resourceDir = path.join(vaultPath, SKILLS_FOLDER, skillId, resourceType);
+
+		if (!fs.existsSync(resourceDir)) {
+			fs.mkdirSync(resourceDir, { recursive: true });
+			// Add .gitkeep
+			fs.writeFileSync(path.join(resourceDir, '.gitkeep'), '', 'utf-8');
+		}
+	}
+
+	/**
+	 * Update a skill's description and/or instructions
+	 */
+	async updateSkill(
+		skillId: string,
+		updates: { description?: string; instructions?: string }
+	): Promise<{ success: boolean; error?: string }> {
+		const skill = this.vaultSkills.get(skillId);
+		if (!skill || !skill.skillMdPath) {
+			return { success: false, error: 'Skill not found' };
+		}
+
+		const adapter = this.vault.adapter;
+		if (!(adapter instanceof FileSystemAdapter)) {
+			return { success: false, error: 'Not a file system adapter' };
+		}
+
+		const vaultPath = adapter.getBasePath();
+		const skillMdPath = path.join(vaultPath, skill.skillMdPath);
+
+		try {
+			// Build new content
+			const newDescription = updates.description ?? skill.metadata.description;
+			const newInstructions = updates.instructions ?? skill.instructions;
+
+			let frontmatter = `---\nname: ${skill.metadata.name}\ndescription: ${newDescription}`;
+
+			if (skill.metadata.license) {
+				frontmatter += `\nlicense: ${skill.metadata.license}`;
+			}
+			if (skill.metadata.compatibility) {
+				frontmatter += `\ncompatibility: ${skill.metadata.compatibility}`;
+			}
+
+			frontmatter += `\n---\n\n`;
+
+			const newContent = frontmatter + newInstructions;
+
+			fs.writeFileSync(skillMdPath, newContent, 'utf-8');
+
+			// Refresh skills
+			await this.refresh();
+
+			return { success: true };
+		} catch (error) {
+			return { success: false, error: String(error) };
+		}
+	}
+
+	/**
+	 * Delete a skill completely
+	 */
+	async deleteSkill(skillId: string): Promise<{ success: boolean; error?: string }> {
+		const skill = this.vaultSkills.get(skillId);
+		if (!skill || !skill.path) {
+			return { success: false, error: 'Skill not found' };
+		}
+
+		const adapter = this.vault.adapter;
+		if (!(adapter instanceof FileSystemAdapter)) {
+			return { success: false, error: 'Not a file system adapter' };
+		}
+
+		const vaultPath = adapter.getBasePath();
+		const skillDir = path.join(vaultPath, skill.path);
+
+		try {
+			if (fs.existsSync(skillDir)) {
+				fs.rmSync(skillDir, { recursive: true, force: true });
+			}
+
+			// Remove from cache
+			this.vaultSkills.delete(skillId);
+
+			return { success: true };
+		} catch (error) {
+			return { success: false, error: String(error) };
+		}
 	}
 }
