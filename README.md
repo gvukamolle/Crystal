@@ -115,31 +115,48 @@ Create your own skills in `.crystal/skills/<skill-name>/SKILL.md`
 
 ## Installation
 
-### 1. Install Claude CLI
+### Quick Start (Recommended)
 
+**Crystal includes built-in onboarding** that automatically guides you through the entire setup process:
+
+1. **Install Plugin:**
+   - **From Community Plugins:** Settings → Community plugins → Search "Crystal" → Install → Enable
+   - **Manual:** Download release from GitHub, extract to `<vault>/.obsidian/plugins/crystal-cli-llm/`
+
+2. **First Launch:**
+   - Open Crystal chat view
+   - Plugin will automatically detect missing dependencies
+   - Follow the interactive setup wizard with platform-specific instructions
+
+**The onboarding will help you install:**
+- Node.js 18+ (if not installed) — with instructions for macOS/Windows/Linux
+- Claude Code CLI — with one-click terminal commands
+- OAuth authentication — guided browser authorization flow
+
+### Manual Installation (Advanced Users)
+
+If you prefer manual setup:
+
+**1. Install Node.js 18+** (if not installed)
+- **macOS:** via Homebrew (`brew install node`)
+- **Windows:** Download from [nodejs.org](https://nodejs.org)
+- **Linux:** Via package manager (apt/dnf/pacman) or NVM
+
+**2. Install Claude CLI:**
 ```bash
 npm i -g @anthropic-ai/claude-code
 ```
 
-**OAuth Authentication:**
-1. Run `claude` command in terminal
-2. Browser will open for OAuth authorization
-3. Log in with your Claude.ai account credentials
-4. Tokens are automatically saved:
-   - macOS: in Keychain
-   - Linux/WSL: in `~/.claude/.credentials.json`
+**3. OAuth Authentication:**
+```bash
+claude
+```
+Browser will open for authorization. Tokens are saved:
+- macOS: in Keychain
+- Linux/WSL: in `~/.claude/.credentials.json`
+- Windows: in Credential Manager
 
-### 2. Install Plugin
-
-**From Community Plugins (recommended):**
-1. Open **Settings → Community plugins**
-2. Search for "Crystal"
-3. Click Install, then Enable
-
-**Manual installation:**
-1. Download latest release from GitHub
-2. Extract `main.js`, `manifest.json`, `styles.css` to `<vault>/.obsidian/plugins/crystal-cli-llm/`
-3. Enable in Obsidian settings
+**4. Install Plugin** (see Quick Start above)
 
 ---
 

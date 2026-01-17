@@ -2296,6 +2296,7 @@
 	align-items: center;
 	justify-content: space-between;
 	gap: 12px;
+	margin-top: 16px;
 }
 
 .crystal-terminal-desc {
@@ -2305,14 +2306,18 @@
 
 /* Install hint section */
 .crystal-install-hint {
-	margin-top: 8px;
-	margin-bottom: 8px;
+	margin-top: 12px;
+	margin-bottom: 16px;
+}
+
+.crystal-install-hint p {
+	margin: 0 0 8px 0;
 }
 
 .crystal-install-command {
 	display: block;
 	padding: 8px 12px;
-	margin-top: 4px;
+	margin-top: 8px;
 	background: var(--background-primary);
 	border: 1px solid var(--background-modifier-border);
 	border-radius: 4px;
@@ -3447,12 +3452,17 @@
    ============================================================================ */
 
 .crystal-node-install-block {
-	margin-top: 16px;
+	margin-top: 20px;
 	padding: 16px;
 	background: var(--background-secondary);
 	border: 1px solid var(--color-yellow);
 	border-radius: 8px;
 	animation: crystal-fade-in 0.3s ease;
+}
+
+/* CLI status integration button spacing */
+.crystal-cli-status-content button.mod-cta {
+	margin-top: 16px;
 }
 
 .crystal-node-install-header {
@@ -3511,42 +3521,99 @@
 	max-width: 90vw;
 }
 
+.crystal-node-install-modal .modal-content {
+	max-width: 520px;
+}
+
 .crystal-node-install-modal h2 {
-	margin: 0 0 16px 0;
+	margin: 0 0 20px 0;
 	font-size: 18px;
+	font-weight: 600;
 	color: var(--text-normal);
 }
 
+.crystal-node-install-modal p.crystal-settings-note {
+	margin: 8px 0 12px 0;
+}
+
 .crystal-install-option {
-	margin: 12px 0;
-	padding: 12px;
+	margin: 16px 0;
+	padding: 16px;
 	background: var(--background-secondary);
 	border-radius: 8px;
+	border: 1px solid transparent;
 }
 
 .crystal-install-option-recommended {
-	border: 1px solid var(--interactive-accent);
+	border-color: var(--interactive-accent);
+	background: var(--background-primary);
 }
 
 .crystal-install-option h4 {
-	margin: 0 0 8px 0;
+	margin: 0 0 12px 0;
 	font-size: 14px;
+	font-weight: 600;
 	color: var(--text-normal);
 }
 
 .crystal-install-step {
-	margin: 8px 0;
+	margin: 12px 0;
 }
 
+.crystal-install-step-header {
+	margin-bottom: 8px;
+}
+
+.crystal-install-step-header span,
 .crystal-install-step span {
 	display: block;
 	font-size: 13px;
 	color: var(--text-muted);
-	margin-bottom: 4px;
+	margin-bottom: 6px;
 }
 
 .crystal-install-step code {
 	display: block;
+}
+
+/* Command container with run button */
+.crystal-install-command-container {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	margin-top: 6px;
+}
+
+.crystal-install-command-container code {
+	flex: 1;
+	margin: 0;
+}
+
+/* Run command button (purple square with arrow) */
+.crystal-run-command-btn {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	width: 32px;
+	height: 32px;
+	padding: 0;
+	background: var(--interactive-accent);
+	border: none;
+	border-radius: 6px;
+	cursor: pointer;
+	transition: all 0.15s ease;
+	flex-shrink: 0;
+}
+
+.crystal-run-command-btn:hover {
+	background: var(--interactive-accent-hover);
+	transform: translateX(2px);
+}
+
+.crystal-run-command-btn svg {
+	width: 16px;
+	height: 16px;
+	color: var(--text-on-accent);
 }
 
 .crystal-quick-install {
@@ -3705,6 +3772,48 @@
 	color: var(--text-error);
 }
 
+/* CLI status row with refresh button */
+.crystal-cli-status-row {
+	display: flex;
+	align-items: center;
+	gap: 12px;
+}
+
+.crystal-cli-status-row p {
+	margin: 0;
+	flex: 1;
+}
+
+.crystal-refresh-btn {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	width: 28px;
+	height: 28px;
+	padding: 0;
+	background: var(--background-modifier-border);
+	border: 1px solid var(--background-modifier-border);
+	border-radius: 6px;
+	cursor: pointer;
+	transition: all 0.15s ease;
+	flex-shrink: 0;
+}
+
+.crystal-refresh-btn:hover {
+	background: var(--background-modifier-hover);
+	border-color: var(--interactive-accent);
+}
+
+.crystal-refresh-btn svg {
+	width: 16px;
+	height: 16px;
+	color: var(--text-muted);
+}
+
+.crystal-refresh-btn:hover svg {
+	color: var(--interactive-accent);
+}
+
 /* Management modals - strict 520px width */
 .crystal-commands-modal,
 .crystal-skills-modal {
@@ -3736,4 +3845,93 @@
 	padding-top: 16px;
 	margin-top: 16px;
 	border-top: 1px solid var(--background-modifier-border);
+}
+
+/* ============================================================================
+   Debug Mode Easter Egg
+   ============================================================================ */
+
+/* Clickable version in CLI status (Easter egg) */
+.crystal-debug-trigger {
+	cursor: pointer;
+	color: var(--text-normal);
+	transition: text-decoration 0.2s ease;
+	position: relative;
+	display: inline-block;
+}
+
+.crystal-debug-trigger:hover {
+	text-decoration: underline;
+}
+
+/* Debug mode confirmation modal */
+.crystal-debug-confirm-modal {
+	width: 480px;
+	max-width: 90vw;
+}
+
+.crystal-debug-modal-header {
+	display: flex;
+	align-items: center;
+	gap: 12px;
+	margin-bottom: 16px;
+}
+
+.crystal-debug-modal-icon {
+	display: flex;
+	width: 32px;
+	height: 32px;
+	color: var(--color-yellow);
+}
+
+.crystal-debug-modal-header h2 {
+	margin: 0;
+	font-size: 18px;
+	font-weight: 600;
+	color: var(--text-normal);
+}
+
+.crystal-debug-modal-desc {
+	margin: 0 0 12px 0;
+	font-size: 14px;
+	line-height: 1.5;
+	color: var(--text-normal);
+}
+
+.crystal-debug-modal-note {
+	margin: 0 0 20px 0;
+	padding: 12px;
+	background: var(--background-secondary);
+	border-left: 3px solid var(--color-yellow);
+	border-radius: 4px;
+	font-size: 13px;
+	color: var(--text-muted);
+}
+
+/* Debug modal buttons */
+.crystal-debug-buttons {
+	display: flex;
+	gap: 12px;
+	justify-content: space-between;
+}
+
+.crystal-debug-cancel-btn {
+	flex: 1;
+	padding: 10px 16px;
+	background: var(--background-modifier-error);
+	border: 1px solid var(--text-error);
+	border-radius: 6px;
+	color: var(--text-error);
+	font-size: 11px;
+	font-weight: 600;
+	text-transform: uppercase;
+	letter-spacing: 0.5px;
+	cursor: pointer;
+	transition: all 0.15s ease;
+}
+
+.crystal-debug-cancel-btn:hover {
+	background: var(--text-error);
+	color: var(--text-on-accent);
+	transform: scale(1.02);
 }

@@ -157,6 +157,19 @@ export interface SettingsLocale {
 	homebrewRecommended: string;
 	officialInstaller: string;
 	orUsePackageManager: string;
+	nodeInstallStep1: string;
+	nodeInstallStep2: string;
+	nodeWinInstallerDesc: string;
+	nodeWinDownloadLink: string;
+	nodeWinChocolatey: string;
+	nodeWinWinget: string;
+	nodeWinWingetDesc: string;
+	nodeLinuxUbuntu: string;
+	nodeLinuxFedora: string;
+	nodeLinuxArch: string;
+	nodeLinuxNVM: string;
+	nodeLinuxNVMDesc: string;
+	nodeLinuxNVMLink: string;
 
 	// Command Modal
 	editCommand: string;
@@ -428,6 +441,19 @@ export const SETTINGS_LOCALES: Record<LanguageCode, SettingsLocale> = {
 		homebrewRecommended: "Homebrew (рекомендуется)",
 		officialInstaller: "Официальный установщик",
 		orUsePackageManager: "Или используйте менеджер пакетов:",
+		nodeInstallStep1: "1. Установите Homebrew (если не установлен):",
+		nodeInstallStep2: "2. Установите Node.js:",
+		nodeWinInstallerDesc: "Скачайте и запустите установщик Windows с официального сайта:",
+		nodeWinDownloadLink: "nodejs.org/en/download →",
+		nodeWinChocolatey: "Chocolatey",
+		nodeWinWinget: "winget",
+		nodeWinWingetDesc: "Используя Windows Package Manager:",
+		nodeLinuxUbuntu: "Ubuntu / Debian",
+		nodeLinuxFedora: "Fedora",
+		nodeLinuxArch: "Arch Linux",
+		nodeLinuxNVM: "NVM (Node Version Manager) — Рекомендуется",
+		nodeLinuxNVMDesc: "Затем перезапустите терминал и выполните: nvm install --lts",
+		nodeLinuxNVMLink: "Подробнее: github.com/nvm-sh/nvm →",
 
 		// Command Modal
 		editCommand: "Редактировать команду",
@@ -696,6 +722,19 @@ export const SETTINGS_LOCALES: Record<LanguageCode, SettingsLocale> = {
 		homebrewRecommended: "Homebrew (recommended)",
 		officialInstaller: "Official Installer",
 		orUsePackageManager: "Or use a package manager:",
+		nodeInstallStep1: "1. Install Homebrew (if not installed):",
+		nodeInstallStep2: "2. Install Node.js:",
+		nodeWinInstallerDesc: "Download and run the Windows installer from the official website:",
+		nodeWinDownloadLink: "nodejs.org/en/download →",
+		nodeWinChocolatey: "Chocolatey",
+		nodeWinWinget: "winget",
+		nodeWinWingetDesc: "Using Windows Package Manager:",
+		nodeLinuxUbuntu: "Ubuntu / Debian",
+		nodeLinuxFedora: "Fedora",
+		nodeLinuxArch: "Arch Linux",
+		nodeLinuxNVM: "NVM (Node Version Manager) — Recommended",
+		nodeLinuxNVMDesc: "Then restart terminal and run: nvm install --lts",
+		nodeLinuxNVMLink: "More info: github.com/nvm-sh/nvm →",
 
 		// Command Modal
 		editCommand: "Edit Command",
@@ -964,6 +1003,19 @@ export const SETTINGS_LOCALES: Record<LanguageCode, SettingsLocale> = {
 		homebrewRecommended: "Homebrew (recommandé)",
 		officialInstaller: "Installateur officiel",
 		orUsePackageManager: "Ou utilisez un gestionnaire de paquets:",
+		nodeInstallStep1: "1. Installer Homebrew (si non installé):",
+		nodeInstallStep2: "2. Installer Node.js:",
+		nodeWinInstallerDesc: "Téléchargez et exécutez l'installateur Windows depuis le site officiel:",
+		nodeWinDownloadLink: "nodejs.org/en/download →",
+		nodeWinChocolatey: "Chocolatey",
+		nodeWinWinget: "winget",
+		nodeWinWingetDesc: "Utilisation du gestionnaire de paquets Windows:",
+		nodeLinuxUbuntu: "Ubuntu / Debian",
+		nodeLinuxFedora: "Fedora",
+		nodeLinuxArch: "Arch Linux",
+		nodeLinuxNVM: "NVM (Node Version Manager) — Recommandé",
+		nodeLinuxNVMDesc: "Puis redémarrez le terminal et exécutez: nvm install --lts",
+		nodeLinuxNVMLink: "Plus d'infos: github.com/nvm-sh/nvm →",
 
 		// Command Modal
 		editCommand: "Modifier la commande",
@@ -1232,6 +1284,19 @@ export const SETTINGS_LOCALES: Record<LanguageCode, SettingsLocale> = {
 		homebrewRecommended: "Homebrew (empfohlen)",
 		officialInstaller: "Offizieller Installer",
 		orUsePackageManager: "Oder verwenden Sie einen Paketmanager:",
+		nodeInstallStep1: "1. Homebrew installieren (falls nicht installiert):",
+		nodeInstallStep2: "2. Node.js installieren:",
+		nodeWinInstallerDesc: "Laden Sie den Windows-Installer von der offiziellen Website herunter und führen Sie ihn aus:",
+		nodeWinDownloadLink: "nodejs.org/en/download →",
+		nodeWinChocolatey: "Chocolatey",
+		nodeWinWinget: "winget",
+		nodeWinWingetDesc: "Mit Windows Package Manager:",
+		nodeLinuxUbuntu: "Ubuntu / Debian",
+		nodeLinuxFedora: "Fedora",
+		nodeLinuxArch: "Arch Linux",
+		nodeLinuxNVM: "NVM (Node Version Manager) — Empfohlen",
+		nodeLinuxNVMDesc: "Starten Sie dann das Terminal neu und führen Sie aus: nvm install --lts",
+		nodeLinuxNVMLink: "Mehr Infos: github.com/nvm-sh/nvm →",
 
 		// Command Modal
 		editCommand: "Befehl bearbeiten",
@@ -1500,6 +1565,19 @@ export const SETTINGS_LOCALES: Record<LanguageCode, SettingsLocale> = {
 		homebrewRecommended: "Homebrew (recomendado)",
 		officialInstaller: "Instalador oficial",
 		orUsePackageManager: "O usa un gestor de paquetes:",
+		nodeInstallStep1: "1. Instalar Homebrew (si no está instalado):",
+		nodeInstallStep2: "2. Instalar Node.js:",
+		nodeWinInstallerDesc: "Descarga y ejecuta el instalador de Windows desde el sitio oficial:",
+		nodeWinDownloadLink: "nodejs.org/en/download →",
+		nodeWinChocolatey: "Chocolatey",
+		nodeWinWinget: "winget",
+		nodeWinWingetDesc: "Usando el administrador de paquetes de Windows:",
+		nodeLinuxUbuntu: "Ubuntu / Debian",
+		nodeLinuxFedora: "Fedora",
+		nodeLinuxArch: "Arch Linux",
+		nodeLinuxNVM: "NVM (Node Version Manager) — Recomendado",
+		nodeLinuxNVMDesc: "Luego reinicia la terminal y ejecuta: nvm install --lts",
+		nodeLinuxNVMLink: "Más información: github.com/nvm-sh/nvm →",
 
 		// Command Modal
 		editCommand: "Editar comando",
@@ -1770,6 +1848,19 @@ export const SETTINGS_LOCALES: Record<LanguageCode, SettingsLocale> = {
 		homebrewRecommended: "Homebrew (अनुशंसित)",
 		officialInstaller: "आधिकारिक इंस्टॉलर",
 		orUsePackageManager: "या पैकेज मैनेजर का उपयोग करें:",
+		nodeInstallStep1: "1. Homebrew इंस्टॉल करें (यदि इंस्टॉल नहीं है):",
+		nodeInstallStep2: "2. Node.js इंस्टॉल करें:",
+		nodeWinInstallerDesc: "आधिकारिक वेबसाइट से Windows इंस्टॉलर डाउनलोड और चलाएं:",
+		nodeWinDownloadLink: "nodejs.org/en/download →",
+		nodeWinChocolatey: "Chocolatey",
+		nodeWinWinget: "winget",
+		nodeWinWingetDesc: "Windows पैकेज मैनेजर का उपयोग करते हुए:",
+		nodeLinuxUbuntu: "Ubuntu / Debian",
+		nodeLinuxFedora: "Fedora",
+		nodeLinuxArch: "Arch Linux",
+		nodeLinuxNVM: "NVM (Node Version Manager) — अनुशंसित",
+		nodeLinuxNVMDesc: "फिर टर्मिनल को पुनः आरंभ करें और चलाएं: nvm install --lts",
+		nodeLinuxNVMLink: "अधिक जानकारी: github.com/nvm-sh/nvm →",
 
 		// Command Modal
 		editCommand: "कमांड संपादित करें",
@@ -2040,6 +2131,19 @@ export const SETTINGS_LOCALES: Record<LanguageCode, SettingsLocale> = {
 		homebrewRecommended: "Homebrew（推荐）",
 		officialInstaller: "官方安装程序",
 		orUsePackageManager: "或使用包管理器：",
+		nodeInstallStep1: "1. 安装 Homebrew（如果未安装）：",
+		nodeInstallStep2: "2. 安装 Node.js：",
+		nodeWinInstallerDesc: "从官方网站下载并运行 Windows 安装程序：",
+		nodeWinDownloadLink: "nodejs.org/en/download →",
+		nodeWinChocolatey: "Chocolatey",
+		nodeWinWinget: "winget",
+		nodeWinWingetDesc: "使用 Windows 包管理器：",
+		nodeLinuxUbuntu: "Ubuntu / Debian",
+		nodeLinuxFedora: "Fedora",
+		nodeLinuxArch: "Arch Linux",
+		nodeLinuxNVM: "NVM (Node Version Manager) — 推荐",
+		nodeLinuxNVMDesc: "然后重启终端并运行：nvm install --lts",
+		nodeLinuxNVMLink: "更多信息：github.com/nvm-sh/nvm →",
 
 		// Command Modal
 		editCommand: "编辑命令",
@@ -2310,6 +2414,19 @@ export const SETTINGS_LOCALES: Record<LanguageCode, SettingsLocale> = {
 		homebrewRecommended: "Homebrew（推奨）",
 		officialInstaller: "公式インストーラー",
 		orUsePackageManager: "またはパッケージマネージャーを使用：",
+		nodeInstallStep1: "1. Homebrew をインストール（未インストールの場合）：",
+		nodeInstallStep2: "2. Node.js をインストール：",
+		nodeWinInstallerDesc: "公式サイトから Windows インストーラーをダウンロードして実行：",
+		nodeWinDownloadLink: "nodejs.org/en/download →",
+		nodeWinChocolatey: "Chocolatey",
+		nodeWinWinget: "winget",
+		nodeWinWingetDesc: "Windows パッケージマネージャーを使用：",
+		nodeLinuxUbuntu: "Ubuntu / Debian",
+		nodeLinuxFedora: "Fedora",
+		nodeLinuxArch: "Arch Linux",
+		nodeLinuxNVM: "NVM (Node Version Manager) — 推奨",
+		nodeLinuxNVMDesc: "その後、ターミナルを再起動して実行：nvm install --lts",
+		nodeLinuxNVMLink: "詳細：github.com/nvm-sh/nvm →",
 
 		// Command Modal
 		editCommand: "コマンドを編集",

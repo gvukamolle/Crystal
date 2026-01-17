@@ -246,6 +246,10 @@ export interface CrystalSettings {
 	// Agent personalization (user context for system prompt)
 	agentPersonalization: AgentPersonalization;
 
+	// Debug/testing settings
+	debugModeEnabled?: boolean;  // Enable debug mode (hidden Easter egg)
+	simulateNodeMissing?: boolean;  // Simulate Node.js not being installed (for testing)
+
 	// Legacy fields for backwards compatibility (will be migrated)
 	cliPath?: string;
 	permissions?: ClaudePermissions;
@@ -265,7 +269,8 @@ export const DEFAULT_SETTINGS: CrystalSettings = {
 	tokenHistory: {},
 	agentTokenHistory: {},
 	gettingStartedDismissed: false,
-	agentPersonalization: DEFAULT_AGENT_PERSONALIZATION
+	agentPersonalization: DEFAULT_AGENT_PERSONALIZATION,
+	simulateNodeMissing: false
 };
 
 // ============================================================================

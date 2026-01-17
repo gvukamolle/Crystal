@@ -101,8 +101,18 @@ function findViaWhich(): string | null {
 
 /**
  * Auto-detects path to Claude CLI
+ * @param simulate - If true, simulates CLI not being installed (for testing UI)
  */
-export function detectCLIPath(): CLIDetectionResult {
+export function detectCLIPath(simulate = false): CLIDetectionResult {
+	// Simulate CLI missing for testing purposes
+	if (simulate) {
+		return {
+			found: false,
+			path: "claude",
+			method: "default"
+		};
+	}
+
 	// 1. Try which/where first
 	const whichPath = findViaWhich();
 	if (whichPath) {
@@ -135,8 +145,18 @@ export function detectCLIPath(): CLIDetectionResult {
 
 /**
  * Checks if CLI is installed and returns version (async)
+ * @param cliPath - Path to CLI executable
+ * @param simulate - If true, simulates CLI not being installed (for testing UI)
  */
-export async function checkCLIInstalled(cliPath: string): Promise<CLIStatusResult> {
+export async function checkCLIInstalled(cliPath: string, simulate = false): Promise<CLIStatusResult> {
+	// Simulate CLI missing for testing purposes
+	if (simulate) {
+		return Promise.resolve({
+			installed: false,
+			error: "Claude CLI not installed (simulated)"
+		});
+	}
+
 	return new Promise((resolve) => {
 		// Extend PATH for spawn like ClaudeService does
 		const pathAdditions = ["/usr/local/bin", "/opt/homebrew/bin", "/usr/bin", "/bin"];
@@ -191,8 +211,17 @@ export async function checkCLIInstalled(cliPath: string): Promise<CLIStatusResul
 
 /**
  * Checks if Node.js is installed and returns version (async)
+ * @param simulate - If true, simulates Node.js not being installed (for testing UI)
  */
-export async function checkNodeInstalled(): Promise<NodeStatusResult> {
+export async function checkNodeInstalled(simulate = false): Promise<NodeStatusResult> {
+	// Simulate Node.js missing for testing purposes
+	if (simulate) {
+		return Promise.resolve({
+			installed: false,
+			error: "Node.js not installed (simulated)"
+		});
+	}
+
 	return new Promise((resolve) => {
 		const pathAdditions = ["/usr/local/bin", "/opt/homebrew/bin", "/usr/bin", "/bin"];
 		const homeDir = process.env.HOME || os.homedir();

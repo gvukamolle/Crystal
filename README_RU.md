@@ -113,78 +113,70 @@ Crystal — это плагин для Obsidian, который интегрир
 
 ---
 
-## Подготовка (для новичков)
+## Установка
 
-Если у вас ещё не установлен Node.js, следуйте инструкциям ниже.
+### Быстрый старт (рекомендуется)
 
-### Как открыть терминал
+**Crystal включает встроенный онбординг**, который автоматически проведёт вас через весь процесс установки:
 
-**macOS:**
-- Нажмите `Cmd + Space`, введите "Terminal", нажмите Enter
-- Или: Finder → Программы → Утилиты → Терминал
+1. **Установите плагин:**
+   - **Из сообщества:** Настройки → Сторонние плагины → Поиск "Crystal" → Установить → Включить
+   - **Вручную:** Скачайте релиз с GitHub, распакуйте в `<vault>/.obsidian/plugins/crystal-cli-llm/`
 
-**Windows:**
-- Нажмите `Win + R`, введите "cmd" или "powershell", нажмите Enter
-- Или: меню Пуск → поиск "PowerShell"
+2. **Первый запуск:**
+   - Откройте вид чата Crystal
+   - Плагин автоматически обнаружит отсутствующие зависимости
+   - Следуйте интерактивному мастеру настройки с инструкциями для вашей платформы
 
-**Linux:**
-- Нажмите `Ctrl + Alt + T`
-- Или через меню приложений → Терминал
+**Онбординг поможет вам установить:**
+- Node.js 18+ (если не установлен) — с инструкциями для macOS/Windows/Linux
+- Claude Code CLI — с командами для терминала в один клик
+- OAuth авторизацию — пошаговый процесс авторизации через браузер
 
-### Установка Node.js
+### Ручная установка (для опытных пользователей)
+
+Если вы предпочитаете ручную настройку:
+
+**1. Установите Node.js 18+** (если не установлен)
 
 **macOS (через Homebrew):**
 ```bash
-# 1. Установить Homebrew (если ещё нет)
+# Установить Homebrew (если ещё нет)
 /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
 
-# 2. После установки добавить в PATH (команда из вывода установщика)
-echo 'eval "$(/opt/homebrew/bin/brew shellenv)"' >> ~/.zprofile
-eval "$(/opt/homebrew/bin/brew shellenv)"
-
-# 3. Установить Node.js
+# Установить Node.js
 brew install node
 
-# 4. Проверить установку
+# Проверить установку
 node --version  # Должно показать v18+ или выше
-npm --version   # Должно показать 9+ или выше
 ```
 
 **Windows:**
-1. Скачайте установщик с https://nodejs.org (выберите LTS версию)
+1. Скачайте установщик с [nodejs.org](https://nodejs.org) (выберите LTS версию)
 2. Запустите установщик и следуйте инструкциям
 3. Перезапустите терминал и проверьте: `node --version`
 
-**Linux (Ubuntu/Debian):**
-```bash
-curl -fsSL https://deb.nodesource.com/setup_20.x | sudo -E bash -
-sudo apt-get install -y nodejs
-node --version
-```
+**Linux:**
+- **Ubuntu/Debian:** `curl -fsSL https://deb.nodesource.com/setup_20.x | sudo -E bash - && sudo apt-get install -y nodejs`
+- **Fedora:** `sudo dnf install nodejs`
+- **Arch:** `sudo pacman -S nodejs npm`
+- **NVM (рекомендуется):** Установите [NVM](https://github.com/nvm-sh/nvm), затем `nvm install --lts`
 
----
-
-## Установка
-
-### 1. Установка плагина
-
-1. Скачайте репозиторий или клонируйте его в `~/vault/.obsidian/plugins/`
-2. Выполните `npm install && npm run build` в папке плагина
-3. Включите плагин в настройках Obsidian: **Настройки → Сторонние плагины → Crystal**
-
-### 2. Установка Claude CLI
-
+**2. Установите Claude CLI:**
 ```bash
 npm i -g @anthropic-ai/claude-code
 ```
 
-**Аутентификация через OAuth:**
-1. Запустите команду `claude` в терминале
-2. Откроется браузер для OAuth авторизации
-3. Войдите с логином и паролем от вашего Claude.ai аккаунта
-4. Токены автоматически сохраняются:
-   - macOS: в Keychain
-   - Linux/WSL: в `~/.claude/.credentials.json`
+**3. OAuth авторизация:**
+```bash
+claude
+```
+Откроется браузер для авторизации. Токены сохраняются:
+- macOS: в Keychain
+- Linux/WSL: в `~/.claude/.credentials.json`
+- Windows: в Credential Manager
+
+**4. Установите плагин** (см. Быстрый старт выше)
 
 ---
 

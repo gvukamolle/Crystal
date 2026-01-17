@@ -39,8 +39,10 @@ export class CrystalSettingTab extends PluginSettingTab {
 		// 5. CLI Status (collapsible)
 		this.displayCliStatusCollapsible(containerEl);
 
-		// 6. Getting Started section (at the bottom)
-		this.displayGettingStarted(containerEl);
+		// 6. Debug/Testing section (collapsible) - only show if debug mode enabled
+		if (this.plugin.settings.debugModeEnabled) {
+			this.displayDebugSection(containerEl);
+		}
 	}
 
 	private displayUsageSection(containerEl: HTMLElement): void {
@@ -290,7 +292,7 @@ export class CrystalSettingTab extends PluginSettingTab {
 		containerEl.createEl("h3", { text: "Claude Code" });
 
 		// Auto-detect CLI path on settings open
-		const detected = detectCLIPath();
+		const detected = detectCLIPath(this.plugin.settings.simulateNodeMissing);
 		if (detected.found && agent.cliPath !== detected.path) {
 			agent.cliPath = detected.path;
 			this.plugin.saveSettings();
@@ -505,7 +507,7 @@ export class CrystalSettingTab extends PluginSettingTab {
 		loadingEl.createSpan({ text: this.locale.checkingCli });
 
 		// Check CLI status
-		const status = await checkCLIInstalled(agent.cliPath);
+		const status = await checkCLIInstalled(agent.cliPath, this.plugin.settings.simulateNodeMissing);
 
 		// Update status info (keep structure, just update content)
 		statusInfo.empty();
@@ -563,7 +565,7 @@ export class CrystalSettingTab extends PluginSettingTab {
 
 			installBtn.addEventListener("click", async () => {
 				// Check if Node.js is installed before opening terminal
-				const nodeStatus = await checkNodeInstalled();
+				const nodeStatus = await checkNodeInstalled(this.plugin.settings.simulateNodeMissing);
 				if (nodeStatus.installed) {
 					this.launchCommand(installCmd);
 				} else {
@@ -767,70 +769,57 @@ export class CrystalSettingTab extends PluginSettingTab {
 		}
 	}
 
-	private displayGettingStarted(containerEl: HTMLElement): void {
-		// Collapsible header
-		const headerEl = containerEl.createDiv({ cls: "crystal-getting-started-header" });
-		const chevronEl = headerEl.createSpan({ cls: "crystal-getting-started-chevron" });
-		setIcon(chevronEl, "chevron-right");
-		headerEl.createEl("h3", { text: this.locale.gettingStarted });
+	/**
+	 * Debug/Testing section (collapsible)
+	 */
+	private displayDebugSection(containerEl: HTMLElement): void {
+		const section = containerEl.createDiv({ cls: "crystal-collapsible-section" });
 
-		// Content container (collapsed by default)
-		const contentEl = containerEl.createDiv({ cls: "crystal-getting-started-content" });
-		contentEl.style.display = "none";
+		// Header
+		const header = section.createDiv({ cls: "crystal-collapsible-header" });
+		const chevron = header.createSpan({ cls: "crystal-collapsible-chevron" });
+		setIcon(chevron, "chevron-right");
+		header.createSpan({ cls: "crystal-collapsible-title", text: "🧪 Debug/Testing" });
 
-		// Toggle on header click
-		headerEl.addEventListener("click", () => {
-			const isHidden = contentEl.style.display === "none";
-			contentEl.style.display = isHidden ? "block" : "none";
-			chevronEl.empty();
-			setIcon(chevronEl, isHidden ? "chevron-down" : "chevron-right");
+		// Content (hidden by default)
+		const content = section.createDiv({ cls: "crystal-collapsible-content" });
+		content.style.display = "none";
+
+		// Simulate Node.js missing toggle
+		new Setting(content)
+			.setName("Simulate Node.js missing")
+			.setDesc("Show Node.js installation instructions even if Node.js is installed (for testing UI)")
+			.addToggle(toggle => toggle
+				.setValue(this.plugin.settings.simulateNodeMissing || false)
+				.onChange(async (value) => {
+					this.plugin.settings.simulateNodeMissing = value;
+					await this.plugin.saveSettings();
+
+					// Refresh settings tab to apply changes
+					this.display();
+				}));
+
+		// Exit debug mode button
+		new Setting(content)
+			.setName("Выйти из Debug Mode")
+			.setDesc("Отключить режим отладки и скрыть эту секцию")
+			.addButton(btn => btn
+				.setButtonText("Выйти")
+				.setWarning()
+				.onClick(async () => {
+					this.plugin.settings.debugModeEnabled = false;
+					this.plugin.settings.simulateNodeMissing = false;
+					await this.plugin.saveSettings();
+					this.display();
+				}));
+
+		// Toggle logic
+		header.addEventListener("click", () => {
+			const isHidden = content.style.display === "none";
+			content.style.display = isHidden ? "block" : "none";
+			chevron.empty();
+			setIcon(chevron, isHidden ? "chevron-down" : "chevron-right");
 		});
-
-		const infoEl = contentEl.createDiv({ cls: "crystal-settings-info" });
-		const steps = infoEl.createEl("ol");
-
-		// Claude installation steps
-		const step1 = steps.createEl("li");
-		step1.createEl("strong", { text: this.locale.step1Title });
-		step1.createEl("br");
-		step1.createEl("span", { cls: "crystal-settings-note", text: this.locale.step1MacOS });
-		step1.createEl("br");
-		step1.createEl("span", { cls: "crystal-settings-note", text: this.locale.step1Windows });
-
-		const step2 = steps.createEl("li");
-		step2.createEl("strong", { text: this.locale.step2Title });
-		step2.createEl("br");
-		step2.createEl("code", { text: "npm i -g @anthropic-ai/claude-code" });
-
-		const step3 = steps.createEl("li");
-		step3.createEl("strong", { text: this.locale.step3Title });
-		step3.createEl("br");
-		step3.createEl("code", { text: "claude" });
-
-		const step4 = steps.createEl("li");
-		step4.createEl("strong", { text: this.locale.step4Title });
-		step4.createEl("br");
-		step4.createEl("span", { cls: "crystal-settings-note", text: this.locale.step4Note });
-
-		const step5 = steps.createEl("li");
-		step5.createEl("strong", { text: this.locale.step5Title });
-		step5.createEl("br");
-		step5.createEl("span", { cls: "crystal-settings-note", text: this.locale.step5Note });
-
-		const step6 = steps.createEl("li");
-		step6.createEl("strong", { text: this.locale.step6Title });
-		step6.createEl("br");
-		step6.createEl("span", { cls: "crystal-settings-note", text: this.locale.step6Note });
-
-		const step7 = steps.createEl("li");
-		step7.createEl("strong", { text: this.locale.step7Title });
-		step7.createEl("br");
-		step7.createEl("span", { cls: "crystal-settings-note", text: this.locale.step7Note });
-
-		const step8 = steps.createEl("li");
-		step8.createEl("strong", { text: this.locale.step8Title });
-
-		infoEl.createEl("p", { cls: "crystal-settings-note", text: this.locale.subscriptionNote });
 	}
 
 	private displaySlashCommandsSection(containerEl: HTMLElement): void {
@@ -1292,7 +1281,7 @@ export class CrystalSettingTab extends PluginSettingTab {
 		if (!agent) return;
 
 		// Auto-detect CLI path
-		const detected = detectCLIPath();
+		const detected = detectCLIPath(this.plugin.settings.simulateNodeMissing);
 		if (detected.found && agent.cliPath !== detected.path) {
 			agent.cliPath = detected.path;
 			this.plugin.saveSettings();
@@ -1338,7 +1327,7 @@ export class CrystalSettingTab extends PluginSettingTab {
 		badge.empty();
 		badge.textContent = "...";
 
-		const status = await checkCLIInstalled(agent.cliPath);
+		const status = await checkCLIInstalled(agent.cliPath, this.plugin.settings.simulateNodeMissing);
 
 		if (status.installed) {
 			badge.addClass("success");
@@ -1346,10 +1335,35 @@ export class CrystalSettingTab extends PluginSettingTab {
 			// Show checkmark icon in badge
 			setIcon(badge, "check");
 
-			// In expanded view - just text without icon
-			container.createEl("p", {
-				cls: "crystal-settings-note",
-				text: this.locale.cliFound.replace("{version}", status.version || "?")
+			// In expanded view - text with refresh button
+			const statusRow = container.createDiv({ cls: "crystal-cli-status-row" });
+			const versionText = statusRow.createEl("p", { cls: "crystal-settings-note" });
+
+			// Parse version text and make entire version clickable
+			const versionStr = status.version || "?";
+			const fullText = this.locale.cliFound.replace("{version}", versionStr);
+			const versionParts = fullText.split(versionStr);
+
+			versionText.appendText(versionParts[0] || "");
+
+			// Make entire version clickable (Easter egg for debug mode)
+			const versionLink = versionText.createEl("span", {
+				text: versionStr,
+				cls: "crystal-debug-trigger"
+			});
+			versionLink.addEventListener("click", (e) => {
+				e.stopPropagation();
+				new DebugModeConfirmModal(this.app, this.plugin, () => this.display()).open();
+			});
+
+			versionText.appendText(versionParts[1] || "");
+
+			// Refresh button
+			const refreshBtn = statusRow.createEl("button", { cls: "crystal-refresh-btn" });
+			setIcon(refreshBtn, "refresh-cw");
+			refreshBtn.setAttribute("aria-label", this.locale.refreshButton);
+			refreshBtn.addEventListener("click", async () => {
+				await this.renderCliStatusContent(container, badge, agent);
 			});
 
 			// Terminal button
@@ -1395,7 +1409,7 @@ export class CrystalSettingTab extends PluginSettingTab {
 			installBtn.createSpan({ text: this.locale.startIntegration || "Open terminal and install CLI" });
 
 			installBtn.addEventListener("click", async () => {
-				const nodeStatus = await checkNodeInstalled();
+				const nodeStatus = await checkNodeInstalled(this.plugin.settings.simulateNodeMissing);
 				if (nodeStatus.installed) {
 					this.launchCommand(installCmd);
 				} else {
@@ -2036,150 +2050,307 @@ class NodeInstallModal extends Modal {
 	}
 
 	private renderMacOSInstructions(el: HTMLElement): void {
-		el.createEl("h2", { text: this.locale.nodeInstallMacOS || "Install Node.js on macOS" });
+		el.createEl("h2", { text: this.locale.nodeInstallMacOS });
 
 		// Option 1: Homebrew (recommended)
-		const option1 = el.createDiv({ cls: "crystal-install-option" });
-		option1.createEl("h4", { text: this.locale.homebrewRecommended || "Homebrew (recommended)" });
+		const option1 = el.createDiv({ cls: "crystal-install-option crystal-install-option-recommended" });
+		option1.createEl("h4", { text: this.locale.homebrewRecommended });
 
 		const step1 = option1.createDiv({ cls: "crystal-install-step" });
-		step1.createEl("span", { text: "1. Install Homebrew (if not installed):" });
-		step1.createEl("code", {
+		const step1Header = step1.createDiv({ cls: "crystal-install-step-header" });
+		step1Header.createEl("span", { text: this.locale.nodeInstallStep1 });
+		const cmd1Container = step1.createDiv({ cls: "crystal-install-command-container" });
+		cmd1Container.createEl("code", {
 			cls: "crystal-install-command",
 			text: '/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"'
 		});
+		const runBtn1 = cmd1Container.createEl("button", {
+			cls: "crystal-run-command-btn",
+			attr: { "aria-label": this.locale.installViaTerminal, "title": this.locale.installViaTerminal }
+		});
+		setIcon(runBtn1, "arrow-right");
+		runBtn1.addEventListener("click", () => {
+			this.plugin.openInSystemTerminal('/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"');
+		});
 
 		const step2 = option1.createDiv({ cls: "crystal-install-step" });
-		step2.createEl("span", { text: "2. Install Node.js:" });
-		step2.createEl("code", {
+		const step2Header = step2.createDiv({ cls: "crystal-install-step-header" });
+		step2Header.createEl("span", { text: this.locale.nodeInstallStep2 });
+		const cmd2Container = step2.createDiv({ cls: "crystal-install-command-container" });
+		cmd2Container.createEl("code", {
 			cls: "crystal-install-command",
 			text: "brew install node"
 		});
-
-		// Quick install button
-		const quickInstall = option1.createDiv({ cls: "crystal-quick-install" });
-		const installBtn = quickInstall.createEl("button", { cls: "mod-cta" });
-		const termIcon = installBtn.createSpan({ cls: "crystal-btn-icon-left" });
-		setIcon(termIcon, "terminal");
-		installBtn.createSpan({ text: this.locale.installViaTerminal || "Install via Terminal" });
-
-		installBtn.addEventListener("click", () => {
+		const runBtn2 = cmd2Container.createEl("button", {
+			cls: "crystal-run-command-btn",
+			attr: { "aria-label": this.locale.installViaTerminal, "title": this.locale.installViaTerminal }
+		});
+		setIcon(runBtn2, "arrow-right");
+		runBtn2.addEventListener("click", () => {
 			this.plugin.openInSystemTerminal("brew install node && echo '✅ Node.js installed!' && node --version");
 			this.close();
 		});
 
 		// Option 2: Official installer
 		const option2 = el.createDiv({ cls: "crystal-install-option" });
-		option2.createEl("h4", { text: this.locale.officialInstaller || "Official Installer" });
+		option2.createEl("h4", { text: this.locale.officialInstaller });
 
 		const linkContainer = option2.createDiv({ cls: "crystal-install-step" });
 		const link = linkContainer.createEl("a", {
-			text: "Download from nodejs.org →",
+			text: this.locale.nodeWinDownloadLink,
 			href: "https://nodejs.org/en/download/"
 		});
 		link.setAttr("target", "_blank");
 
 		// Close button
 		const buttonContainer = el.createDiv({ cls: "crystal-modal-buttons" });
-		const closeBtn = buttonContainer.createEl("button", { text: this.locale.closeButton || "Close" });
+		const closeBtn = buttonContainer.createEl("button", { text: this.locale.closeButton });
 		closeBtn.addEventListener("click", () => this.close());
 	}
 
 	private renderWindowsInstructions(el: HTMLElement): void {
-		el.createEl("h2", { text: this.locale.nodeInstallWindows || "Install Node.js on Windows" });
+		el.createEl("h2", { text: this.locale.nodeInstallWindows });
 
-		// Option 1: Official installer
-		const option1 = el.createDiv({ cls: "crystal-install-option" });
-		option1.createEl("h4", { text: this.locale.officialInstaller || "Official Installer (Recommended)" });
+		// Option 1: Official installer (recommended)
+		const option1 = el.createDiv({ cls: "crystal-install-option crystal-install-option-recommended" });
+		option1.createEl("h4", { text: this.locale.officialInstaller });
 
 		option1.createEl("p", {
-			text: "Download and run the Windows installer from the official website:",
+			text: this.locale.nodeWinInstallerDesc,
 			cls: "crystal-settings-note"
 		});
 
 		const linkContainer1 = option1.createDiv({ cls: "crystal-install-step" });
 		const link1 = linkContainer1.createEl("a", {
-			text: "nodejs.org/en/download →",
+			text: this.locale.nodeWinDownloadLink,
 			href: "https://nodejs.org/en/download/"
 		});
 		link1.setAttr("target", "_blank");
 
 		// Option 2: Chocolatey
 		const option2 = el.createDiv({ cls: "crystal-install-option" });
-		option2.createEl("h4", { text: "Chocolatey" });
+		option2.createEl("h4", { text: this.locale.nodeWinChocolatey });
 
-		option2.createEl("span", { text: this.locale.orUsePackageManager || "Or use a package manager:" });
-		option2.createEl("code", {
+		const chocoStep = option2.createDiv({ cls: "crystal-install-step" });
+		const chocoHeader = chocoStep.createDiv({ cls: "crystal-install-step-header" });
+		chocoHeader.createEl("span", { text: this.locale.orUsePackageManager });
+		const chocoContainer = chocoStep.createDiv({ cls: "crystal-install-command-container" });
+		chocoContainer.createEl("code", {
 			cls: "crystal-install-command",
 			text: "choco install nodejs"
+		});
+		const chocoBtn = chocoContainer.createEl("button", {
+			cls: "crystal-run-command-btn",
+			attr: { "aria-label": this.locale.installViaTerminal, "title": this.locale.installViaTerminal }
+		});
+		setIcon(chocoBtn, "arrow-right");
+		chocoBtn.addEventListener("click", () => {
+			this.plugin.openInSystemTerminal("choco install nodejs");
+			this.close();
 		});
 
 		// Option 3: winget
 		const option3 = el.createDiv({ cls: "crystal-install-option" });
-		option3.createEl("h4", { text: "winget" });
+		option3.createEl("h4", { text: this.locale.nodeWinWinget });
 
-		option3.createEl("span", { text: "Using Windows Package Manager:" });
-		option3.createEl("code", {
+		const wingetStep = option3.createDiv({ cls: "crystal-install-step" });
+		const wingetHeader = wingetStep.createDiv({ cls: "crystal-install-step-header" });
+		wingetHeader.createEl("span", { text: this.locale.nodeWinWingetDesc });
+		const wingetContainer = wingetStep.createDiv({ cls: "crystal-install-command-container" });
+		wingetContainer.createEl("code", {
 			cls: "crystal-install-command",
 			text: "winget install OpenJS.NodeJS"
+		});
+		const wingetBtn = wingetContainer.createEl("button", {
+			cls: "crystal-run-command-btn",
+			attr: { "aria-label": this.locale.installViaTerminal, "title": this.locale.installViaTerminal }
+		});
+		setIcon(wingetBtn, "arrow-right");
+		wingetBtn.addEventListener("click", () => {
+			this.plugin.openInSystemTerminal("winget install OpenJS.NodeJS");
+			this.close();
 		});
 
 		// Close button
 		const buttonContainer = el.createDiv({ cls: "crystal-modal-buttons" });
-		const closeBtn = buttonContainer.createEl("button", { text: this.locale.closeButton || "Close" });
+		const closeBtn = buttonContainer.createEl("button", { text: this.locale.closeButton });
 		closeBtn.addEventListener("click", () => this.close());
 	}
 
 	private renderLinuxInstructions(el: HTMLElement): void {
-		el.createEl("h2", { text: this.locale.nodeInstallLinux || "Install Node.js on Linux" });
+		el.createEl("h2", { text: this.locale.nodeInstallLinux });
 
 		// Ubuntu/Debian
 		const option1 = el.createDiv({ cls: "crystal-install-option" });
-		option1.createEl("h4", { text: "Ubuntu / Debian" });
-		option1.createEl("code", {
+		option1.createEl("h4", { text: this.locale.nodeLinuxUbuntu });
+		const ubuntuContainer = option1.createDiv({ cls: "crystal-install-command-container" });
+		ubuntuContainer.createEl("code", {
 			cls: "crystal-install-command",
 			text: "sudo apt update && sudo apt install nodejs npm"
+		});
+		const ubuntuBtn = ubuntuContainer.createEl("button", {
+			cls: "crystal-run-command-btn",
+			attr: { "aria-label": this.locale.installViaTerminal, "title": this.locale.installViaTerminal }
+		});
+		setIcon(ubuntuBtn, "arrow-right");
+		ubuntuBtn.addEventListener("click", () => {
+			this.plugin.openInSystemTerminal("sudo apt update && sudo apt install nodejs npm");
+			this.close();
 		});
 
 		// Fedora
 		const option2 = el.createDiv({ cls: "crystal-install-option" });
-		option2.createEl("h4", { text: "Fedora" });
-		option2.createEl("code", {
+		option2.createEl("h4", { text: this.locale.nodeLinuxFedora });
+		const fedoraContainer = option2.createDiv({ cls: "crystal-install-command-container" });
+		fedoraContainer.createEl("code", {
 			cls: "crystal-install-command",
 			text: "sudo dnf install nodejs npm"
+		});
+		const fedoraBtn = fedoraContainer.createEl("button", {
+			cls: "crystal-run-command-btn",
+			attr: { "aria-label": this.locale.installViaTerminal, "title": this.locale.installViaTerminal }
+		});
+		setIcon(fedoraBtn, "arrow-right");
+		fedoraBtn.addEventListener("click", () => {
+			this.plugin.openInSystemTerminal("sudo dnf install nodejs npm");
+			this.close();
 		});
 
 		// Arch
 		const option3 = el.createDiv({ cls: "crystal-install-option" });
-		option3.createEl("h4", { text: "Arch Linux" });
-		option3.createEl("code", {
+		option3.createEl("h4", { text: this.locale.nodeLinuxArch });
+		const archContainer = option3.createDiv({ cls: "crystal-install-command-container" });
+		archContainer.createEl("code", {
 			cls: "crystal-install-command",
 			text: "sudo pacman -S nodejs npm"
 		});
+		const archBtn = archContainer.createEl("button", {
+			cls: "crystal-run-command-btn",
+			attr: { "aria-label": this.locale.installViaTerminal, "title": this.locale.installViaTerminal }
+		});
+		setIcon(archBtn, "arrow-right");
+		archBtn.addEventListener("click", () => {
+			this.plugin.openInSystemTerminal("sudo pacman -S nodejs npm");
+			this.close();
+		});
 
-		// NVM (universal)
+		// NVM (universal - recommended)
 		const option4 = el.createDiv({ cls: "crystal-install-option crystal-install-option-recommended" });
-		option4.createEl("h4", { text: "NVM (Node Version Manager) — Recommended" });
-		option4.createEl("code", {
+		option4.createEl("h4", { text: this.locale.nodeLinuxNVM });
+
+		// Step 1: Install NVM
+		const nvmStep1 = option4.createDiv({ cls: "crystal-install-step" });
+		const nvmContainer = nvmStep1.createDiv({ cls: "crystal-install-command-container" });
+		nvmContainer.createEl("code", {
 			cls: "crystal-install-command",
 			text: "curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.40.0/install.sh | bash"
 		});
-		option4.createEl("p", {
+		const nvmBtn = nvmContainer.createEl("button", {
+			cls: "crystal-run-command-btn",
+			attr: { "aria-label": this.locale.installViaTerminal, "title": this.locale.installViaTerminal }
+		});
+		setIcon(nvmBtn, "arrow-right");
+		nvmBtn.addEventListener("click", () => {
+			this.plugin.openInSystemTerminal("curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.40.0/install.sh | bash");
+			this.close();
+		});
+
+		// Step 2: Install Node.js via NVM
+		const nvmStep2 = option4.createDiv({ cls: "crystal-install-step" });
+		nvmStep2.createEl("p", {
 			cls: "crystal-settings-note",
-			text: "Then restart terminal and run: nvm install --lts"
+			text: this.locale.nodeLinuxNVMDesc
+		});
+		const nvmLtsContainer = nvmStep2.createDiv({ cls: "crystal-install-command-container" });
+		nvmLtsContainer.createEl("code", {
+			cls: "crystal-install-command",
+			text: "nvm install --lts"
+		});
+		const nvmLtsBtn = nvmLtsContainer.createEl("button", {
+			cls: "crystal-run-command-btn",
+			attr: { "aria-label": this.locale.installViaTerminal, "title": this.locale.installViaTerminal }
+		});
+		setIcon(nvmLtsBtn, "arrow-right");
+		nvmLtsBtn.addEventListener("click", () => {
+			this.plugin.openInSystemTerminal("nvm install --lts");
+			this.close();
 		});
 
 		const linkContainer = option4.createDiv({ cls: "crystal-install-step" });
 		const link = linkContainer.createEl("a", {
-			text: "More info: github.com/nvm-sh/nvm →",
+			text: this.locale.nodeLinuxNVMLink,
 			href: "https://github.com/nvm-sh/nvm"
 		});
 		link.setAttr("target", "_blank");
 
 		// Close button
 		const buttonContainer = el.createDiv({ cls: "crystal-modal-buttons" });
-		const closeBtn = buttonContainer.createEl("button", { text: this.locale.closeButton || "Close" });
+		const closeBtn = buttonContainer.createEl("button", { text: this.locale.closeButton });
 		closeBtn.addEventListener("click", () => this.close());
+	}
+
+	onClose(): void {
+		const { contentEl } = this;
+		contentEl.empty();
+	}
+}
+
+/**
+ * Modal for confirming debug mode activation
+ */
+class DebugModeConfirmModal extends Modal {
+	private plugin: CrystalPlugin;
+	private onConfirm: () => void;
+
+	constructor(app: App, plugin: CrystalPlugin, onConfirm: () => void) {
+		super(app);
+		this.plugin = plugin;
+		this.onConfirm = onConfirm;
+	}
+
+	onOpen(): void {
+		const { contentEl } = this;
+		contentEl.empty();
+		contentEl.addClass("crystal-debug-confirm-modal");
+
+		// Header with warning icon
+		const header = contentEl.createDiv({ cls: "crystal-debug-modal-header" });
+		const iconSpan = header.createSpan({ cls: "crystal-debug-modal-icon" });
+		setIcon(iconSpan, "alert-triangle");
+		header.createEl("h2", { text: "🧪 Активировать Debug Mode?" });
+
+		// Description
+		contentEl.createEl("p", {
+			cls: "crystal-debug-modal-desc",
+			text: "Вы нашли секретную функцию для тестирования интерфейса. Debug Mode позволяет симулировать различные состояния установки CLI и Node.js."
+		});
+
+		contentEl.createEl("p", {
+			cls: "crystal-debug-modal-note",
+			text: "⚠️ Это режим только для разработчиков и тестирования UI. Обычным пользователям он не нужен."
+		});
+
+		// Buttons
+		const buttonContainer = contentEl.createDiv({ cls: "crystal-modal-buttons crystal-debug-buttons" });
+
+		// Cancel button (red, warning)
+		const cancelBtn = buttonContainer.createEl("button", {
+			text: "DON'T DO IT, THERE'S NOTHING INTERESTING",
+			cls: "crystal-debug-cancel-btn"
+		});
+		cancelBtn.addEventListener("click", () => this.close());
+
+		// Confirm button
+		const confirmBtn = buttonContainer.createEl("button", {
+			text: "Да, мне надо",
+			cls: "mod-cta"
+		});
+		confirmBtn.addEventListener("click", async () => {
+			this.plugin.settings.debugModeEnabled = true;
+			await this.plugin.saveSettings();
+			this.onConfirm();
+			this.close();
+		});
 	}
 
 	onClose(): void {
