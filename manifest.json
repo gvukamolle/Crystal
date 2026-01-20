@@ -3,7 +3,7 @@
 	"name": "Crystal",
 	"version": "1.0.0",
 	"minAppVersion": "1.4.0",
-	"description": "Claude Code CLI integration for Obsidian notes",
+	"description": "Claude AI agent with full vault access — read, edit, search web.",
 	"author": "Timofey Grushko",
 	"authorUrl": "https://github.com/gvukamolle",
 	"isDesktopOnly": true
