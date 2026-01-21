@@ -1101,35 +1101,17 @@ export class CrystalSettingTab extends PluginSettingTab {
 	}
 
 	/**
-	 * Collapsible permissions section
+	 * Permissions section
 	 */
 	private displayPermissionsCollapsible(containerEl: HTMLElement): void {
 		const agent = this.plugin.getAgentByCliType("claude");
 		if (!agent) return;
 
-		const section = containerEl.createDiv({ cls: "crystal-collapsible-section" });
-
-		// Header
-		const header = section.createDiv({ cls: "crystal-collapsible-header" });
-		const chevron = header.createSpan({ cls: "crystal-collapsible-chevron" });
-		setIcon(chevron, "chevron-right");
-		header.createSpan({ cls: "crystal-collapsible-title", text: this.locale.permissionsSection });
-
-		// Content (hidden by default)
-		const content = section.createDiv({ cls: "crystal-collapsible-content" });
-		content.hide();
+		// Section heading
+		new Setting(containerEl).setName(this.locale.permissionsSection).setHeading();
 
 		// Render permissions content
-		this.renderPermissionsContent(content, agent);
-
-		// Toggle
-		header.addEventListener("click", () => {
-			const isHidden = content.hasClass("crystal-hidden");
-			content.toggleClass("crystal-hidden", !isHidden);
-			section.toggleClass("expanded", isHidden);
-			chevron.empty();
-			setIcon(chevron, isHidden ? "chevron-down" : "chevron-right");
-		});
+		this.renderPermissionsContent(containerEl, agent);
 	}
 
 	/**
@@ -1294,32 +1276,15 @@ export class CrystalSettingTab extends PluginSettingTab {
 			void this.plugin.saveSettings();
 		}
 
-		const section = containerEl.createDiv({ cls: "crystal-collapsible-section" });
+		// Section heading with status badge
+		const headingSetting = new Setting(containerEl).setName(this.locale.cliStatusSection).setHeading();
+		const statusBadge = headingSetting.nameEl.createSpan({ cls: "crystal-cli-badge" });
 
-		// Header
-		const header = section.createDiv({ cls: "crystal-collapsible-header" });
-		const chevron = header.createSpan({ cls: "crystal-collapsible-chevron" });
-		setIcon(chevron, "chevron-right");
-		header.createSpan({ cls: "crystal-collapsible-title", text: this.locale.cliStatusSection });
-
-		// Status badge (shows status even when collapsed)
-		const statusBadge = header.createSpan({ cls: "crystal-cli-badge" });
-
-		// Content (hidden by default)
-		const content = section.createDiv({ cls: "crystal-collapsible-content" });
-		content.hide();
+		// Content container
+		const content = containerEl.createDiv({ cls: "crystal-cli-status-content" });
 
 		// Render CLI status content
 		void this.renderCliStatusContent(content, statusBadge, agent);
-
-		// Toggle
-		header.addEventListener("click", () => {
-			const isHidden = content.hasClass("crystal-hidden");
-			content.toggleClass("crystal-hidden", !isHidden);
-			section.toggleClass("expanded", isHidden);
-			chevron.empty();
-			setIcon(chevron, isHidden ? "chevron-down" : "chevron-right");
-		});
 	}
 
 	/**
