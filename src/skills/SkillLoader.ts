@@ -622,10 +622,10 @@ description: ${description}
 	/**
 	 * Update a skill's description and/or instructions
 	 */
-	async updateSkill(
+	updateSkill(
 		skillId: string,
 		updates: { description?: string; instructions?: string }
-	): Promise<{ success: boolean; error?: string }> {
+	): { success: boolean; error?: string } {
 		const skill = this.vaultSkills.get(skillId);
 		if (!skill || !skill.skillMdPath) {
 			return { success: false, error: 'Skill not found' };

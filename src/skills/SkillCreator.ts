@@ -522,7 +522,7 @@ export class EditSkillModal extends Modal {
 		const descInput = this.contentEl.querySelector('input[data-field="description"]') as HTMLInputElement;
 		const newDescription = descInput?.value.trim() || this.skill.metadata.description;
 
-		const result = await this.skillLoader.updateSkill(this.skill.id, {
+		const result = this.skillLoader.updateSkill(this.skill.id, {
 			description: newDescription,
 			instructions: newInstructions
 		});

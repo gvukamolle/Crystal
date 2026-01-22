@@ -2003,12 +2003,7 @@ class NodeInstallModal extends Modal {
 		const step1 = option1.createDiv({ cls: "crystal-install-step" });
 		const step1Header = step1.createDiv({ cls: "crystal-install-step-header" });
 		step1Header.createEl("span", { text: this.locale.nodeInstallStep1 });
-		const cmd1Container = step1.createDiv({ cls: "crystal-install-command-container" });
-		cmd1Container.createEl("code", {
-			cls: "crystal-install-command",
-			text: '/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"'
-		});
-		const runBtn1 = cmd1Container.createEl("button", {
+		const runBtn1 = step1Header.createEl("button", {
 			cls: "crystal-run-command-btn",
 			attr: { "aria-label": this.locale.installViaTerminal, "title": this.locale.installViaTerminal }
 		});
@@ -2020,12 +2015,7 @@ class NodeInstallModal extends Modal {
 		const step2 = option1.createDiv({ cls: "crystal-install-step" });
 		const step2Header = step2.createDiv({ cls: "crystal-install-step-header" });
 		step2Header.createEl("span", { text: this.locale.nodeInstallStep2 });
-		const cmd2Container = step2.createDiv({ cls: "crystal-install-command-container" });
-		cmd2Container.createEl("code", {
-			cls: "crystal-install-command",
-			text: "brew install node"
-		});
-		const runBtn2 = cmd2Container.createEl("button", {
+		const runBtn2 = step2Header.createEl("button", {
 			cls: "crystal-run-command-btn",
 			attr: { "aria-label": this.locale.installViaTerminal, "title": this.locale.installViaTerminal }
 		});
@@ -2078,12 +2068,7 @@ class NodeInstallModal extends Modal {
 		const chocoStep = option2.createDiv({ cls: "crystal-install-step" });
 		const chocoHeader = chocoStep.createDiv({ cls: "crystal-install-step-header" });
 		chocoHeader.createEl("span", { text: this.locale.orUsePackageManager });
-		const chocoContainer = chocoStep.createDiv({ cls: "crystal-install-command-container" });
-		chocoContainer.createEl("code", {
-			cls: "crystal-install-command",
-			text: "choco install nodejs"
-		});
-		const chocoBtn = chocoContainer.createEl("button", {
+		const chocoBtn = chocoHeader.createEl("button", {
 			cls: "crystal-run-command-btn",
 			attr: { "aria-label": this.locale.installViaTerminal, "title": this.locale.installViaTerminal }
 		});
@@ -2100,12 +2085,7 @@ class NodeInstallModal extends Modal {
 		const wingetStep = option3.createDiv({ cls: "crystal-install-step" });
 		const wingetHeader = wingetStep.createDiv({ cls: "crystal-install-step-header" });
 		wingetHeader.createEl("span", { text: this.locale.nodeWinWingetDesc });
-		const wingetContainer = wingetStep.createDiv({ cls: "crystal-install-command-container" });
-		wingetContainer.createEl("code", {
-			cls: "crystal-install-command",
-			text: "winget install OpenJS.NodeJS"
-		});
-		const wingetBtn = wingetContainer.createEl("button", {
+		const wingetBtn = wingetHeader.createEl("button", {
 			cls: "crystal-run-command-btn",
 			attr: { "aria-label": this.locale.installViaTerminal, "title": this.locale.installViaTerminal }
 		});
@@ -2127,12 +2107,10 @@ class NodeInstallModal extends Modal {
 		// Ubuntu/Debian
 		const option1 = el.createDiv({ cls: "crystal-install-option" });
 		option1.createEl("h4", { text: this.locale.nodeLinuxUbuntu });
-		const ubuntuContainer = option1.createDiv({ cls: "crystal-install-command-container" });
-		ubuntuContainer.createEl("code", {
-			cls: "crystal-install-command",
-			text: "sudo apt update && sudo apt install nodejs npm"
-		});
-		const ubuntuBtn = ubuntuContainer.createEl("button", {
+		const ubuntuStep = option1.createDiv({ cls: "crystal-install-step" });
+		const ubuntuHeader = ubuntuStep.createDiv({ cls: "crystal-install-step-header" });
+		ubuntuHeader.createEl("span", { text: this.locale.installViaTerminal });
+		const ubuntuBtn = ubuntuHeader.createEl("button", {
 			cls: "crystal-run-command-btn",
 			attr: { "aria-label": this.locale.installViaTerminal, "title": this.locale.installViaTerminal }
 		});
@@ -2145,12 +2123,10 @@ class NodeInstallModal extends Modal {
 		// Fedora
 		const option2 = el.createDiv({ cls: "crystal-install-option" });
 		option2.createEl("h4", { text: this.locale.nodeLinuxFedora });
-		const fedoraContainer = option2.createDiv({ cls: "crystal-install-command-container" });
-		fedoraContainer.createEl("code", {
-			cls: "crystal-install-command",
-			text: "sudo dnf install nodejs npm"
-		});
-		const fedoraBtn = fedoraContainer.createEl("button", {
+		const fedoraStep = option2.createDiv({ cls: "crystal-install-step" });
+		const fedoraHeader = fedoraStep.createDiv({ cls: "crystal-install-step-header" });
+		fedoraHeader.createEl("span", { text: this.locale.installViaTerminal });
+		const fedoraBtn = fedoraHeader.createEl("button", {
 			cls: "crystal-run-command-btn",
 			attr: { "aria-label": this.locale.installViaTerminal, "title": this.locale.installViaTerminal }
 		});
@@ -2163,12 +2139,10 @@ class NodeInstallModal extends Modal {
 		// Arch
 		const option3 = el.createDiv({ cls: "crystal-install-option" });
 		option3.createEl("h4", { text: this.locale.nodeLinuxArch });
-		const archContainer = option3.createDiv({ cls: "crystal-install-command-container" });
-		archContainer.createEl("code", {
-			cls: "crystal-install-command",
-			text: "sudo pacman -S nodejs npm"
-		});
-		const archBtn = archContainer.createEl("button", {
+		const archStep = option3.createDiv({ cls: "crystal-install-step" });
+		const archHeader = archStep.createDiv({ cls: "crystal-install-step-header" });
+		archHeader.createEl("span", { text: this.locale.installViaTerminal });
+		const archBtn = archHeader.createEl("button", {
 			cls: "crystal-run-command-btn",
 			attr: { "aria-label": this.locale.installViaTerminal, "title": this.locale.installViaTerminal }
 		});
@@ -2184,12 +2158,9 @@ class NodeInstallModal extends Modal {
 
 		// Step 1: Install NVM
 		const nvmStep1 = option4.createDiv({ cls: "crystal-install-step" });
-		const nvmContainer = nvmStep1.createDiv({ cls: "crystal-install-command-container" });
-		nvmContainer.createEl("code", {
-			cls: "crystal-install-command",
-			text: "curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.40.0/install.sh | bash"
-		});
-		const nvmBtn = nvmContainer.createEl("button", {
+		const nvmHeader1 = nvmStep1.createDiv({ cls: "crystal-install-step-header" });
+		nvmHeader1.createEl("span", { text: this.locale.nodeInstallStep1 });
+		const nvmBtn = nvmHeader1.createEl("button", {
 			cls: "crystal-run-command-btn",
 			attr: { "aria-label": this.locale.installViaTerminal, "title": this.locale.installViaTerminal }
 		});
@@ -2205,12 +2176,9 @@ class NodeInstallModal extends Modal {
 			cls: "crystal-settings-note",
 			text: this.locale.nodeLinuxNVMDesc
 		});
-		const nvmLtsContainer = nvmStep2.createDiv({ cls: "crystal-install-command-container" });
-		nvmLtsContainer.createEl("code", {
-			cls: "crystal-install-command",
-			text: "nvm install --lts"
-		});
-		const nvmLtsBtn = nvmLtsContainer.createEl("button", {
+		const nvmHeader2 = nvmStep2.createDiv({ cls: "crystal-install-step-header" });
+		nvmHeader2.createEl("span", { text: this.locale.nodeInstallStep2 });
+		const nvmLtsBtn = nvmHeader2.createEl("button", {
 			cls: "crystal-run-command-btn",
 			attr: { "aria-label": this.locale.installViaTerminal, "title": this.locale.installViaTerminal }
 		});
